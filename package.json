@@ -1,0 +1,11 @@
+{
+  "name": "daily-helper",
+  "version": "0.1",
+  "description": "Helper for Team Black dailies",
+  "main": "index.js",
+  "repository": "https://github.com/Aliamondo/daily-helper",
+  "author": "Aliamondo",
+  "dependencies": {
+    "octokit": "^1.7.2"
+  }
+}
