@@ -141,6 +141,14 @@ export default function CommitChecksIndicator({
                   name: 'flip',
                   enabled: false,
                 },
+                {
+                  name: 'preventOverflow',
+                  enabled: true,
+                  options: {
+                    altAxis: true,
+                    rootBoundary: 'document',
+                  },
+                },
               ]}
               sx={{ zIndex: 1 }}
             >
