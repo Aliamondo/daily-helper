@@ -42,6 +42,11 @@ type GraphQL_PullRequestsPerUserResponse = {
       commits: {
         nodes: GraphQL_Commit[]
       }
+      lastCommit: {
+        nodes: {
+          commit: GraphQL_LastCommitWithChecks
+        }[]
+      }
       labels: {
         nodes: GraphQL_Label[]
       }
@@ -67,6 +72,7 @@ type GraphQL_Label = {
   id: number
   color: string
   name: string
+  description: string
 }
 
 type GraphQL_Team = {
@@ -87,4 +93,55 @@ type GraphQL_Commit = {
       user: GraphQL_User | null
     }
   }
+}
+
+type GraphQL_LastCommitWithChecks = {
+  checkSuites: {
+    nodes: GraphQL_CheckSuite[]
+  }
+  status: GraphQL_CommitStatus | null
+}
+
+type GraphQL_CheckSuite = {
+  checkRuns: {
+    nodes: GraphQL_CommitCheckRun[]
+  }
+  app: GraphQL_CheckSuiteApp
+}
+
+type GraphQL_CommitCheckRun = {
+  name: string
+  status:
+    | 'QUEUED'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'WAITING'
+    | 'PENDING'
+    | 'REQUESTED'
+  conclusion: 'SUCCESS' | 'FAILURE' | 'SKIPPED' | 'CANCELLED' | 'NEUTRAL' | null // there are more
+  permalink: string
+  startedAt: string | null
+  completedAt: string | null
+}
+
+type GraphQL_CheckSuiteApp = {
+  slug: string
+  logoUrl: string
+  logoBackgroundColor: string
+}
+
+type GraphQL_CommitStatus = {
+  state: 'SUCCESS' | 'FAILURE' | 'EXPECTED' | 'ERROR' | 'PENDING'
+  contexts: GraphQL_CommitStatusContext[]
+}
+
+type GraphQL_CommitStatusContext = {
+  context: string
+  description: string
+  state: GraphQL_CommitStatus['state']
+  creator: {
+    login: string
+  }
+  avatarUrl: string
+  targetUrl: string
 }

@@ -15,12 +15,14 @@ type PullRequest = {
   reviews: Review[]
   requestedReviewers: User[]
   assignees: User[]
+  lastCommitChecks: CommitCheck[]
 }
 
 type Label = {
   id: number
   color: string
   name: string
+  description: string
 }
 
 type User = {
@@ -34,3 +36,15 @@ type Review = {
 }
 
 type ReviewState = 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED'
+
+type CommitCheck = {
+  result: 'SUCCESS' | 'FAILURE' | 'IN_PROGRESS' | 'PENDING' | 'SKIPPED'
+  name: string
+  description: string
+  runUrl: string
+  checker: CommitChecker
+}
+
+type CommitChecker = User & {
+  backgroundColor: string
+}

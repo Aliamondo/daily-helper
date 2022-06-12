@@ -101,11 +101,50 @@ export function getPullRequestsByUserQuery({
                 }
               }
             }
+            lastCommit: commits(last: 1) {
+              nodes {
+                commit {
+                  checkSuites(first: 10) {
+                    nodes {
+                      checkRuns(first: 100) {
+                        nodes {
+                          name
+                          status
+                          conclusion
+                          permalink
+                          startedAt
+                          completedAt
+                        }
+                      }
+                      app {
+                        slug
+                        logoUrl
+                        logoBackgroundColor
+                      }
+                    }
+                  }
+                  status {
+                    state
+                    contexts {
+                      context
+                      description
+                      state
+                      creator {
+                        login
+                      }
+                      avatarUrl
+                      targetUrl
+                    }
+                  }
+                }
+              }
+            }
             labels(first: 100) {
               nodes {
                 id
                 color
                 name
+                description
               }
             }
           }

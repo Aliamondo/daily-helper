@@ -32,7 +32,7 @@ export default function UserGroup({
           </AvatarGroup>
         </>
       ) : (
-        <Typography variant="subtitle1">
+        <Typography variant="subtitle1" color="GrayText">
           {emptyGroupName || `No ${groupName}`}
         </Typography>
       )}
