@@ -82,9 +82,10 @@ export default function PullRequest({
             >
               (#{number})
             </Link>
-            {lastCommitChecks.length ? (
+            {lastCommitChecks.result ? (
               <CommitChecksIndicator
-                commitChecks={lastCommitChecks}
+                commitChecks={lastCommitChecks.commitChecks}
+                result={lastCommitChecks.result}
                 sx={{
                   marginBottom: 0.3,
                 }}

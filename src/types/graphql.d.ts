@@ -100,6 +100,14 @@ type GraphQL_LastCommitWithChecks = {
     nodes: GraphQL_CheckSuite[]
   }
   status: GraphQL_CommitStatus | null
+  statusCheckRollup: {
+    state: GraphQL_CommitStatusContext['state']
+    contexts: {
+      nodes: {
+        id: string
+      }[] // Combined CheckRun and StatusContext
+    }
+  }
 }
 
 type GraphQL_CheckSuite = {
@@ -110,6 +118,7 @@ type GraphQL_CheckSuite = {
 }
 
 type GraphQL_CommitCheckRun = {
+  id: string
   name: string
   status:
     | 'QUEUED'
@@ -131,14 +140,15 @@ type GraphQL_CheckSuiteApp = {
 }
 
 type GraphQL_CommitStatus = {
-  state: 'SUCCESS' | 'FAILURE' | 'EXPECTED' | 'ERROR' | 'PENDING'
   contexts: GraphQL_CommitStatusContext[]
 }
 
 type GraphQL_CommitStatusContext = {
+  id: string
   context: string
   description: string
-  state: GraphQL_CommitStatus['state']
+  state: 'SUCCESS' | 'FAILURE' | 'EXPECTED' | 'ERROR' | 'PENDING'
+  createdAt: string
   creator: {
     login: string
   }

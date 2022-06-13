@@ -9,6 +9,8 @@ import LinearProgress from '@mui/material/LinearProgress'
 import { Octokit } from 'octokit'
 import PullRequest from './PullRequest'
 import Stack from '@mui/material/Stack'
+import { enumerationToSentenceCase } from '../../helpers/strings'
+import moment from 'moment'
 
 const orgName = process.env.ORG_NAME || 'ePages-de'
 const teamName = process.env.TEAM_NAME || 'team-crimson'
@@ -72,7 +74,8 @@ function getContributors(
 function convertContextStateToCommitCheckResult(
   state: GraphQL_CommitStatusContext['state'],
 ): CommitCheck['result'] {
-  if (state === 'PENDING' || state === 'EXPECTED') return 'PENDING'
+  if (state === 'EXPECTED') return 'IN_PROGRESS'
+  if (state === 'PENDING') return 'PENDING'
   if (state === 'SUCCESS') return 'SUCCESS'
   return 'FAILURE'
 }
@@ -101,11 +104,23 @@ function getLastCommitChecks(
     }
 
     checkSuite.checkRuns.nodes.forEach(checkRun => {
+      const startedAt = checkRun.startedAt ? new Date(checkRun.startedAt) : null
+      const completedAt = checkRun.completedAt
+        ? new Date(checkRun.completedAt)
+        : null
+
       commitChecks.push({
+        id: checkRun.id,
         name: checkRun.name,
-        description: getCommitCheckDescription(checkRun),
+        description: getCommitCheckDescription(
+          checkRun,
+          startedAt,
+          completedAt,
+        ),
         result: extractCommitCheckRunResult(checkRun),
         runUrl: checkRun.permalink,
+        startedAt,
+        completedAt,
         checker,
       })
     })
@@ -113,10 +128,13 @@ function getLastCommitChecks(
 
   status?.contexts.forEach(context => {
     commitChecks.push({
+      id: context.id,
       name: context.context,
       description: context.description,
       result: convertContextStateToCommitCheckResult(context.state),
       runUrl: context.targetUrl,
+      startedAt: new Date(context.createdAt),
+      completedAt: null,
       checker: {
         login: context.creator.login,
         avatarUrl: context.avatarUrl,
@@ -125,24 +143,46 @@ function getLastCommitChecks(
     })
   })
 
+  const commitChecksOrder =
+    lastCommitChecks.statusCheckRollup.contexts.nodes.map(({ id }) => id)
+  commitChecks.sort(
+    (a, b) => commitChecksOrder.indexOf(a.id) - commitChecksOrder.indexOf(b.id),
+  )
+
   return commitChecks
 }
 
-function getCommitCheckDescription(checkRun: GraphQL_CommitCheckRun): string {
-  return checkRun.status
+function getCommitCheckDescription(
+  checkRun: GraphQL_CommitCheckRun,
+  startedAt: Date | null,
+  completedAt: Date | null,
+): string {
+  if (checkRun.status === 'COMPLETED') {
+    if (
+      checkRun.conclusion === 'NEUTRAL' ||
+      checkRun.conclusion === 'SKIPPED'
+    ) {
+      return 'Skipped'
+    }
+
+    const runTime = moment(completedAt).from(moment(startedAt), true)
+    return enumerationToSentenceCase(`${checkRun.status} in ${runTime}`)
+  }
+
+  return enumerationToSentenceCase(checkRun.status)
 }
 
 function extractCommitCheckRunResult(
   checkRun: GraphQL_CommitCheckRun,
 ): CommitCheck['result'] {
   if (checkRun.status === 'COMPLETED') {
-    if (
-      checkRun.conclusion === 'SUCCESS' ||
-      checkRun.conclusion === 'NEUTRAL'
-    ) {
+    if (checkRun.conclusion === 'SUCCESS') {
       return 'SUCCESS'
     }
-    if (checkRun.conclusion === 'SKIPPED') {
+    if (
+      checkRun.conclusion === 'SKIPPED' ||
+      checkRun.conclusion === 'NEUTRAL'
+    ) {
       return 'SKIPPED'
     }
     return 'FAILURE'
@@ -153,8 +193,9 @@ function extractCommitCheckRunResult(
     checkRun.status === 'QUEUED' ||
     checkRun.status === 'WAITING' ||
     checkRun.status === 'REQUESTED'
-  )
+  ) {
     return 'PENDING'
+  }
   return 'FAILURE'
 }
 
@@ -216,7 +257,12 @@ async function fetchPullRequests(setProgress: {
       requestedReviewers: getReviewers(pr.reviewRequests.nodes),
       contributors: getContributors(pr.commits.nodes, pr.author),
       assignees: pr.assignees.nodes,
-      lastCommitChecks: getLastCommitChecks(pr.lastCommit.nodes[0].commit),
+      lastCommitChecks: {
+        commitChecks: getLastCommitChecks(pr.lastCommit.nodes[0].commit),
+        result: convertContextStateToCommitCheckResult(
+          pr.lastCommit.nodes[0].commit.statusCheckRollup.state,
+        ),
+      },
     }),
   )
 

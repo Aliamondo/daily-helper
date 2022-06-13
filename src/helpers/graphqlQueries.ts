@@ -108,6 +108,7 @@ export function getPullRequestsByUserQuery({
                     nodes {
                       checkRuns(first: 100) {
                         nodes {
+                          id
                           name
                           status
                           conclusion
@@ -124,16 +125,30 @@ export function getPullRequestsByUserQuery({
                     }
                   }
                   status {
-                    state
                     contexts {
+                      id
                       context
                       description
                       state
+                      createdAt
                       creator {
                         login
                       }
                       avatarUrl
                       targetUrl
+                    }
+                  }
+                  statusCheckRollup {
+                    state
+                    contexts(first: 100) {
+                      nodes {
+                        ... on CheckRun {
+                          id
+                        }
+                        ... on StatusContext {
+                          id
+                        }
+                      }
                     }
                   }
                 }

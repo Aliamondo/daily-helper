@@ -12,25 +12,25 @@ import ListItemText from '@mui/material/ListItemText'
 import Paper from '@mui/material/Paper'
 import PendingIcon from '@mui/icons-material/Circle'
 import Popper from '@mui/material/Popper'
-import SkippedIcon from '@mui/icons-material/SkipNext'
+import SkippedIcon from '@mui/icons-material/DoNotDisturbAlt'
 import SuccessIcon from '@mui/icons-material/Check'
 import UserBadge from './UserBadge'
 
 type CommitChecksIndicatorProps = {
   commitChecks: CommitCheck[]
+  result: CommitCheck['result']
   sx?: SxProps<Theme>
 }
 
 const CommitChecksIndicatorIcon = forwardRef<
   SVGSVGElement,
-  CommitChecksIndicatorProps
->(({ commitChecks, sx, ...props }, ref) => {
+  { result: CommitCheck['result']; sx?: SxProps<Theme> }
+>(({ result, sx, ...props }, ref) => {
   const SMALL_FONT_SIZE = 14
 
   const commonProps = { sx, ...props }
-  const compositeResult = getCompositeResult(commitChecks)
 
-  switch (compositeResult) {
+  switch (result) {
     case 'SUCCESS':
       return <SuccessIcon color="success" {...commonProps} />
     case 'FAILURE':
@@ -68,13 +68,15 @@ function getCompositeResult(
     commitChecks.every(
       ({ result }) => result === 'SUCCESS' || result === 'SKIPPED',
     )
-  )
+  ) {
     return 'SUCCESS'
+  }
 
   return 'FAILURE'
 }
 
 function getCommitChecksCompositeStatus(commitChecks: CommitCheck[]): string {
+  // FIXME: Might be enough to simply get `lastCommitChecks.result`
   const compositeResult = getCompositeResult(commitChecks)
 
   switch (compositeResult) {
@@ -100,6 +102,7 @@ function CommitRunnerBadge({
 
 export default function CommitChecksIndicator({
   commitChecks,
+  result,
   sx,
 }: CommitChecksIndicatorProps) {
   const ICON_BUTTON_SIZE = 40
@@ -131,7 +134,7 @@ export default function CommitChecksIndicator({
               onClick={handleClick}
               sx={{ width: ICON_BUTTON_SIZE, height: ICON_BUTTON_SIZE, ...sx }}
             >
-              <CommitChecksIndicatorIcon commitChecks={commitChecks} />
+              <CommitChecksIndicatorIcon result={result} />
             </IconButton>
             <Popper
               open={isOpen}
@@ -168,7 +171,7 @@ export default function CommitChecksIndicator({
                   />
                   {commitChecks.map(commitCheck => (
                     <ListItem
-                      key={commitCheck.runUrl}
+                      key={commitCheck.id}
                       secondaryAction={
                         <IconButton
                           edge="end"
@@ -179,7 +182,7 @@ export default function CommitChecksIndicator({
                           }}
                         >
                           <CommitChecksIndicatorIcon
-                            commitChecks={[commitCheck]}
+                            result={commitCheck.result}
                           />
                         </IconButton>
                       }
@@ -189,7 +192,10 @@ export default function CommitChecksIndicator({
                           commitChecker={commitCheck.checker}
                         />
                       </ListItemAvatar>
-                      <ListItemText primary={commitCheck.name} />
+                      <ListItemText
+                        primary={commitCheck.name}
+                        secondary={commitCheck.description}
+                      />
                     </ListItem>
                   ))}
                 </List>

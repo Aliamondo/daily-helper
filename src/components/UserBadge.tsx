@@ -6,6 +6,7 @@ import CommentedIcon from '@mui/icons-material/Info'
 import ContributorIcon from '@mui/icons-material/AddCircle'
 import { ReactElement } from 'react'
 import ReviewRequestedIcon from '@mui/icons-material/Pending'
+import { enumerationToSentenceCase } from '../helpers/strings'
 
 function getReviewIcon(state: ReviewState): ReactElement | null {
   switch (state) {
@@ -27,9 +28,7 @@ function getReviewStatusTooltip({
   reviewState: ReviewState
   user: User
 }): string {
-  const state =
-    reviewState.charAt(0).toUpperCase() +
-    reviewState.substring(1).replaceAll('_', ' ').toLowerCase()
+  const state = enumerationToSentenceCase(reviewState)
 
   return `${state} by ${user.login}`
 }
