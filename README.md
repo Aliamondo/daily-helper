@@ -9,6 +9,16 @@
 - [ ] List appropriate pull requests where a review from the team was requested
 - [ ] Research how to make application start faster
 
+## Environment variables
+
+| Variable | Description | Default value |
+|:---:|:---:|:---:|
+| REACT_APP_GITHUB_TOKEN | [Your Github personal access token](https://github.com/settings/tokens). Needed to make requests against Github GraphQL API. | - |
+| ORG_NAME | The name of an organization on Github. Can be found at https://github.com/{ORG_NAME}. | ePages-de |
+| TEAM_NAME | The name of a team on Github. Can be found at https://github.com/orgs/{ORG_NAME}/teams/{TEAM_NAME}. | team-black |
+
+## General info
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 In the project directory, you can run:
 
