@@ -5,6 +5,7 @@ import Badge from '@mui/material/Badge'
 import ClickAwayListener from '@mui/material/ClickAwayListener'
 import FailureIcon from '@mui/icons-material/Close'
 import IconButton from '@mui/material/IconButton'
+import Link from '@mui/material/Link'
 import List from '@mui/material/List'
 import ListItem from '@mui/material/ListItem'
 import ListItemAvatar from '@mui/material/ListItemAvatar'
@@ -193,7 +194,11 @@ export default function CommitChecksIndicator({
                         />
                       </ListItemAvatar>
                       <ListItemText
-                        primary={commitCheck.name}
+                        primary={
+                          <Link href={commitCheck.runUrl}>
+                            {commitCheck.name}
+                          </Link>
+                        }
                         secondary={commitCheck.description}
                       />
                     </ListItem>

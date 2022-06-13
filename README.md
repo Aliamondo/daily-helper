@@ -2,10 +2,12 @@
 
 ## To-do checklist
 
-- [ ] Link commit check runs' statuses to their permalink
+- [x] Link commit check runs' to their permalink
 - [ ] Add filters to hide/show WiP tickets
 - [ ] Add reload button to fetch new statuses for commit check runs
+- [ ] Research how to get missing PENDING check runs
 - [ ] List appropriate pull requests where a review from the team was requested
+- [ ] Research how to make application start faster
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 In the project directory, you can run:
