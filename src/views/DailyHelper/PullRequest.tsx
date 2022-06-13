@@ -58,7 +58,7 @@ export default function PullRequest({
     >
       <CardContent>
         <Grid container columnSpacing={2} rowSpacing={2} alignItems="center">
-          <Grid item xs={1}>
+          <Grid item xs="auto">
             <PullRequestStateIcon state={state} isDraft={isDraft} />
           </Grid>
           <Grid item xs={10}>
