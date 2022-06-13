@@ -29,10 +29,12 @@ export default function PullRequestStatus({
   return (
     <>
       <Grid item xs={2}>
-        <Stack direction="column" alignItems="center">
-          <Typography variant="subtitle1">Author</Typography>
+        <Stack direction="column">
+          <Typography variant="subtitle1" align="center">
+            Author
+          </Typography>
           <Stack direction="row" spacing={1} alignItems="center">
-            <AvatarGroup max={3}>
+            <AvatarGroup max={3} sx={{ marginLeft: 1 }}>
               <UserBadge user={author} type="AUTHOR" />
             </AvatarGroup>
             <Typography variant="subtitle2">{createdAtFromNow}</Typography>
