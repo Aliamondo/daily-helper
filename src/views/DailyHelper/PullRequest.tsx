@@ -13,15 +13,12 @@ import Typography from '@mui/material/Typography'
 
 function getBackgroundColor({
   state,
-  reviews,
+  reviewDecision,
   isDraft,
-}: Pick<PullRequest, 'state' | 'reviews' | 'isDraft'>) {
+}: Pick<PullRequest, 'state' | 'reviewDecision' | 'isDraft'>) {
   if (state === 'OPEN') {
-    const reviewStates = reviews.map(review => review.state)
-
-    if (reviewStates.includes('CHANGES_REQUESTED'))
-      return 'rgb(250, 170, 180, 0.6)'
-    if (reviewStates.includes('APPROVED')) return 'rgb(65, 200, 150, 0.5)'
+    if (reviewDecision === 'CHANGES_REQUESTED') return 'rgb(250, 170, 180, 0.6)'
+    if (reviewDecision === 'APPROVED') return 'rgb(65, 200, 150, 0.5)'
 
     if (isDraft) return 'rgb(200, 200, 200, 0.6)'
   }
@@ -42,6 +39,7 @@ export default function PullRequest({
   createdAt,
   state,
   isDraft,
+  reviewDecision,
   reviews,
   requestedReviewers,
   contributors,
@@ -53,7 +51,7 @@ export default function PullRequest({
       sx={{
         minHeight: 150,
         minWidth: 600,
-        bgcolor: getBackgroundColor({ state, reviews, isDraft }),
+        bgcolor: getBackgroundColor({ state, reviewDecision, isDraft }),
       }}
     >
       <CardContent>

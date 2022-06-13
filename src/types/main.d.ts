@@ -6,6 +6,7 @@ type PullRequest = {
   number: number
   createdAt: Date
   state: 'OPEN' | 'CLOSED' | 'MERGED'
+  reviewDecision: 'REVIEW_REQUIRED' | 'APPROVED' | 'CHANGES_REQUESTED'
   author: User
   contributors: User[]
   labels: Label[]

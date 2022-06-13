@@ -22,6 +22,7 @@ type GraphQL_PullRequestsPerUserResponse = {
       permalink: string
       number: number
       createdAt: string
+      reviewDecision: 'REVIEW_REQUIRED' | 'APPROVED' | 'CHANGES_REQUESTED'
       state: 'OPEN' | 'MERGED' | 'CLOSED'
       id: string
       isDraft: boolean
@@ -61,7 +62,12 @@ type GraphQL_Repository = {
 
 type GraphQL_Review = {
   body: string
-  state: ReviewState
+  state:
+    | 'APPROVED'
+    | 'CHANGES_REQUESTED'
+    | 'COMMENTED'
+    | 'PENDING'
+    | 'DISMISSED'
   author: GraphQL_User
   comments: {
     totalCount: number

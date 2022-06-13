@@ -43,6 +43,7 @@ export function getPullRequestsByUserQuery({
             state
             id
             isDraft
+            reviewDecision
             author {
               ${UserNode}
             }

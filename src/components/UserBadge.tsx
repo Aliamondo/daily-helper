@@ -6,7 +6,7 @@ import CommentedIcon from '@mui/icons-material/Info'
 import ContributorIcon from '@mui/icons-material/BuildCircle'
 import { ReactElement } from 'react'
 import ReviewPendingIcon from '@mui/icons-material/Pending'
-import ReviewRequestedIcon from '@mui/icons-material/AccessTimeFilled'
+import ReviewRequestedIcon from '@mui/icons-material/Circle'
 import { enumerationToSentenceCase } from '../helpers/strings'
 
 function getReviewIcon(state: ReviewState): ReactElement | null {
@@ -66,7 +66,7 @@ function getBadgeContent({
   const icon = getIcon({ type, reviewState })
 
   return icon ? (
-    <Avatar sx={{ bgcolor: 'white', width: 24, height: 24 }}>{icon}</Avatar>
+    <Avatar sx={{ bgcolor: 'white', width: 20, height: 20 }}>{icon}</Avatar>
   ) : null
 }
 
@@ -76,7 +76,7 @@ function getIcon({
 }: Pick<UserBadgeProps, 'reviewState' | 'type'>) {
   if (type === 'CONTRIBUTOR') return <ContributorIcon color="secondary" />
   if (type === 'REQUESTED_REVIEWER')
-    return <ReviewRequestedIcon htmlColor="gray" />
+    return <ReviewRequestedIcon htmlColor="#bf8700" fontSize="small" />
   if (type === 'REVIEWER' && reviewState) return getReviewIcon(reviewState)
 
   return null

@@ -284,6 +284,7 @@ async function fetchPullRequests(setProgress: {
       repositoryName: pr.repository.name,
       state: pr.state,
       isDraft: pr.isDraft,
+      reviewDecision: pr.reviewDecision,
       createdAt: new Date(pr.createdAt),
       labels: pr.labels.nodes,
       reviews: formatReviews(pr.reviews.nodes),
