@@ -37,9 +37,16 @@ function formatReviews(reviews: GraphQL_Review[]): Review[] {
     }),
   )
 
-  const reviewsMap = new Map(
-    formattedReviews.map(review => [review.reviewer.login, review]),
-  )
+  const reviewsMap = new Map()
+  formattedReviews.forEach(review => {
+    if (
+      !reviewsMap.has(review.reviewer.login) ||
+      review.state !== 'COMMENTED'
+    ) {
+      reviewsMap.set(review.reviewer.login, review)
+    }
+    // skip COMMENTED reviews, if they came after another type of review
+  })
 
   return Array.from(reviewsMap.values())
 }
