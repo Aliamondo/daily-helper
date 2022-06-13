@@ -37,6 +37,7 @@ const CommitChecksIndicatorIcon = forwardRef<
     case 'FAILURE':
       return <FailureIcon ref={ref} color="error" {...commonProps} />
     case 'IN_PROGRESS':
+    case 'PENDING':
       return (
         <PendingIcon
           htmlColor="#bf8700"
@@ -57,30 +58,10 @@ const CommitChecksIndicatorIcon = forwardRef<
   }
 })
 
-function getCompositeResult(
-  commitChecks: CommitCheck[],
-): CommitCheck['result'] {
-  if (commitChecks.some(({ result }) => result === 'IN_PROGRESS'))
-    return 'IN_PROGRESS'
-  if (commitChecks.some(({ result }) => result === 'PENDING')) return 'PENDING'
-  if (commitChecks.some(({ result }) => result === 'FAILURE')) return 'FAILURE'
-  if (commitChecks.every(({ result }) => result === 'SKIPPED')) return 'SKIPPED'
-  if (
-    commitChecks.every(
-      ({ result }) => result === 'SUCCESS' || result === 'SKIPPED',
-    )
-  ) {
-    return 'SUCCESS'
-  }
-
-  return 'FAILURE'
-}
-
-function getCommitChecksCompositeStatus(commitChecks: CommitCheck[]): string {
-  // FIXME: Might be enough to simply get `lastCommitChecks.result`
-  const compositeResult = getCompositeResult(commitChecks)
-
-  switch (compositeResult) {
+function getCommitChecksCompositeStatus(
+  result: CommitChecksIndicatorProps['result'],
+): string {
+  switch (result) {
     case 'SUCCESS':
       return 'All checks have passed'
     case 'IN_PROGRESS':
@@ -93,12 +74,8 @@ function getCommitChecksCompositeStatus(commitChecks: CommitCheck[]): string {
   }
 }
 
-function CommitRunnerBadge({
-  commitChecker,
-}: {
-  commitChecker: CommitChecker
-}) {
-  return <UserBadge user={commitChecker} type="DEFAULT" />
+function CommitCheckRunnerBadge({ checker }: Pick<CommitCheck, 'checker'>) {
+  return <UserBadge user={checker} type="COMMIT_CHECK_RUNNER" />
 }
 
 export default function CommitChecksIndicator({
@@ -166,7 +143,7 @@ export default function CommitChecksIndicator({
               >
                 <List>
                   <ListItemText
-                    primary={getCommitChecksCompositeStatus(commitChecks)}
+                    primary={getCommitChecksCompositeStatus(result)}
                     secondary={`${successes} / ${total} checks OK`}
                     sx={{ textAlign: 'center' }}
                   />
@@ -189,9 +166,7 @@ export default function CommitChecksIndicator({
                       }
                     >
                       <ListItemAvatar>
-                        <CommitRunnerBadge
-                          commitChecker={commitCheck.checker}
-                        />
+                        <CommitCheckRunnerBadge checker={commitCheck.checker} />
                       </ListItemAvatar>
                       <ListItemText
                         primary={

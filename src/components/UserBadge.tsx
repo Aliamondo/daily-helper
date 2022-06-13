@@ -3,7 +3,7 @@ import { Avatar, Badge, Tooltip } from '@mui/material'
 import ApprovedIcon from '@mui/icons-material/CheckCircle'
 import ChangesRequestedIcon from '@mui/icons-material/Cancel'
 import CommentedIcon from '@mui/icons-material/Info'
-import ContributorIcon from '@mui/icons-material/AddCircle'
+import ContributorIcon from '@mui/icons-material/BuildCircle'
 import { ReactElement } from 'react'
 import ReviewRequestedIcon from '@mui/icons-material/Pending'
 import { enumerationToSentenceCase } from '../helpers/strings'
@@ -45,6 +45,7 @@ function getTooltip({
     return `Review requested from ${user.login}`
   if (type === 'REVIEWER' && reviewState)
     return getReviewStatusTooltip({ reviewState, user })
+  if (type === 'COMMIT_CHECK_RUNNER') return `Started by ${user.login}`
 
   return user.login
 }
@@ -86,6 +87,7 @@ export type UserBadgeProps =
         | 'REQUESTED_REVIEWER'
         | 'CONTRIBUTOR'
         | 'ASSIGNEE'
+        | 'COMMIT_CHECK_RUNNER'
       reviewState?: ReviewState
     })
   | (BaseUserBadgeProps & {

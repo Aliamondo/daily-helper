@@ -2,11 +2,13 @@
 
 ## To-do checklist
 
-- [x] Link commit check runs' to their permalink
-- [ ] Add filters to hide/show WiP tickets
-- [ ] Add reload button to fetch new statuses for commit check runs
-- [ ] Research how to get missing PENDING check runs
+- [x] Link commit `CheckRun`' to their permalink
+- [ ] Rework `UserGroup`s empty states (reconsider what's shown on `DRAFT` PRs)
+- [ ] Add filters to hide/show `WiP` tickets
+- [ ] Add reload button to fetch new statuses for commit `CheckRun`. Should also affect overall status on PR card
+- [ ] Research how to get missing `PENDING` `CheckRun`
 - [ ] List appropriate pull requests where a review from the team was requested
+- [ ] Research and add tab with currently ran github actions for recently merged PRs (potentially filter by `CODEOWNERS`)
 - [ ] Research how to make application start faster
 
 ## Environment variables
