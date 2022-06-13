@@ -87,6 +87,7 @@ export function getPullRequestsByUserQuery({
               nodes {
                 ... on PullRequestCommit {
                   commit {
+                    committedViaWeb
                     author {
                       user {
                         ${UserNode}
