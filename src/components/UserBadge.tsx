@@ -5,7 +5,8 @@ import ChangesRequestedIcon from '@mui/icons-material/Cancel'
 import CommentedIcon from '@mui/icons-material/Info'
 import ContributorIcon from '@mui/icons-material/BuildCircle'
 import { ReactElement } from 'react'
-import ReviewRequestedIcon from '@mui/icons-material/Pending'
+import ReviewPendingIcon from '@mui/icons-material/Pending'
+import ReviewRequestedIcon from '@mui/icons-material/AccessTimeFilled'
 import { enumerationToSentenceCase } from '../helpers/strings'
 
 function getReviewIcon(state: ReviewState): ReactElement | null {
@@ -16,6 +17,8 @@ function getReviewIcon(state: ReviewState): ReactElement | null {
       return <ChangesRequestedIcon color="error" />
     case 'COMMENTED':
       return <CommentedIcon color="action" />
+    case 'PENDING':
+      return <ReviewPendingIcon color="disabled" />
     default:
       return null
   }
@@ -28,6 +31,9 @@ function getReviewStatusTooltip({
   reviewState: ReviewState
   user: User
 }): string {
+  if (reviewState === 'PENDING')
+    return `Currently being reviewed by ${user.login}`
+
   const state = enumerationToSentenceCase(reviewState)
 
   return `${state} by ${user.login}`
@@ -43,8 +49,9 @@ function getTooltip({
   if (type === 'ASSIGNEE') return `Assigned to ${user.login}`
   if (type === 'REQUESTED_REVIEWER')
     return `Review requested from ${user.login}`
-  if (type === 'REVIEWER' && reviewState)
+  if (type === 'REVIEWER' && reviewState) {
     return getReviewStatusTooltip({ reviewState, user })
+  }
   if (type === 'COMMIT_CHECK_RUNNER') return `Started by ${user.login}`
 
   return user.login

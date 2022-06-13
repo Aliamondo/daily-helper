@@ -55,14 +55,16 @@ export default function PullRequestStatus({
             <>
               <Typography variant="subtitle1">Reviewers</Typography>
               <AvatarGroup max={3}>
-                {reviews.map(review => (
-                  <UserBadge
-                    key={review.reviewer.login}
-                    user={review.reviewer}
-                    reviewState={review.state}
-                    type="REVIEWER"
-                  />
-                ))}
+                {reviews
+                  .filter(({ state }) => state !== 'DISMISSED') // Hide dismissed and stale reviews
+                  .map(review => (
+                    <UserBadge
+                      key={review.reviewer.login}
+                      user={review.reviewer}
+                      reviewState={review.state}
+                      type="REVIEWER"
+                    />
+                  ))}
                 {requestedReviewers.map(requestedReviewer => (
                   <UserBadge
                     key={requestedReviewer.login}

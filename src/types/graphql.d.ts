@@ -61,7 +61,7 @@ type GraphQL_Repository = {
 
 type GraphQL_Review = {
   body: string
-  state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED'
+  state: ReviewState
   author: GraphQL_User
   comments: {
     totalCount: number

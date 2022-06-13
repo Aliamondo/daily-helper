@@ -16,7 +16,7 @@
 
 | Variable | Description | Default value |
 |:---:|:---:|:---:|
-| `REACT_APP_GITHUB_TOKEN` | [Your Github personal access token](https://github.com/settings/tokens). Needed to make requests against Github GraphQL API. | - |
+| `REACT_APP_GITHUB_TOKEN` | [Your Github personal access token](https://github.com/settings/tokens). Needed to make requests against Github's GraphQL API. | - |
 | `ORG_NAME` | The name of an organization on Github. Can be found at [https://github.com/{ORG_NAME}](https://github.com/ePages-de). | ePages-de |
 | `TEAM_NAME` | The name of a team on Github. Can be found at [https://github.com/orgs/{ORG_NAME}/teams/{TEAM_NAME}](https://github.com/orgs/ePages-de/teams/team-black). | team-black |
 
