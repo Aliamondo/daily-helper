@@ -17,7 +17,7 @@ type PullRequest = {
   assignees: User[]
   lastCommitChecks: {
     commitChecks: CommitCheck[]
-    result: CommitCheck['result']
+    result: CommitCheck['result'] | null
   }
 }
 

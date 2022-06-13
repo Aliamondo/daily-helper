@@ -107,7 +107,7 @@ type GraphQL_LastCommitWithChecks = {
         id: string
       }[] // Combined CheckRun and StatusContext
     }
-  }
+  } | null
 }
 
 type GraphQL_CheckSuite = {

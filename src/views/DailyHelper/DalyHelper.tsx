@@ -13,7 +13,7 @@ import { enumerationToSentenceCase } from '../../helpers/strings'
 import moment from 'moment'
 
 const orgName = process.env.ORG_NAME || 'ePages-de'
-const teamName = process.env.TEAM_NAME || 'team-crimson'
+const teamName = process.env.TEAM_NAME || 'team-black'
 
 function calculateNumberOfComments(
   comments: number,
@@ -86,7 +86,7 @@ function convertContextStateToCommitCheckResult(
  * we need to get all check suites of the commit and iterate every check step.
  * That number needs to be added to the number of contexts of a commit status.
  */
-function getLastCommitChecks(
+function extractLastCommitChecks(
   lastCommitChecks: GraphQL_LastCommitWithChecks,
 ): CommitCheck[] {
   const commitChecks: CommitCheck[] = []
@@ -94,6 +94,7 @@ function getLastCommitChecks(
   const {
     checkSuites: { nodes: checkSuites },
     status,
+    statusCheckRollup,
   } = lastCommitChecks
 
   checkSuites.forEach(checkSuite => {
@@ -143,11 +144,16 @@ function getLastCommitChecks(
     })
   })
 
-  const commitChecksOrder =
-    lastCommitChecks.statusCheckRollup.contexts.nodes.map(({ id }) => id)
-  commitChecks.sort(
-    (a, b) => commitChecksOrder.indexOf(a.id) - commitChecksOrder.indexOf(b.id),
-  )
+  // Only fix the order when there are check contexts
+  if (!!statusCheckRollup) {
+    const commitChecksOrder = statusCheckRollup.contexts.nodes.map(
+      ({ id }) => id,
+    )
+    commitChecks.sort(
+      (a, b) =>
+        commitChecksOrder.indexOf(a.id) - commitChecksOrder.indexOf(b.id),
+    )
+  }
 
   return commitChecks
 }
@@ -197,6 +203,18 @@ function extractCommitCheckRunResult(
     return 'PENDING'
   }
   return 'FAILURE'
+}
+
+function getLastCommitChecks(
+  lastCommitChecks: GraphQL_LastCommitWithChecks,
+): PullRequest['lastCommitChecks'] {
+  const state = lastCommitChecks.statusCheckRollup?.state
+  const result = state ? convertContextStateToCommitCheckResult(state) : null
+
+  return {
+    commitChecks: extractLastCommitChecks(lastCommitChecks),
+    result,
+  }
 }
 
 const octokit = new Octokit({
@@ -257,12 +275,7 @@ async function fetchPullRequests(setProgress: {
       requestedReviewers: getReviewers(pr.reviewRequests.nodes),
       contributors: getContributors(pr.commits.nodes, pr.author),
       assignees: pr.assignees.nodes,
-      lastCommitChecks: {
-        commitChecks: getLastCommitChecks(pr.lastCommit.nodes[0].commit),
-        result: convertContextStateToCommitCheckResult(
-          pr.lastCommit.nodes[0].commit.statusCheckRollup.state,
-        ),
-      },
+      lastCommitChecks: getLastCommitChecks(pr.lastCommit.nodes[0].commit),
     }),
   )
 
