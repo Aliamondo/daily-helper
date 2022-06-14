@@ -92,7 +92,6 @@ type GraphQL_ReviewRequest = {
 
 type GraphQL_Commit = {
   commit: {
-    committedViaWeb: boolean
     author: {
       user: GraphQL_User | null
     }

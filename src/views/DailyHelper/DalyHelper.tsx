@@ -61,13 +61,10 @@ function getReviewers(reviewRequests: GraphQL_ReviewRequest[]): User[] {
   }))
 }
 
-function returnNonWebContributor(
+function extractContributor(
   user: GraphQL_User | null,
   author: GraphQL_User,
-  commitedViaWeb: boolean,
 ): GraphQL_User {
-  // TODO: What if the commit was created via the Github Code Editor?
-  if (commitedViaWeb) return author
   return user || author
 }
 
@@ -77,12 +74,10 @@ function getContributors(
 ): User[] {
   const contributors = new Map(
     commits
-      .flatMap(
-        ({ commit: { author: commitAuthor, committer, committedViaWeb } }) => [
-          returnNonWebContributor(commitAuthor.user, author, committedViaWeb),
-          returnNonWebContributor(committer.user, author, committedViaWeb),
-        ],
-      )
+      .flatMap(({ commit: { author: commitAuthor, committer } }) => [
+        extractContributor(commitAuthor.user, author),
+        extractContributor(committer.user, author),
+      ])
       .map(user => [user.login, user]),
   )
   contributors.delete(author.login)
