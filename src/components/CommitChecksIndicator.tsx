@@ -2,6 +2,7 @@ import { SxProps, Theme } from '@mui/system'
 import { forwardRef, useRef, useState } from 'react'
 
 import Badge from '@mui/material/Badge'
+import CircularProgress from '@mui/material/CircularProgress'
 import ClickAwayListener from '@mui/material/ClickAwayListener'
 import FailureIcon from '@mui/icons-material/Close'
 import IconButton from '@mui/material/IconButton'
@@ -13,6 +14,8 @@ import ListItemText from '@mui/material/ListItemText'
 import Paper from '@mui/material/Paper'
 import PendingIcon from '@mui/icons-material/Circle'
 import Popper from '@mui/material/Popper'
+import ReloadIcon from '@mui/icons-material/Replay'
+import Skeleton from '@mui/material/Skeleton'
 import SkippedIcon from '@mui/icons-material/DoNotDisturbAlt'
 import SuccessIcon from '@mui/icons-material/Check'
 import UserBadge from './UserBadge'
@@ -20,6 +23,8 @@ import UserBadge from './UserBadge'
 type CommitChecksIndicatorProps = {
   commitChecks: CommitCheck[]
   result: CommitCheck['result']
+  handleReload: () => void
+  isLoading: boolean
   sx?: SxProps<Theme>
 }
 
@@ -81,12 +86,15 @@ function CommitCheckRunnerBadge({ checker }: Pick<CommitCheck, 'checker'>) {
 export default function CommitChecksIndicator({
   commitChecks,
   result,
+  handleReload,
+  isLoading,
   sx,
 }: CommitChecksIndicatorProps) {
   const ICON_BUTTON_SIZE = 40
 
   const [isOpen, setIsOpen] = useState(false)
   const container = useRef(null)
+  const main = useRef<HTMLHeadingElement>(null)
 
   const handleClick = () => {
     setIsOpen(!isOpen)
@@ -115,6 +123,7 @@ export default function CommitChecksIndicator({
               <CommitChecksIndicatorIcon result={result} />
             </IconButton>
             <Popper
+              ref={main}
               open={isOpen}
               anchorEl={container.current}
               modifiers={[
@@ -142,11 +151,50 @@ export default function CommitChecksIndicator({
                 }}
               >
                 <List>
-                  <ListItemText
-                    primary={getCommitChecksCompositeStatus(result)}
-                    secondary={`${successes} / ${total} checks OK`}
-                    sx={{ textAlign: 'center' }}
-                  />
+                  <ListItem
+                    secondaryAction={
+                      <IconButton
+                        edge="end"
+                        onClick={handleReload}
+                        size="large"
+                        disableRipple={isLoading}
+                      >
+                        {isLoading ? (
+                          <CircularProgress size={30} />
+                        ) : (
+                          <ReloadIcon />
+                        )}
+                      </IconButton>
+                    }
+                  >
+                    <ListItemText
+                      primary={
+                        isLoading ? (
+                          <Skeleton
+                            variant="text"
+                            animation="wave"
+                            width={200}
+                            sx={{ marginLeft: 'auto', marginRight: 'auto' }}
+                          />
+                        ) : (
+                          getCommitChecksCompositeStatus(result)
+                        )
+                      }
+                      secondary={
+                        isLoading ? (
+                          <Skeleton
+                            variant="text"
+                            animation="wave"
+                            width={250}
+                            sx={{ marginLeft: 'auto', marginRight: 'auto' }}
+                          />
+                        ) : (
+                          `${successes} / ${total} checks OK`
+                        )
+                      }
+                      sx={{ textAlign: 'center' }}
+                    />
+                  </ListItem>
                   {commitChecks.map(commitCheck => (
                     <ListItem
                       key={commitCheck.id}
@@ -159,26 +207,64 @@ export default function CommitChecksIndicator({
                             height: ICON_BUTTON_SIZE,
                           }}
                         >
-                          <CommitChecksIndicatorIcon
-                            result={commitCheck.result}
-                          />
+                          {isLoading ? (
+                            <Skeleton
+                              variant="circular"
+                              animation="wave"
+                              height={24}
+                              width={ICON_BUTTON_SIZE}
+                            />
+                          ) : (
+                            <CommitChecksIndicatorIcon
+                              result={commitCheck.result}
+                            />
+                          )}
                         </IconButton>
                       }
                     >
                       <ListItemAvatar>
-                        <CommitCheckRunnerBadge checker={commitCheck.checker} />
+                        {isLoading ? (
+                          <Skeleton
+                            variant="circular"
+                            animation="wave"
+                            width={ICON_BUTTON_SIZE}
+                            height={ICON_BUTTON_SIZE}
+                          />
+                        ) : (
+                          <CommitCheckRunnerBadge
+                            checker={commitCheck.checker}
+                          />
+                        )}
                       </ListItemAvatar>
                       <ListItemText
                         primary={
-                          <Link
-                            href={commitCheck.runUrl}
-                            target="_blank"
-                            rel="noopener"
-                          >
-                            {commitCheck.name}
-                          </Link>
+                          isLoading ? (
+                            <Skeleton
+                              variant="text"
+                              animation="wave"
+                              width={200}
+                            />
+                          ) : (
+                            <Link
+                              href={commitCheck.runUrl}
+                              target="_blank"
+                              rel="noopener"
+                            >
+                              {commitCheck.name}
+                            </Link>
+                          )
                         }
-                        secondary={commitCheck.description}
+                        secondary={
+                          isLoading ? (
+                            <Skeleton
+                              variant="text"
+                              animation="wave"
+                              width={(main.current?.offsetWidth || 400) - 120}
+                            />
+                          ) : (
+                            commitCheck.description
+                          )
+                        }
                       />
                     </ListItem>
                   ))}

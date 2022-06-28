@@ -10,6 +10,8 @@ import PullRequestStateIcon from './PullRequestStateIcon'
 import PullRequestStatus from './PullRequestStatus'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import { refreshLastCommitChecks } from './DalyHelper'
+import { useState } from 'react'
 
 function getBackgroundColor({
   state,
@@ -43,8 +45,24 @@ export default function PullRequest({
   reviews,
   requestedReviewers,
   contributors,
-  lastCommitChecks,
+  lastCommitChecks: originalLastCommitChecks,
 }: PullRequest) {
+  const [lastCommitChecks, setLastCommitChecks] = useState(
+    originalLastCommitChecks,
+  )
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleCommitChecksReload = async () => {
+    setIsLoading(true)
+    setLastCommitChecks(
+      await refreshLastCommitChecks({
+        repoName: repositoryName,
+        prNumber: number,
+      }),
+    )
+    setIsLoading(false)
+  }
+
   return (
     <Card
       variant="outlined"
@@ -95,6 +113,8 @@ export default function PullRequest({
               <CommitChecksIndicator
                 commitChecks={lastCommitChecks.commitChecks}
                 result={lastCommitChecks.result}
+                handleReload={handleCommitChecksReload}
+                isLoading={isLoading}
                 sx={{
                   marginBottom: 0.3,
                 }}

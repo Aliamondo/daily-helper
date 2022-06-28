@@ -1,4 +1,58 @@
 const UserNode = `login avatarUrl`
+const LastCommitChecksNode = `
+lastCommit: commits(last: 1) {
+  nodes {
+    commit {
+      checkSuites(first: 10) {
+        nodes {
+          checkRuns(first: 100) {
+            nodes {
+              id
+              name
+              status
+              conclusion
+              permalink
+              startedAt
+              completedAt
+            }
+          }
+          app {
+            slug
+            logoUrl
+            logoBackgroundColor
+          }
+        }
+      }
+      status {
+        contexts {
+          id
+          context
+          description
+          state
+          createdAt
+          creator {
+            login
+          }
+          avatarUrl
+          targetUrl
+        }
+      }
+      statusCheckRollup {
+        state
+        contexts(first: 100) {
+          nodes {
+            ... on CheckRun {
+              id
+            }
+            ... on StatusContext {
+              id
+            }
+          }
+        }
+      }
+    }
+  }
+}`
 
 type GetTeamUsersProps = {
   orgName: string
@@ -102,59 +156,7 @@ export function getPullRequestsByUserQuery({
                 }
               }
             }
-            lastCommit: commits(last: 1) {
-              nodes {
-                commit {
-                  checkSuites(first: 10) {
-                    nodes {
-                      checkRuns(first: 100) {
-                        nodes {
-                          id
-                          name
-                          status
-                          conclusion
-                          permalink
-                          startedAt
-                          completedAt
-                        }
-                      }
-                      app {
-                        slug
-                        logoUrl
-                        logoBackgroundColor
-                      }
-                    }
-                  }
-                  status {
-                    contexts {
-                      id
-                      context
-                      description
-                      state
-                      createdAt
-                      creator {
-                        login
-                      }
-                      avatarUrl
-                      targetUrl
-                    }
-                  }
-                  statusCheckRollup {
-                    state
-                    contexts(first: 100) {
-                      nodes {
-                        ... on CheckRun {
-                          id
-                        }
-                        ... on StatusContext {
-                          id
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
+            ${LastCommitChecksNode}
             labels(first: 100) {
               nodes {
                 id
@@ -167,4 +169,25 @@ export function getPullRequestsByUserQuery({
         }
       }
     }`
+}
+
+type GetCommitChecksProps = {
+  orgName: string
+  repoName: string
+  prNumber: number
+}
+export function getCommitChecksQuery({
+  orgName,
+  repoName,
+  prNumber,
+}: GetCommitChecksProps) {
+  return `{
+    organization(login: "${orgName}"){
+      repository(name: "${repoName}") {
+        pullRequest(number: ${prNumber}) {
+          ${LastCommitChecksNode}
+        }
+      }
+    }
+  }`
 }

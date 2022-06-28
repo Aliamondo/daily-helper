@@ -1,5 +1,6 @@
 import { SetStateAction, useEffect, useState } from 'react'
 import {
+  getCommitChecksQuery,
   getPullRequestsByUserQuery,
   getTeamUsersQuery,
 } from '../../helpers/graphqlQueries'
@@ -92,6 +93,27 @@ function convertContextStateToCommitCheckResult(
   if (state === 'PENDING') return 'PENDING'
   if (state === 'SUCCESS') return 'SUCCESS'
   return 'FAILURE'
+}
+
+type RefreshLastCommitChecksProps = {
+  repoName: string
+  prNumber: number
+}
+export async function refreshLastCommitChecks({
+  repoName,
+  prNumber,
+}: RefreshLastCommitChecksProps) {
+  const commitChecks = await octokit
+    .graphql<GraphQL_CommitChecksPerPullRequestResponse>(
+      getCommitChecksQuery({ orgName, repoName, prNumber }),
+    )
+    .then(res =>
+      getLastCommitChecks(
+        res.organization.repository.pullRequest.lastCommit.nodes[0].commit,
+      ),
+    )
+
+  return commitChecks
 }
 
 /**

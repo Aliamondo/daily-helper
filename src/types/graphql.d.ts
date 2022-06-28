@@ -161,3 +161,17 @@ type GraphQL_CommitStatusContext = {
   avatarUrl: string
   targetUrl: string
 }
+
+type GraphQL_CommitChecksPerPullRequestResponse = {
+  organization: {
+    repository: {
+      pullRequest: {
+        lastCommit: {
+          nodes: {
+            commit: GraphQL_LastCommitWithChecks
+          }[]
+        }
+      }
+    }
+  }
+}
