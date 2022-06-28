@@ -65,10 +65,19 @@ export default function PullRequest({
               variant="subtitle1"
               color="GrayText"
               underline="hover"
+              target="_blank"
+              rel="noopener"
             >
               {repositoryName}
             </Link>
-            <Link href={url} underline="none" variant="body1" marginLeft={1}>
+            <Link
+              href={url}
+              underline="none"
+              variant="body1"
+              marginLeft={1}
+              target="_blank"
+              rel="noopener"
+            >
               {title}
             </Link>
             <Link
@@ -77,6 +86,8 @@ export default function PullRequest({
               color="InfoText"
               underline="hover"
               marginLeft={1}
+              target="_blank"
+              rel="noopener"
             >
               (#{number})
             </Link>
@@ -94,7 +105,7 @@ export default function PullRequest({
             ))}
           </Grid>
           <Grid item xs={1}>
-            <Link href={url} underline="none">
+            <Link href={url} underline="none" target="_blank" rel="noopener">
               <Stack
                 direction="row"
                 spacing={0.5}

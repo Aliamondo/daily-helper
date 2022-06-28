@@ -170,7 +170,11 @@ export default function CommitChecksIndicator({
                       </ListItemAvatar>
                       <ListItemText
                         primary={
-                          <Link href={commitCheck.runUrl}>
+                          <Link
+                            href={commitCheck.runUrl}
+                            target="_blank"
+                            rel="noopener"
+                          >
                             {commitCheck.name}
                           </Link>
                         }
