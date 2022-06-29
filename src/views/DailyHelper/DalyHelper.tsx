@@ -5,16 +5,23 @@ import {
   getTeamUsersQuery,
 } from '../../helpers/graphqlQueries'
 
+import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
+import IconButton from '@mui/material/IconButton'
 import LinearProgress from '@mui/material/LinearProgress'
 import { Octokit } from 'octokit'
 import PullRequest from './PullRequest'
+import ReloadIcon from '@mui/icons-material/Replay'
 import Stack from '@mui/material/Stack'
+import Toolbar from '@mui/material/Toolbar'
+import Tooltip from '@mui/material/Tooltip'
+import Typography from '@mui/material/Typography'
 import { enumerationToSentenceCase } from '../../helpers/strings'
 import moment from 'moment'
 
 const orgName = process.env.ORG_NAME || 'ePages-de'
 const teamName = process.env.TEAM_NAME || 'team-black'
+export const ICON_BUTTON_SIZE = 40
 
 function calculateNumberOfComments(
   comments: number,
@@ -326,25 +333,46 @@ async function fetchPullRequests(setProgress: {
 }
 
 export default function DailyHelper() {
-  const [firstTime, setFirstTime] = useState(true)
+  const [shouldLoad, setShouldLoad] = useState(true)
   const [progress, setProgress] = useState(0)
   const [pullRequests, setPullRequests] = useState<PullRequest[]>([])
+  const isLoading = progress < 100
 
   useEffect(() => {
-    if (firstTime) {
+    if (shouldLoad) {
       fetchPullRequests(setProgress).then(setPullRequests)
-      setFirstTime(false)
+      setShouldLoad(false)
     }
-  }, [firstTime])
+  }, [shouldLoad])
 
-  if (!pullRequests.length)
-    return <LinearProgress variant="determinate" value={progress} />
+  const handleReload = () => {
+    setProgress(0)
+    setShouldLoad(true)
+  }
 
   return (
     <Box sx={{ mx: 'auto', width: '90%' }} maxWidth={1000}>
+      <AppBar>
+        <Toolbar>
+          <Typography>Daily Helper</Typography>
+          <Box sx={{ flexGrow: 1 }} />
+          <Tooltip title="Refresh pull requests">
+            <IconButton
+              edge="end"
+              size="large"
+              color="inherit"
+              onClick={handleReload}
+            >
+              <ReloadIcon />
+            </IconButton>
+          </Tooltip>
+        </Toolbar>
+        {isLoading && <LinearProgress variant="determinate" value={progress} />}
+      </AppBar>
+      <Toolbar sx={{ paddingBottom: '1em' }} />
       <Stack spacing={0.5}>
         {pullRequests.map(pr => (
-          <PullRequest key={pr.id} {...pr} />
+          <PullRequest key={pr.id} isLoading={isLoading} {...pr} />
         ))}
       </Stack>
     </Box>

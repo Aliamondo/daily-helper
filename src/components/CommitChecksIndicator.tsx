@@ -5,6 +5,7 @@ import Badge from '@mui/material/Badge'
 import CircularProgress from '@mui/material/CircularProgress'
 import ClickAwayListener from '@mui/material/ClickAwayListener'
 import FailureIcon from '@mui/icons-material/Close'
+import { ICON_BUTTON_SIZE } from '../views/DailyHelper/DalyHelper'
 import IconButton from '@mui/material/IconButton'
 import Link from '@mui/material/Link'
 import List from '@mui/material/List'
@@ -90,8 +91,6 @@ export default function CommitChecksIndicator({
   isLoading,
   sx,
 }: CommitChecksIndicatorProps) {
-  const ICON_BUTTON_SIZE = 40
-
   const [isOpen, setIsOpen] = useState(false)
   const container = useRef(null)
   const main = useRef<HTMLHeadingElement>(null)
@@ -259,7 +258,7 @@ export default function CommitChecksIndicator({
                             <Skeleton
                               variant="text"
                               animation="wave"
-                              width={(main.current?.offsetWidth || 400) - 120}
+                              width={main.current!.offsetWidth - 120}
                             />
                           ) : (
                             commitCheck.description

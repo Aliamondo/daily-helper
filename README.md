@@ -3,8 +3,9 @@
 ## To-do checklist
 
 - [x] Link commit `CheckRun`' to their permalink
+- [x] Add reload button to fetch new statuses for commit `CheckRun`. Should also affect overall status on PR card
+- [x] Add reload of all pull requests, preferrably with app bar
 - [ ] Rework `UserGroup`s empty states (reconsider what's shown on `DRAFT` PRs)
-- [ ] Add reload button to fetch new statuses for commit `CheckRun`. Should also affect overall status on PR card
 - [ ] Show automatic review requests from `CODEOWNERS`
 - [ ] Extract wording to translations file
 - [ ] Add filters to hide/show tickets with certain labels (such as `WiP`)
