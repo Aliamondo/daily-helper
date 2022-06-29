@@ -381,19 +381,17 @@ export default function DailyHelper() {
         <Toolbar>
           <Typography>Daily Helper</Typography>
           <Box sx={{ paddingRight: 5 }} />
-          {teamNames.length > 1 && (
-            <Tabs
-              variant="scrollable"
-              value={teamTabValue}
-              onChange={handleTabChange}
-              textColor="inherit"
-              indicatorColor="secondary"
-            >
-              {teamNames.map((teamName, index) => (
-                <Tab key={teamName} value={index} label={teamName} />
-              ))}
-            </Tabs>
-          )}
+          <Tabs
+            variant="scrollable"
+            value={teamTabValue}
+            onChange={handleTabChange}
+            textColor="inherit"
+            indicatorColor="secondary"
+          >
+            {teamNames.map((teamName, index) => (
+              <Tab key={teamName} value={index} label={teamName} />
+            ))}
+          </Tabs>
           <Box sx={{ flexGrow: 1 }} />
           <Tooltip title="Refresh pull requests">
             <IconButton
