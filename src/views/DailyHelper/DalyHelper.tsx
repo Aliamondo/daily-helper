@@ -1,4 +1,4 @@
-import { SetStateAction, useEffect, useState } from 'react'
+import { SetStateAction, SyntheticEvent, useEffect, useState } from 'react'
 import {
   getCommitChecksQuery,
   getPullRequestsByUserQuery,
@@ -13,14 +13,17 @@ import { Octokit } from 'octokit'
 import PullRequest from './PullRequest'
 import ReloadIcon from '@mui/icons-material/Replay'
 import Stack from '@mui/material/Stack'
+import Tab from '@mui/material/Tab'
+import Tabs from '@mui/material/Tabs'
 import Toolbar from '@mui/material/Toolbar'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { enumerationToSentenceCase } from '../../helpers/strings'
 import moment from 'moment'
 
-const orgName = process.env.ORG_NAME || 'ePages-de'
-const teamName = process.env.TEAM_NAME || 'team-black'
+const orgName = process.env.REACT_APP_ORG_NAME || 'ePages-de'
+const teamNamesRaw = process.env.REACT_APP_TEAM_NAMES || 'team-black'
+const teamNames = teamNamesRaw.split(',')
 export const ICON_BUTTON_SIZE = 40
 
 function calculateNumberOfComments(
@@ -263,10 +266,13 @@ function getLastCommitChecks(
 const octokit = new Octokit({
   auth: process.env.REACT_APP_GITHUB_TOKEN,
 })
-async function fetchPullRequests(setProgress: {
-  (value: SetStateAction<number>): void
-  (arg0: number): void
-}): Promise<PullRequest[]> {
+async function fetchPullRequests(
+  teamName: string,
+  setProgress: {
+    (value: SetStateAction<number>): void
+    (arg0: number): void
+  },
+): Promise<PullRequest[]> {
   const teamUsers: string[] = await octokit
     .graphql<GraphQL_UserResponse>(getTeamUsersQuery({ orgName, teamName }))
     .then(res =>
@@ -335,19 +341,38 @@ async function fetchPullRequests(setProgress: {
 export default function DailyHelper() {
   const [shouldLoad, setShouldLoad] = useState(true)
   const [progress, setProgress] = useState(0)
-  const [pullRequests, setPullRequests] = useState<PullRequest[]>([])
-  const isLoading = progress < 100
+  const [teamTabValue, setTeamTabValue] = useState(0)
+  const [pullRequests, setPullRequests] = useState<PullRequest[]>(
+    generateDummyPullRequests(5),
+  )
+  const [isLoadingAnimationPlaying, setIsLoadingAnimationPlaying] =
+    useState(true)
 
   useEffect(() => {
     if (shouldLoad) {
-      fetchPullRequests(setProgress).then(setPullRequests)
+      fetchPullRequests(teamNames[teamTabValue], setProgress).then(
+        pullRequests => {
+          setPullRequests(pullRequests)
+          setIsLoadingAnimationPlaying(false)
+        },
+      )
       setShouldLoad(false)
     }
-  }, [shouldLoad])
+  }, [shouldLoad, teamTabValue])
 
   const handleReload = () => {
     setProgress(0)
+    setIsLoadingAnimationPlaying(true)
+    if (pullRequests.length < 5) {
+      pullRequests.push(...generateDummyPullRequests(5 - pullRequests.length))
+    }
+    setPullRequests(pullRequests.slice(0, 5))
     setShouldLoad(true)
+  }
+
+  const handleTabChange = (_e: SyntheticEvent, newValue: number) => {
+    setTeamTabValue(newValue)
+    handleReload()
   }
 
   return (
@@ -355,6 +380,20 @@ export default function DailyHelper() {
       <AppBar>
         <Toolbar>
           <Typography>Daily Helper</Typography>
+          <Box sx={{ paddingRight: 5 }} />
+          {teamNames.length > 1 && (
+            <Tabs
+              variant="scrollable"
+              value={teamTabValue}
+              onChange={handleTabChange}
+              textColor="inherit"
+              indicatorColor="secondary"
+            >
+              {teamNames.map((teamName, index) => (
+                <Tab key={teamName} value={index} label={teamName} />
+              ))}
+            </Tabs>
+          )}
           <Box sx={{ flexGrow: 1 }} />
           <Tooltip title="Refresh pull requests">
             <IconButton
@@ -367,14 +406,51 @@ export default function DailyHelper() {
             </IconButton>
           </Tooltip>
         </Toolbar>
-        {isLoading && <LinearProgress variant="determinate" value={progress} />}
+        {isLoadingAnimationPlaying && (
+          <LinearProgress variant="determinate" value={progress} />
+        )}
       </AppBar>
-      <Toolbar sx={{ paddingBottom: '1em' }} />
+      <Toolbar sx={{ paddingBottom: 2 }} />
       <Stack spacing={0.5}>
         {pullRequests.map(pr => (
-          <PullRequest key={pr.id} isLoading={isLoading} {...pr} />
+          <PullRequest
+            key={pr.id}
+            isLoading={isLoadingAnimationPlaying}
+            {...pr}
+          />
         ))}
       </Stack>
     </Box>
   )
+}
+
+function generateDummyPullRequests(total: number): PullRequest[] {
+  return Array(total)
+    .fill(0)
+    .map((_, index) => ({
+      id: index.toString(),
+      author: {
+        login: '',
+        avatarUrl: '',
+      },
+      title: '',
+      number: 0,
+      url: '',
+      repositoryUrl: '',
+      repositoryName: '',
+      state: 'OPEN',
+      isDraft: false,
+      reviewDecision: 'REVIEW_REQUIRED',
+      createdAt: moment().subtract(1, 'days').toDate(),
+      labels: [],
+      reviews: [],
+      comments: 0,
+      requestedReviewers: [],
+      contributors: [],
+      assignees: [],
+      lastCommitChecks: {
+        commitChecks: [],
+        result: 'SUCCESS',
+      },
+    }))
 }

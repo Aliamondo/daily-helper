@@ -41,19 +41,11 @@ export default function PullRequestStatus({
             variant="rectangular"
             animation="wave"
             height={skeletonHeight}
-          />
+          >
+            <AuthorColumn author={author} createdAtFromNow={createdAtFromNow} />
+          </Skeleton>
         ) : (
-          <Stack direction="column">
-            <Typography variant="subtitle1" align="center">
-              Author
-            </Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <AvatarGroup max={3} sx={{ marginLeft: 1 }}>
-                <UserBadge user={author} type="AUTHOR" />
-              </AvatarGroup>
-              <Typography variant="subtitle2">{createdAtFromNow}</Typography>
-            </Stack>
-          </Stack>
+          <AuthorColumn author={author} createdAtFromNow={createdAtFromNow} />
         )}
       </Grid>
       <Grid item xs={2}>
@@ -126,5 +118,25 @@ export default function PullRequestStatus({
         )}
       </Grid>
     </>
+  )
+}
+
+type AuthorColumnProps = {
+  author: PullRequest['author']
+  createdAtFromNow: string
+}
+function AuthorColumn({ author, createdAtFromNow }: AuthorColumnProps) {
+  return (
+    <Stack direction="column">
+      <Typography variant="subtitle1" align="center">
+        Author
+      </Typography>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <AvatarGroup max={3} sx={{ marginLeft: 1 }}>
+          <UserBadge user={author} type="AUTHOR" />
+        </AvatarGroup>
+        <Typography variant="subtitle2">{createdAtFromNow}</Typography>
+      </Stack>
+    </Stack>
   )
 }

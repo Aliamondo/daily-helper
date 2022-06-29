@@ -1,5 +1,4 @@
 import { ICON_BUTTON_SIZE, refreshLastCommitChecks } from './DalyHelper'
-import { useRef, useState } from 'react'
 
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -14,13 +13,17 @@ import PullRequestStatus from './PullRequestStatus'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import { useState } from 'react'
 
 function getBackgroundColor({
   state,
   reviewDecision,
   isDraft,
-}: Pick<PullRequest, 'state' | 'reviewDecision' | 'isDraft'>) {
-  if (state === 'OPEN') {
+  isLoading,
+}: Pick<PullRequest, 'state' | 'reviewDecision' | 'isDraft'> & {
+  isLoading: boolean
+}) {
+  if (state === 'OPEN' && !isLoading) {
     if (reviewDecision === 'CHANGES_REQUESTED') return 'rgb(250, 170, 180, 0.6)'
     if (reviewDecision === 'APPROVED') return 'rgb(65, 200, 150, 0.5)'
 
@@ -77,7 +80,12 @@ export default function PullRequest({
       sx={{
         minHeight: 150,
         minWidth: 700,
-        bgcolor: getBackgroundColor({ state, reviewDecision, isDraft }),
+        bgcolor: getBackgroundColor({
+          state,
+          reviewDecision,
+          isDraft,
+          isLoading,
+        }),
       }}
     >
       <CardContent>
