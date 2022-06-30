@@ -24,7 +24,7 @@ import UserBadge from './UserBadge'
 type CommitChecksIndicatorProps = {
   commitChecks: CommitCheck[]
   result: CommitCheck['result']
-  handleReload: () => void
+  handleReload: VoidFunction
   isLoading: boolean
   sx?: SxProps<Theme>
 }

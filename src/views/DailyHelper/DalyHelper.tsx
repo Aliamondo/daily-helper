@@ -376,11 +376,12 @@ export default function DailyHelper() {
   }
 
   return (
-    <Box sx={{ mx: 'auto', width: '90%' }} maxWidth={1000}>
+    <Box sx={{ mx: 'auto', width: '90%' }} maxWidth={1050}>
       <AppBar>
-        <Toolbar>
-          <Typography>Daily Helper</Typography>
-          <Box sx={{ paddingRight: 5 }} />
+        <Toolbar sx={{ paddingBottom: isLoadingAnimationPlaying ? 0 : 0.5 }}>
+          <Typography variant="h6" whiteSpace="nowrap" paddingRight={2}>
+            Daily Helper
+          </Typography>
           <Tabs
             variant="scrollable"
             value={teamTabValue}
