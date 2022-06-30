@@ -1,3 +1,5 @@
+import './DailyHelper.css'
+
 import { SyntheticEvent, useEffect, useState } from 'react'
 
 import AppBar from '@mui/material/AppBar'
@@ -69,7 +71,6 @@ export default function DailyHelper() {
             value={teamTabValue}
             onChange={handleTabChange}
             textColor="inherit"
-            indicatorColor="secondary"
           >
             {teamNames.map((teamName, index) => (
               <Tab key={teamName} value={index} label={teamName} />

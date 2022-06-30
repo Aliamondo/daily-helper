@@ -1,8 +1,8 @@
-import { Avatar, Tooltip } from '@mui/material'
-
+import Avatar from '@mui/material/Avatar'
 import ClosedPullRequestIcon from '@mui/icons-material/RemoveRoad'
 import OpenPullRequestIcon from '@mui/icons-material/Merge'
 import { ReactElement } from 'react'
+import Tooltip from '@mui/material/Tooltip'
 
 type FinalPullRequestState = 'OPEN' | 'MERGED' | 'CLOSED' | 'DRAFT'
 const styles: Record<

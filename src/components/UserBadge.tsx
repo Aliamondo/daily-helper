@@ -1,12 +1,13 @@
-import { Avatar, Badge, Tooltip } from '@mui/material'
-
 import ApprovedIcon from '@mui/icons-material/CheckCircle'
+import Avatar from '@mui/material/Avatar'
+import Badge from '@mui/material/Badge'
 import ChangesRequestedIcon from '@mui/icons-material/Cancel'
 import CommentedIcon from '@mui/icons-material/Info'
 import ContributorIcon from '@mui/icons-material/BuildCircle'
 import { ReactElement } from 'react'
 import ReviewPendingIcon from '@mui/icons-material/Pending'
 import ReviewRequestedIcon from '@mui/icons-material/Circle'
+import Tooltip from '@mui/material/Tooltip'
 import { enumerationToSentenceCase } from '../helpers/strings'
 
 function getReviewIcon(state: ReviewState): ReactElement | null {
