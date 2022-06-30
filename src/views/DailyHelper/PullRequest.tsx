@@ -1,18 +1,18 @@
-import { ICON_BUTTON_SIZE, refreshLastCommitChecks } from './DalyHelper'
-
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import CommentsIcon from '@mui/icons-material/ChatOutlined'
 import CommitChecksIndicator from '../../components/CommitChecksIndicator'
 import Grid from '@mui/material/Grid'
+import { ICON_BUTTON_SIZE } from './DalyHelper'
 import Label from '../../components/Label'
 import Link from '@mui/material/Link'
 import NoCommentsIcon from '@mui/icons-material/ChatBubbleOutline'
-import PullRequestStateIcon from './PullRequestStateIcon'
+import PullRequestStateIcon from '../../components/PullRequestStateIcon'
 import PullRequestStatus from './PullRequestStatus'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import { refreshLastCommitChecks } from '../../helpers/dataFetcher'
 import { useState } from 'react'
 
 function getBackgroundColor({
@@ -34,10 +34,12 @@ function getBackgroundColor({
 }
 
 type PullRequestProps = {
+  orgName: string
   isLoading: boolean
 } & PullRequest
 
 export default function PullRequest({
+  orgName,
   isLoading,
   title,
   author,
@@ -67,6 +69,7 @@ export default function PullRequest({
     setIsLastCommitChecksLoading(true)
     setLastCommitChecks(
       await refreshLastCommitChecks({
+        orgName,
         repoName: repositoryName,
         prNumber: number,
       }),
