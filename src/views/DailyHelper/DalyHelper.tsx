@@ -60,7 +60,7 @@ export default function DailyHelper() {
   }
 
   return (
-    <Box sx={{ mx: 'auto', width: '90%' }} maxWidth={1050}>
+    <Box sx={{ mx: 'auto' }} maxWidth={1050}>
       <AppBar>
         <Toolbar sx={{ paddingBottom: isLoadingAnimationPlaying ? 0 : 0.5 }}>
           <Typography variant="h6" whiteSpace="nowrap" paddingRight={2}>
