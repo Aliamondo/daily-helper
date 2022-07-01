@@ -1,12 +1,13 @@
+import UserGroup, { AvatarGroupPopper } from '../../components/UserGroup'
+import { useRef, useState } from 'react'
+
 import AvatarGroup from '@mui/material/AvatarGroup'
 import Grid from '@mui/material/Grid'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import UserBadge from '../../components/UserBadge'
-import UserGroup from '../../components/UserGroup'
 import moment from 'moment'
-import { useRef } from 'react'
 
 export default function PullRequestStatus({
   isLoading,
@@ -82,39 +83,11 @@ export default function PullRequestStatus({
             height={skeletonHeight}
           />
         ) : (
-          <Stack direction="column" alignItems="center">
-            {reviews.length || requestedReviewers.length ? (
-              <>
-                <Typography variant="subtitle1">Reviewers</Typography>
-                <AvatarGroup max={3}>
-                  {reviews
-                    .filter(({ state }) => state !== 'DISMISSED') // Hide dismissed and stale reviews
-                    .map(review => (
-                      <UserBadge
-                        key={review.reviewer.login}
-                        user={review.reviewer}
-                        reviewState={review.state}
-                        type="REVIEWER"
-                      />
-                    ))}
-                  {requestedReviewers.map(requestedReviewer => (
-                    <UserBadge
-                      key={requestedReviewer.login}
-                      user={requestedReviewer}
-                      type="REQUESTED_REVIEWER"
-                    />
-                  ))}
-                </AvatarGroup>
-              </>
-            ) : (
-              <Typography
-                variant="subtitle1"
-                color={isDraft ? 'GrayText' : 'InfoText'}
-              >
-                {isDraft ? 'Draft pull request' : 'Review required'}
-              </Typography>
-            )}
-          </Stack>
+          <ReviewersColumn
+            reviews={reviews}
+            requestedReviewers={requestedReviewers}
+            isDraft={isDraft}
+          />
         )}
       </Grid>
     </>
@@ -137,6 +110,81 @@ function AuthorColumn({ author, createdAtFromNow }: AuthorColumnProps) {
         </AvatarGroup>
         <Typography variant="subtitle2">{createdAtFromNow}</Typography>
       </Stack>
+    </Stack>
+  )
+}
+
+function ReviewersColumn({
+  reviews,
+  requestedReviewers,
+  isDraft,
+}: Pick<PullRequest, 'reviews' | 'requestedReviewers' | 'isDraft'>) {
+  const [isOpen, setIsOpen] = useState(false)
+  const container = useRef(null)
+  const main = useRef<HTMLHeadingElement>(null)
+
+  const handleClick = () => {
+    setIsOpen(!isOpen)
+  }
+
+  const handleClose = () => {
+    setIsOpen(false)
+  }
+
+  const showUsers = () => {
+    return [
+      reviews
+        .filter(({ state }) => state !== 'DISMISSED') // Hide dismissed and stale reviews
+        .map(review => (
+          <UserBadge
+            key={review.reviewer.login}
+            user={review.reviewer}
+            reviewState={review.state}
+            type="REVIEWER"
+          />
+        )),
+      requestedReviewers.map(requestedReviewer => (
+        <UserBadge
+          key={requestedReviewer.login}
+          user={requestedReviewer}
+          type="REQUESTED_REVIEWER"
+        />
+      )),
+    ].flat()
+  }
+
+  return (
+    <Stack direction="column" alignItems="center">
+      {reviews.length || requestedReviewers.length ? (
+        <>
+          <Typography variant="subtitle1">Reviewers</Typography>
+          <AvatarGroup
+            max={3}
+            componentsProps={{
+              additionalAvatar: {
+                ref: container,
+                onClick: handleClick,
+              },
+            }}
+          >
+            {showUsers()}
+          </AvatarGroup>
+          <AvatarGroupPopper
+            isOpen={isOpen}
+            showUsers={showUsers}
+            main={main}
+            container={container}
+            handleClose={handleClose}
+          />
+        </>
+      ) : (
+        <Typography
+          variant="subtitle1"
+          color={isDraft ? 'GrayText' : 'InfoText'}
+        >
+          {isDraft ? 'Draft pull request' : 'Review required'}
+        </Typography>
+      )}
     </Stack>
   )
 }

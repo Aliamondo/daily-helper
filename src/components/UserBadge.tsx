@@ -75,7 +75,7 @@ function getIcon({
   reviewState,
   type,
 }: Pick<UserBadgeProps, 'reviewState' | 'type'>) {
-  if (type === 'CONTRIBUTOR') return <ContributorIcon color="secondary" />
+  if (type === 'CONTRIBUTOR') return <ContributorIcon htmlColor="#6c40e6" />
   if (type === 'REQUESTED_REVIEWER')
     return <ReviewRequestedIcon htmlColor="#bf8700" fontSize="small" />
   if (type === 'REVIEWER' && reviewState) return getReviewIcon(reviewState)
