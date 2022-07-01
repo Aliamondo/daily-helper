@@ -7,7 +7,7 @@
 - [x] Add reload of all pull requests, preferrably with app bar
 - [x] Show multiple teams, when specified
 - [x] Show all users of a group when clicking on `+x` icon
-- [ ] Link to `/checks` from commit check runs title
+- [x] Link to `/checks` from commit check runs title
 - [ ] Add filters to hide/show tickets with certain labels (such as `WiP`)
 - [ ] Research how to get missing `PENDING` `CheckRun`s. Might be related to required repository checks.
 - [ ] List appropriate pull requests where a review from the team was requested

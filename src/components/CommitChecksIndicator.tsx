@@ -24,6 +24,7 @@ import UserBadge from './UserBadge'
 type CommitChecksIndicatorProps = {
   commitChecks: CommitCheck[]
   result: CommitCheck['result']
+  prUrl: string
   handleReload: VoidFunction
   isLoading: boolean
   sx?: SxProps<Theme>
@@ -87,6 +88,7 @@ function CommitCheckRunnerBadge({ checker }: Pick<CommitCheck, 'checker'>) {
 export default function CommitChecksIndicator({
   commitChecks,
   result,
+  prUrl,
   handleReload,
   isLoading,
   sx,
@@ -175,7 +177,13 @@ export default function CommitChecksIndicator({
                           sx={{ marginLeft: 'auto', marginRight: 'auto' }}
                         />
                       ) : (
-                        getCommitChecksCompositeStatus(result)
+                        <Link
+                          href={`${prUrl}/checks`}
+                          target="_blank"
+                          rel="noopener"
+                        >
+                          {getCommitChecksCompositeStatus(result)}
+                        </Link>
                       )
                     }
                     secondary={

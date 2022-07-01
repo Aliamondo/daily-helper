@@ -147,6 +147,7 @@ export default function PullRequest({
                   <CommitChecksIndicator
                     commitChecks={lastCommitChecks.commitChecks}
                     result={lastCommitChecks.result}
+                    prUrl={url}
                     handleReload={handleCommitChecksReload}
                     isLoading={isLastCommitChecksLoading}
                     sx={{
