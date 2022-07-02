@@ -1,14 +1,23 @@
-import { RefObject, createRef, useEffect, useState } from 'react'
+import { RefObject, createRef, useEffect, useRef, useState } from 'react'
 
 import AppBar from '../../components/AppBar'
+import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
+import Button from '@mui/material/Button'
 import Drawer from '@mui/material/Drawer'
-import Grid from '@mui/material/Grid'
+import InvisibleIcon from '@mui/icons-material/VisibilityOff'
 import Label from '../../components/Label'
+import List from '@mui/material/List'
+import ListItem from '@mui/material/ListItem'
+import ListItemButton from '@mui/material/ListItemButton'
+import ListItemText from '@mui/material/ListItemText'
+import ListSubheader from '@mui/material/ListSubheader'
 import PullRequest from './PullRequest'
 import Slide from '@mui/material/Slide'
 import Stack from '@mui/material/Stack'
+import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
+import VisibleIcon from '@mui/icons-material/Visibility'
 import { fetchPullRequests } from '../../helpers/dataFetcher'
 import moment from 'moment'
 
@@ -16,6 +25,10 @@ const orgName = process.env.REACT_APP_ORG_NAME || 'ePages-de'
 const teamNamesRaw = process.env.REACT_APP_TEAM_NAMES || 'team-black'
 const teamNames = teamNamesRaw.split(',')
 export const ICON_BUTTON_SIZE = 40
+
+type LabelWithCount = Label & {
+  count: number
+}
 
 export default function DailyHelper() {
   const [teamName, setTeamName] = useState(teamNames[0])
@@ -27,6 +40,10 @@ export default function DailyHelper() {
   const [isLoadingAnimationPlaying, setIsLoadingAnimationPlaying] =
     useState(true)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [
+    isPullRequestsWithoutLabelsHidden,
+    setIsPullRequestsWithoutLabelsHidden,
+  ] = useState(false)
   const [hiddenLabels, setHiddenLabels] = useState(new Set<string>())
   const [pullRequestRefs, setPullRequestRefs] = useState<
     RefObject<HTMLElement>[]
@@ -34,6 +51,8 @@ export default function DailyHelper() {
   const [isPullRequestInViewport, setIsPullRequestInViewport] = useState<
     Map<string, boolean>
   >(new Map())
+
+  const main = useRef(null)
 
   useEffect(() => {
     if (shouldLoad) {
@@ -65,14 +84,22 @@ export default function DailyHelper() {
     setIsPullRequestInViewport(isPullRequestInViewport)
   }
 
-  const allLabels = new Map<string, Label>()
-  pullRequests.map(pr =>
-    pr.labels.forEach(label =>
-      allLabels.set(label.name, {
+  const allLabels = new Map<string, LabelWithCount>()
+  const pullRequestsWithLabels = pullRequests.filter(pr => pr.labels.length)
+  const pullRequestsWithoutLabelsCount =
+    pullRequests.length - pullRequestsWithLabels.length
+  pullRequestsWithLabels.forEach(pr =>
+    pr.labels.forEach(label => {
+      const name = label.name.toLocaleLowerCase()
+      const count = allLabels.get(name)?.count || 0
+      const color = allLabels.get(name)?.color
+      allLabels.set(name, {
         ...label,
+        color: color || label.color,
         description: '',
-      }),
-    ),
+        count: count + 1,
+      })
+    }),
   )
 
   const handleReload = (newTeamName: string) => {
@@ -88,59 +115,41 @@ export default function DailyHelper() {
     setShouldLoad(true)
   }
 
-  const getVisibility = (pr: PullRequest): boolean =>
-    !pr.labels
+  const handleLabelClick = (labelName: string) => {
+    if (hiddenLabels.has(labelName)) {
+      hiddenLabels.delete(labelName)
+    } else {
+      hiddenLabels.add(labelName)
+    }
+    setHiddenLabels(new Set(hiddenLabels))
+  }
+
+  const handlePullRequestsWithoutLabelsClick = () =>
+    setIsPullRequestsWithoutLabelsHidden(!isPullRequestsWithoutLabelsHidden)
+
+  const getVisibility = (labels: Label[]): boolean => {
+    if (!labels.length) return !isPullRequestsWithoutLabelsHidden
+    return !labels
       .map(label => label.name)
       .some(labelName => hiddenLabels.has(labelName))
-
-  const showDrawer = (marginTopRaw?: number) => {
-    const marginTop = marginTopRaw || 0
-    return (
-      <Drawer
-        open={isSettingsOpen}
-        variant="persistent"
-        anchor="right"
-        PaperProps={{
-          sx: {
-            marginTop: `${marginTop}px`,
-            width: '40%',
-            bgcolor: 'rgb(244,244,247)',
-          },
-        }}
-      >
-        <Typography textAlign="center" variant="h6" padding={2}>
-          Labels
-        </Typography>
-        <Grid container rowSpacing={1} paddingLeft={1}>
-          {Array.from(allLabels.values()).map(label => (
-            <Grid item key={label.id} xs="auto">
-              <Label
-                label={label}
-                onClick={() => {
-                  if (hiddenLabels.has(label.name)) {
-                    hiddenLabels.delete(label.name)
-                  } else {
-                    hiddenLabels.add(label.name)
-                  }
-                  setHiddenLabels(new Set(hiddenLabels))
-                }}
-                isCrossedOut={hiddenLabels.has(label.name)}
-              />
-            </Grid>
-          ))}
-        </Grid>
-      </Drawer>
-    )
   }
 
   return (
-    <Box sx={{ mx: 'auto' }} maxWidth={1050}>
+    <Box ref={main} sx={{ mx: 'auto' }} maxWidth={1050}>
       <AppBar
         teamNames={teamNames}
         loadingProgress={loadingProgress}
         isLoadingAnimationPlaying={isLoadingAnimationPlaying}
         handleReload={handleReload}
-        showSettings={showDrawer}
+        showSettings={getDrawer({
+          allLabels,
+          handleLabelClick,
+          handlePullRequestsWithoutLabelsClick,
+          hiddenLabels,
+          isPullRequestsWithoutLabelsHidden,
+          isSettingsOpen,
+          pullRequestsWithoutLabelsCount,
+        })}
         isSettingsOpen={isSettingsOpen}
         setIsSettingsOpen={setIsSettingsOpen}
       />
@@ -149,11 +158,12 @@ export default function DailyHelper() {
           <Slide
             key={pr.id}
             direction="up"
-            in={getVisibility(pr)}
+            in={getVisibility(pr.labels)}
             timeout={400}
             mountOnEnter
             unmountOnExit
             appear={false}
+            container={main.current}
             enter={isPullRequestInViewport.has(pr.id)}
             exit={false} // disable exit transitions as they lag when multiple are played at once
           >
@@ -202,4 +212,127 @@ function generateDummyPullRequests(total: number): PullRequest[] {
         result: 'SUCCESS',
       },
     }))
+}
+
+type DrawerComponentProps = {
+  isSettingsOpen: boolean
+  allLabels: Map<string, LabelWithCount>
+  hiddenLabels: Set<string>
+  handleLabelClick: (labelName: string) => void
+  isPullRequestsWithoutLabelsHidden: boolean
+  pullRequestsWithoutLabelsCount: number
+  handlePullRequestsWithoutLabelsClick: VoidFunction
+}
+function getDrawer({
+  isSettingsOpen,
+  allLabels,
+  hiddenLabels,
+  handleLabelClick,
+  isPullRequestsWithoutLabelsHidden,
+  pullRequestsWithoutLabelsCount,
+  handlePullRequestsWithoutLabelsClick,
+}: DrawerComponentProps) {
+  return (marginTopRaw?: number) => {
+    const marginTop = marginTopRaw || 0
+
+    return (
+      <Drawer
+        open={isSettingsOpen}
+        variant="persistent"
+        anchor="right"
+        PaperProps={{
+          sx: {
+            marginTop: `${marginTop}px`,
+            width: '40%',
+            bgcolor: 'rgb(244,244,247)',
+          },
+        }}
+      >
+        <List
+          subheader={
+            <ListSubheader color="primary" sx={{ bgcolor: 'inherit' }}>
+              Labels
+            </ListSubheader>
+          }
+        >
+          <DrawerListItem
+            count={pullRequestsWithoutLabelsCount}
+            countTooltip="Total pull requests without labels"
+            isHidden={isPullRequestsWithoutLabelsHidden}
+            handleClick={handlePullRequestsWithoutLabelsClick}
+          />
+          {Array.from(allLabels.values())
+            .sort((a, b) => b.count - a.count)
+            .map(label => (
+              <DrawerListItem
+                key={label.id}
+                label={label}
+                countTooltip="Total pull requests with this label"
+                isHidden={hiddenLabels.has(label.name)}
+                handleClick={() => handleLabelClick(label.name)}
+              />
+            ))}
+        </List>
+      </Drawer>
+    )
+  }
+}
+
+type DrawerListItemProps = {
+  label?: LabelWithCount
+  count?: number
+  countTooltip: string
+  isHidden: boolean
+  handleClick: VoidFunction
+}
+function DrawerListItem({
+  label,
+  count,
+  countTooltip,
+  isHidden,
+  handleClick,
+}: DrawerListItemProps) {
+  return (
+    <ListItem
+      disablePadding
+      secondaryAction={
+        <Tooltip title={countTooltip}>
+          <Avatar variant="rounded" sx={{ width: 30, height: 30 }}>
+            <Typography variant="button">
+              {label ? label.count : count}
+            </Typography>
+          </Avatar>
+        </Tooltip>
+      }
+    >
+      <ListItemButton onClick={handleClick}>
+        {isHidden ? <InvisibleIcon /> : <VisibleIcon />}
+        <ListItemText
+          primary={
+            <Stack paddingRight={3}>
+              {label ? (
+                <Label label={label} isGreyedOut={isHidden} />
+              ) : (
+                <Button
+                  disableRipple
+                  sx={{
+                    textTransform: 'none',
+                    color: isHidden ? 'rgb(0, 0, 0, 0.2)' : 'primary',
+                    ':hover': {
+                      bgcolor: 'inherit',
+                    },
+                  }}
+                >
+                  <Typography paddingLeft={1}>
+                    Pull requests without labels
+                  </Typography>
+                </Button>
+              )}
+            </Stack>
+          }
+          sx={{ marginLeft: label ? 0 : 1 }}
+        />
+      </ListItemButton>
+    </ListItem>
+  )
 }

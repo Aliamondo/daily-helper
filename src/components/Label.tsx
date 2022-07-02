@@ -1,6 +1,7 @@
+import { ReactNode, forwardRef } from 'react'
+
 import Chip from '@mui/material/Chip'
 import Tooltip from '@mui/material/Tooltip'
-import { forwardRef } from 'react'
 
 function hexToRgb(hex: string) {
   // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
@@ -30,13 +31,15 @@ function getFontColor(backgroundColor: string): string {
 }
 
 type LabelProps = {
-  label: Label
+  label: Pick<Label, 'color' | 'description'> & {
+    name: Label['name'] | ReactNode
+  }
   onClick?: VoidFunction
-  isCrossedOut?: boolean
+  isGreyedOut?: boolean
 }
 
 const Label = forwardRef<HTMLDivElement, LabelProps>(
-  ({ label, onClick, isCrossedOut, ...props }: LabelProps, ref) => {
+  ({ label, onClick, isGreyedOut, ...props }: LabelProps, ref) => {
     const rgbColor = hexToRgb(label.color)
     const rgbColorString = `${rgbColor.r * 255}, ${rgbColor.g * 255}, ${
       rgbColor.b * 255
@@ -44,9 +47,9 @@ const Label = forwardRef<HTMLDivElement, LabelProps>(
     return (
       <Chip
         ref={ref}
-        label={isCrossedOut ? <s>{label.name}</s> : label.name}
+        label={label.name}
         sx={{
-          bgcolor: `rgb(${rgbColorString}, ${isCrossedOut ? 0.3 : 1})`,
+          bgcolor: `rgb(${rgbColorString}, ${isGreyedOut ? 0.3 : 1})`,
           color: getFontColor(label.color),
           padding: 1,
           marginLeft: 1,
