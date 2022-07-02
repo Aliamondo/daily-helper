@@ -232,6 +232,53 @@ type DrawerComponentProps = {
 }
 function getDrawer({
   isSettingsOpen,
+  ...drawerContentsProps
+}: DrawerComponentProps) {
+  return (marginTopRaw?: number) => {
+    const marginTop = marginTopRaw || 0
+
+    return (
+      <>
+        <Drawer
+          open={isSettingsOpen}
+          variant="persistent"
+          anchor="right"
+          ModalProps={{
+            keepMounted: true, // Better open performance on mobile.
+          }}
+          PaperProps={{
+            sx: {
+              marginTop: `${marginTop}px`,
+              minWidth: '85%',
+              display: { xs: 'block', sm: 'none' }, // show only on mobile
+              bgcolor: 'rgb(244, 244, 247)',
+            },
+          }}
+        >
+          <DrawerContents {...drawerContentsProps} />
+        </Drawer>
+        <Drawer
+          open={isSettingsOpen}
+          variant="persistent"
+          anchor="right"
+          PaperProps={{
+            sx: {
+              marginTop: `${marginTop}px`,
+              minWidth: '35%',
+              display: { xs: 'none', sm: 'block' }, // show on larger screens
+              bgcolor: 'rgb(244, 244, 247)',
+            },
+          }}
+        >
+          <DrawerContents {...drawerContentsProps} />
+        </Drawer>
+      </>
+    )
+  }
+}
+
+type DrawerContentsProps = Omit<DrawerComponentProps, 'isSettingsOpen'>
+function DrawerContents({
   allLabels,
   hiddenLabels,
   handleLabelClick,
@@ -239,60 +286,43 @@ function getDrawer({
   pullRequestsWithoutLabelsCount,
   handlePullRequestsWithoutLabelsClick,
   resetFilters,
-}: DrawerComponentProps) {
-  return (marginTopRaw?: number) => {
-    const marginTop = marginTopRaw || 0
-
-    return (
-      <Drawer
-        open={isSettingsOpen}
-        variant="persistent"
-        anchor="right"
-        PaperProps={{
-          sx: {
-            marginTop: `${marginTop}px`,
-            width: '40%',
-            bgcolor: 'rgb(244,244,247)',
-          },
-        }}
-      >
-        <List
-          subheader={
-            <ListSubheader color="primary" sx={{ bgcolor: 'inherit' }}>
-              <Stack direction="row" justifyContent="space-between">
-                Labels
-                <Button
-                  size="small"
-                  onClick={resetFilters}
-                  sx={{ ':hover': { bgcolor: 'inherit' } }}
-                >
-                  Reset
-                </Button>
-              </Stack>
-            </ListSubheader>
-          }
-        >
+}: DrawerContentsProps) {
+  return (
+    <List
+      subheader={
+        <ListSubheader color="primary" sx={{ bgcolor: 'inherit' }}>
+          <Stack direction="row" justifyContent="space-between">
+            Labels
+            <Button
+              size="small"
+              onClick={resetFilters}
+              sx={{ ':hover': { bgcolor: 'inherit' } }}
+            >
+              Reset
+            </Button>
+          </Stack>
+        </ListSubheader>
+      }
+    >
+      <DrawerListItem
+        count={pullRequestsWithoutLabelsCount}
+        countTooltip="Total pull requests without labels"
+        isHidden={isPullRequestsWithoutLabelsHidden}
+        handleClick={handlePullRequestsWithoutLabelsClick}
+      />
+      {Array.from(allLabels.values())
+        .sort((a, b) => b.count - a.count)
+        .map(label => (
           <DrawerListItem
-            count={pullRequestsWithoutLabelsCount}
-            countTooltip="Total pull requests without labels"
-            isHidden={isPullRequestsWithoutLabelsHidden}
-            handleClick={handlePullRequestsWithoutLabelsClick}
+            key={label.id}
+            label={label}
+            countTooltip="Total pull requests with this label"
+            isHidden={hiddenLabels.has(label.name)}
+            handleClick={() => handleLabelClick(label.name)}
           />
-          {Array.from(allLabels.values())
-            .sort((a, b) => b.count - a.count)
-            .map(label => (
-              <DrawerListItem
-                key={label.id}
-                label={label}
-                countTooltip="Total pull requests with this label"
-                isHidden={hiddenLabels.has(label.name)}
-                handleClick={() => handleLabelClick(label.name)}
-              />
-            ))}
-        </List>
-      </Drawer>
-    )
-  }
+        ))}
+    </List>
+  )
 }
 
 type DrawerListItemProps = {
@@ -314,7 +344,10 @@ function DrawerListItem({
       disablePadding
       secondaryAction={
         <Tooltip title={countTooltip}>
-          <Avatar variant="rounded" sx={{ width: 30, height: 30 }}>
+          <Avatar
+            variant="rounded"
+            sx={{ width: 30, height: 30, color: 'black', bgcolor: 'lightgray' }}
+          >
             <Typography variant="button">
               {label ? label.count : count}
             </Typography>
