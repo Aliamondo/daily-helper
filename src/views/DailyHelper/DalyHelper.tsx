@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { RefObject, createRef, useEffect, useState } from 'react'
 
 import AppBar from '../../components/AppBar'
 import Box from '@mui/material/Box'
@@ -28,6 +28,12 @@ export default function DailyHelper() {
     useState(true)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [hiddenLabels, setHiddenLabels] = useState(new Set<string>())
+  const [pullRequestRefs, setPullRequestRefs] = useState<
+    RefObject<HTMLElement>[]
+  >([])
+  const [isPullRequestInViewport, setIsPullRequestInViewport] = useState<
+    Map<string, boolean>
+  >(new Map())
 
   useEffect(() => {
     if (shouldLoad) {
@@ -35,11 +41,29 @@ export default function DailyHelper() {
         pullRequests => {
           setPullRequests(pullRequests)
           setIsLoadingAnimationPlaying(false)
+          setPullRequestRefs(
+            Array(pullRequests.length)
+              .fill(null)
+              .map((_, index) => pullRequestRefs[index] || createRef()),
+          )
         },
       )
       setShouldLoad(false)
     }
-  }, [shouldLoad, teamName])
+    setPullRequestRefs(pullRequestRefs)
+  }, [shouldLoad, teamName, pullRequestRefs])
+
+  const setPullRequestInViewport = (
+    pullRequestId: string,
+    isVisible: boolean,
+  ) => {
+    if (isVisible) {
+      isPullRequestInViewport.set(pullRequestId, true)
+    } else {
+      isPullRequestInViewport.delete(pullRequestId)
+    }
+    setIsPullRequestInViewport(isPullRequestInViewport)
+  }
 
   const allLabels = new Map<string, Label>()
   pullRequests.map(pr =>
@@ -59,6 +83,7 @@ export default function DailyHelper() {
     setLoadingProgress(0)
     setIsLoadingAnimationPlaying(true)
     setPullRequests(generateDummyPullRequests(5))
+    setPullRequestRefs([])
     setShouldLoad(true)
   }
 
@@ -125,13 +150,16 @@ export default function DailyHelper() {
             direction="up"
             in={getVisibility(pr)}
             timeout={400}
-            appear={false}
             mountOnEnter
             unmountOnExit
-            exit={false}
+            appear={false}
+            enter={isPullRequestInViewport.has(pr.id)}
+            exit={false} // disable exit transitions as they lag when multiple are played at once
           >
-            <Box>
+            <Box ref={pullRequestRefs[index]}>
               <PullRequest
+                customRef={pullRequestRefs[index]}
+                setIsInViewport={setPullRequestInViewport}
                 orgName={orgName}
                 isLoading={isLoadingAnimationPlaying}
                 {...pr}

@@ -1,3 +1,5 @@
+import { RefObject, useState } from 'react'
+
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import CommentsIcon from '@mui/icons-material/ChatOutlined'
@@ -13,7 +15,7 @@ import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { refreshLastCommitChecks } from '../../helpers/dataFetcher'
-import { useState } from 'react'
+import useOnScreen from '../../helpers/useOnScreen'
 
 function getBackgroundColor({
   state,
@@ -34,13 +36,18 @@ function getBackgroundColor({
 }
 
 type PullRequestProps = {
+  customRef: RefObject<HTMLElement>
+  setIsInViewport: (id: string, visible: boolean) => void
   orgName: string
   isLoading: boolean
 } & PullRequest
 
 export default function PullRequest({
+  customRef,
+  setIsInViewport,
   orgName,
   isLoading,
+  id,
   title,
   author,
   comments,
@@ -64,6 +71,9 @@ export default function PullRequest({
   )
   const [isLastCommitChecksLoading, setIsLastCommitChecksLoading] =
     useState(false)
+
+  const isInViewport = useOnScreen(customRef)
+  setIsInViewport(id, isInViewport)
 
   const handleCommitChecksReload = async () => {
     setIsLastCommitChecksLoading(true)
