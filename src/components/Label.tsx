@@ -31,27 +31,41 @@ function getFontColor(backgroundColor: string): string {
 
 type LabelProps = {
   label: Label
+  onClick?: VoidFunction
+  isCrossedOut?: boolean
 }
 
 const Label = forwardRef<HTMLDivElement, LabelProps>(
-  ({ label, ...props }: LabelProps, ref) => {
+  ({ label, onClick, isCrossedOut, ...props }: LabelProps, ref) => {
+    const rgbColor = hexToRgb(label.color)
+    const rgbColorString = `${rgbColor.r * 255}, ${rgbColor.g * 255}, ${
+      rgbColor.b * 255
+    }`
     return (
       <Chip
         ref={ref}
-        label={label.name}
+        label={isCrossedOut ? <s>{label.name}</s> : label.name}
         sx={{
-          bgcolor: `#${label.color}`,
+          bgcolor: `rgb(${rgbColorString}, ${isCrossedOut ? 0.3 : 1})`,
           color: getFontColor(label.color),
+          padding: 1,
           marginLeft: 1,
+          ':hover': onClick && {
+            border: `ButtonHighlight 2px solid`,
+            padding: 0.75,
+            bgcolor: `rgb(${rgbColorString}, 0.7)`,
+            color: getFontColor(label.color),
+          },
         }}
+        onClick={onClick}
         {...props}
       />
     )
   },
 )
 
-function LabelWithTooltip({ label }: LabelProps) {
-  const labelComponent = <Label label={label} />
+function LabelWithTooltip({ label, ...props }: LabelProps) {
+  const labelComponent = <Label label={label} {...props} />
 
   if (label.description)
     return <Tooltip title={label.description}>{labelComponent}</Tooltip>

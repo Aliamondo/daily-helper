@@ -75,7 +75,7 @@ type GraphQL_Review = {
 }
 
 type GraphQL_Label = {
-  id: number
+  id: string
   color: string
   name: string
   description: string
