@@ -19,7 +19,6 @@ export const ICON_BUTTON_SIZE = 40
 
 export default function DailyHelper() {
   const [teamName, setTeamName] = useState(teamNames[0])
-  const [previousTeamName, setPreviousTeamName] = useState(teamNames[0])
   const [shouldLoad, setShouldLoad] = useState(true)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [pullRequests, setPullRequests] = useState<PullRequest[]>(
@@ -57,7 +56,6 @@ export default function DailyHelper() {
       setHiddenLabels(new Set())
     }
     setTeamName(newTeamName)
-    setPreviousTeamName(teamName)
     setLoadingProgress(0)
     setIsLoadingAnimationPlaying(true)
     setPullRequests(generateDummyPullRequests(5))
