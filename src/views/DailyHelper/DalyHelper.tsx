@@ -82,8 +82,9 @@ export default function DailyHelper() {
     setTeamName(newTeamName)
     setLoadingProgress(0)
     setIsLoadingAnimationPlaying(true)
-    setPullRequests(generateDummyPullRequests(5))
+    setPullRequests(generateDummyPullRequests(isPullRequestInViewport.size + 1))
     setPullRequestRefs([])
+    setIsPullRequestInViewport(new Map())
     setShouldLoad(true)
   }
 

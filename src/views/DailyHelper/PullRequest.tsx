@@ -1,4 +1,4 @@
-import { RefObject, useState } from 'react'
+import { RefObject, useEffect, useState } from 'react'
 
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -73,7 +73,9 @@ export default function PullRequest({
     useState(false)
 
   const isInViewport = useOnScreen(customRef)
-  setIsInViewport(id, isInViewport)
+  useEffect(() => {
+    setIsInViewport(id, isInViewport)
+  }, [isInViewport, id, setIsInViewport])
 
   const handleCommitChecksReload = async () => {
     setIsLastCommitChecksLoading(true)
