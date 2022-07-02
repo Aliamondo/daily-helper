@@ -127,6 +127,11 @@ export default function DailyHelper() {
   const handlePullRequestsWithoutLabelsClick = () =>
     setIsPullRequestsWithoutLabelsHidden(!isPullRequestsWithoutLabelsHidden)
 
+  const resetFilters = () => {
+    setIsPullRequestsWithoutLabelsHidden(false)
+    setHiddenLabels(new Set())
+  }
+
   const getVisibility = (labels: Label[]): boolean => {
     if (!labels.length) return !isPullRequestsWithoutLabelsHidden
     return !labels
@@ -149,6 +154,7 @@ export default function DailyHelper() {
           isPullRequestsWithoutLabelsHidden,
           isSettingsOpen,
           pullRequestsWithoutLabelsCount,
+          resetFilters,
         })}
         isSettingsOpen={isSettingsOpen}
         setIsSettingsOpen={setIsSettingsOpen}
@@ -222,6 +228,7 @@ type DrawerComponentProps = {
   isPullRequestsWithoutLabelsHidden: boolean
   pullRequestsWithoutLabelsCount: number
   handlePullRequestsWithoutLabelsClick: VoidFunction
+  resetFilters: VoidFunction
 }
 function getDrawer({
   isSettingsOpen,
@@ -231,6 +238,7 @@ function getDrawer({
   isPullRequestsWithoutLabelsHidden,
   pullRequestsWithoutLabelsCount,
   handlePullRequestsWithoutLabelsClick,
+  resetFilters,
 }: DrawerComponentProps) {
   return (marginTopRaw?: number) => {
     const marginTop = marginTopRaw || 0
@@ -251,7 +259,16 @@ function getDrawer({
         <List
           subheader={
             <ListSubheader color="primary" sx={{ bgcolor: 'inherit' }}>
-              Labels
+              <Stack direction="row" justifyContent="space-between">
+                Labels
+                <Button
+                  size="small"
+                  onClick={resetFilters}
+                  sx={{ ':hover': { bgcolor: 'inherit' } }}
+                >
+                  Reset
+                </Button>
+              </Stack>
             </ListSubheader>
           }
         >
@@ -315,6 +332,8 @@ function DrawerListItem({
               ) : (
                 <Button
                   disableRipple
+                  tabIndex={-1}
+                  fullWidth
                   sx={{
                     textTransform: 'none',
                     color: isHidden ? 'rgb(0, 0, 0, 0.2)' : 'primary',
@@ -323,9 +342,7 @@ function DrawerListItem({
                     },
                   }}
                 >
-                  <Typography paddingLeft={1}>
-                    Pull requests without labels
-                  </Typography>
+                  <Typography>Pull requests without labels</Typography>
                 </Button>
               )}
             </Stack>

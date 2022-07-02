@@ -54,7 +54,7 @@ const Label = forwardRef<HTMLDivElement, LabelProps>(
           padding: 1,
           marginLeft: 1,
           ':hover': onClick && {
-            border: `ButtonHighlight 2px solid`,
+            border: `ButtonHighlight 0.25em solid`,
             padding: 0.75,
             bgcolor: `rgb(${rgbColorString}, 0.7)`,
             color: getFontColor(label.color),
