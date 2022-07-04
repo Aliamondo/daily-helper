@@ -111,6 +111,7 @@ export default function DailyHelper() {
     setIsLoadingAnimationPlaying(true)
     setPullRequests(generateDummyPullRequests(isPullRequestInViewport.size + 1))
     setPullRequestRefs([])
+    setIsPullRequestsWithoutLabelsHidden(false)
     setIsPullRequestInViewport(new Map())
     setShouldLoad(true)
   }
