@@ -109,7 +109,7 @@ export default function DailyHelper() {
     setTeamName(newTeamName)
     setLoadingProgress(0)
     setIsLoadingAnimationPlaying(true)
-    setPullRequests(generateDummyPullRequests(isPullRequestInViewport.size + 1))
+    setPullRequests(generateDummyPullRequests(isPullRequestInViewport.size))
     setPullRequestRefs([])
     setIsPullRequestsWithoutLabelsHidden(false)
     setIsPullRequestInViewport(new Map())
@@ -288,19 +288,24 @@ function DrawerContents({
   handlePullRequestsWithoutLabelsClick,
   resetFilters,
 }: DrawerContentsProps) {
+  const areFiltersEnabled =
+    hiddenLabels.size || isPullRequestsWithoutLabelsHidden
+
   return (
     <List
       subheader={
         <ListSubheader color="primary" sx={{ bgcolor: 'inherit' }}>
           <Stack direction="row" justifyContent="space-between">
             Labels
-            <Button
-              size="small"
-              onClick={resetFilters}
-              sx={{ ':hover': { bgcolor: 'inherit' } }}
-            >
-              Reset
-            </Button>
+            {areFiltersEnabled && (
+              <Button
+                size="small"
+                onClick={resetFilters}
+                sx={{ ':hover': { bgcolor: 'inherit' } }}
+              >
+                Reset
+              </Button>
+            )}
           </Stack>
         </ListSubheader>
       }

@@ -12,6 +12,8 @@
 - [x] Add filters to hide/show tickets without any labels and reset filters
 - [ ] List appropriate pull requests where a review from the team was requested
 - [ ] Show automatic review requests from the repositories where the team is `CODEOWNERS`
+- [ ] Add no PRs message for no PRs found and all PRs filtered out
+- [ ] Add tests
 - [ ] Research how to get missing `PENDING` `CheckRun`s. Might be related to required repository checks.
 - [ ] Research and add tab with currently ran github actions for recently merged PRs (potentially filter by `CODEOWNERS`)
 - [ ] Extract wording to translations file
