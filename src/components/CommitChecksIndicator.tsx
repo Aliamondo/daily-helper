@@ -1,7 +1,7 @@
 import { SxProps, Theme } from '@mui/system'
 import { forwardRef, useRef, useState } from 'react'
 
-import Badge from '@mui/material/Badge'
+import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import ClickAwayListener from '@mui/material/ClickAwayListener'
 import FailureIcon from '@mui/icons-material/Close'
@@ -112,11 +112,10 @@ export default function CommitChecksIndicator({
   if (total) {
     return (
       <ClickAwayListener onClickAway={handleClose}>
-        <Badge>
+        <Box component="span" sx={{ margin: 1 }}>
           <IconButton
             ref={container}
             edge="end"
-            disableRipple
             onClick={handleClick}
             sx={{ width: ICON_BUTTON_SIZE, height: ICON_BUTTON_SIZE, ...sx }}
           >
@@ -208,6 +207,7 @@ export default function CommitChecksIndicator({
                       <IconButton
                         edge="end"
                         disableRipple
+                        tabIndex={-1}
                         sx={{
                           width: ICON_BUTTON_SIZE,
                           height: ICON_BUTTON_SIZE,
@@ -275,7 +275,7 @@ export default function CommitChecksIndicator({
               </List>
             </Paper>
           </Popper>
-        </Badge>
+        </Box>
       </ClickAwayListener>
     )
   }
