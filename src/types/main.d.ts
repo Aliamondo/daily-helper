@@ -12,6 +12,8 @@ type PullRequest = {
   labels: Label[]
   repositoryUrl: string
   repositoryName: string
+  repositoryBaseRef: string
+  baseRef: string
   isDraft: boolean
   reviews: Review[]
   requestedReviewers: User[]

@@ -2,8 +2,10 @@ import { RefObject, useEffect, useState } from 'react'
 
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
+import Chip from '@mui/material/Chip'
 import CommentsIcon from '@mui/icons-material/ChatOutlined'
 import CommitChecksIndicator from '../../components/CommitChecksIndicator'
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows'
 import Grid from '@mui/material/Grid'
 import { ICON_BUTTON_SIZE } from './DalyHelper'
 import Label from '../../components/Label'
@@ -56,6 +58,8 @@ export default function PullRequest({
   assignees,
   repositoryUrl,
   repositoryName,
+  repositoryBaseRef,
+  baseRef,
   url,
   createdAt,
   state,
@@ -144,6 +148,15 @@ export default function PullRequest({
                 >
                   {title}
                 </Link>
+                {repositoryBaseRef !== baseRef && (
+                  <Chip
+                    label={baseRef}
+                    size="small"
+                    icon={<CompareArrowsIcon fontSize="small" />}
+                    color="primary"
+                    sx={{ marginLeft: 1, marginBottom: 0.5 }}
+                  />
+                )}
                 <Link
                   href={url}
                   variant="subtitle1"

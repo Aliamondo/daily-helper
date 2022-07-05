@@ -104,6 +104,15 @@ export function getPullRequestsByUserQuery({
             repository {
               name
               url
+              defaultBranchRef {
+                name
+              }
+            }
+            baseRef {
+              name
+              branchProtectionRule {
+                requiredStatusCheckContexts
+              }
             }
             comments {
               totalCount

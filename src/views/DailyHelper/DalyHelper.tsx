@@ -143,7 +143,7 @@ export default function DailyHelper() {
   }
 
   return (
-    <Box ref={main} sx={{ mx: 'auto' }} maxWidth={1050}>
+    <Box ref={main} sx={{ mx: 'auto' }} maxWidth={1150}>
       <AppBar
         teamNames={teamNames}
         loadingProgress={loadingProgress}
@@ -206,6 +206,8 @@ function generateDummyPullRequests(total: number): PullRequest[] {
       url: '',
       repositoryUrl: '',
       repositoryName: '',
+      baseRef: 'master',
+      repositoryBaseRef: 'master',
       state: 'OPEN',
       isDraft: false,
       reviewDecision: 'REVIEW_REQUIRED',

@@ -298,6 +298,8 @@ async function fetchPullRequests(
       url: pr.permalink,
       repositoryUrl: pr.repository.url,
       repositoryName: pr.repository.name,
+      repositoryBaseRef: pr.repository.defaultBranchRef.name,
+      baseRef: pr.baseRef.name,
       state: pr.state,
       isDraft: pr.isDraft,
       reviewDecision: pr.reviewDecision,

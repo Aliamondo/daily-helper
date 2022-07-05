@@ -36,7 +36,7 @@ export default function PullRequestStatus({
 
   return (
     <>
-      <Grid item xs={2} ref={authorRef}>
+      <Grid item xs={2.5} ref={authorRef}>
         {isLoading ? (
           <Skeleton
             variant="rectangular"
@@ -49,7 +49,7 @@ export default function PullRequestStatus({
           <AuthorColumn author={author} createdAtFromNow={createdAtFromNow} />
         )}
       </Grid>
-      <Grid item xs={2}>
+      <Grid item xs={2.5}>
         {isLoading ? (
           <Skeleton
             variant="rectangular"
@@ -64,7 +64,7 @@ export default function PullRequestStatus({
           />
         )}
       </Grid>
-      <Grid item xs={2}>
+      <Grid item xs={2.5}>
         {isLoading ? (
           <Skeleton
             variant="rectangular"
@@ -75,7 +75,7 @@ export default function PullRequestStatus({
           <UserGroup users={assignees} groupName="Assignees" type="ASSIGNEE" />
         )}
       </Grid>
-      <Grid item xs={2}>
+      <Grid item xs={2.5}>
         {isLoading ? (
           <Skeleton
             variant="rectangular"

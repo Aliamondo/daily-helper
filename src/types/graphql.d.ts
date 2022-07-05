@@ -28,6 +28,7 @@ type GraphQL_PullRequestsPerUserResponse = {
       isDraft: boolean
       author: GraphQL_User
       repository: GraphQL_Repository
+      baseRef: GraphQL_BaseRef
       comments: {
         totalCount: number
       }
@@ -58,6 +59,9 @@ type GraphQL_PullRequestsPerUserResponse = {
 type GraphQL_Repository = {
   name: string
   url: string
+  defaultBranchRef: {
+    name: string
+  }
 }
 
 type GraphQL_Review = {
@@ -84,6 +88,13 @@ type GraphQL_Label = {
 type GraphQL_Team = {
   name: string
   avatarUrl: string
+}
+
+type GraphQL_BaseRef = {
+  name: string
+  branchProtectionRule: {
+    requiredStatusCheckContexts: string[]
+  }
 }
 
 type GraphQL_ReviewRequest = {
