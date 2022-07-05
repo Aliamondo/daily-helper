@@ -66,9 +66,25 @@ const CommitChecksIndicatorIcon = forwardRef<
   }
 })
 
-function getCommitChecksCompositeStatus(
+function getCommitChecksCalculatedStatus(
   result: CommitChecksIndicatorProps['result'],
+  commitChecks: CommitCheck[],
+): CommitChecksIndicatorProps['result'] {
+  if (result === 'SUCCESS') {
+    if (commitChecks.find(commitCheck => commitCheck.result === 'PENDING')) {
+      return 'FAILURE'
+    }
+  }
+
+  return result
+}
+
+function getCommitChecksCompositeStatus(
+  resultRaw: CommitChecksIndicatorProps['result'],
+  commitChecks: CommitCheck[],
 ): string {
+  const result = getCommitChecksCalculatedStatus(resultRaw, commitChecks)
+
   switch (result) {
     case 'SUCCESS':
       return 'All checks have passed'
@@ -120,7 +136,9 @@ export default function CommitChecksIndicator({
             onClick={handleClick}
             sx={{ width: ICON_BUTTON_SIZE, height: ICON_BUTTON_SIZE, ...sx }}
           >
-            <CommitChecksIndicatorIcon result={result} />
+            <CommitChecksIndicatorIcon
+              result={getCommitChecksCalculatedStatus(result, commitChecks)}
+            />
           </IconButton>
           <Popper
             ref={main}
@@ -182,7 +200,7 @@ export default function CommitChecksIndicator({
                           target="_blank"
                           rel="noopener"
                         >
-                          {getCommitChecksCompositeStatus(result)}
+                          {getCommitChecksCompositeStatus(result, commitChecks)}
                         </Link>
                       )
                     }
