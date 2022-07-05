@@ -93,7 +93,7 @@ type GraphQL_Team = {
 type GraphQL_BaseRef = {
   name: string
   branchProtectionRule: {
-    requiredStatusCheckContexts: string[]
+    requiredStatusCheckContexts: string[] | null
   }
 }
 
@@ -177,6 +177,7 @@ type GraphQL_CommitChecksPerPullRequestResponse = {
   organization: {
     repository: {
       pullRequest: {
+        baseRef: Pick<GraphQL_BaseRef, 'branchProtectionRule'>
         lastCommit: {
           nodes: {
             commit: GraphQL_LastCommitWithChecks

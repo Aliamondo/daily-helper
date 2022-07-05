@@ -105,6 +105,8 @@ async function refreshLastCommitChecks({
     .then(res =>
       getLastCommitChecks(
         res.organization.repository.pullRequest.lastCommit.nodes[0].commit,
+        res.organization.repository.pullRequest.baseRef.branchProtectionRule
+          ?.requiredStatusCheckContexts,
       ),
     )
 
@@ -119,6 +121,7 @@ async function refreshLastCommitChecks({
  */
 function extractLastCommitChecks(
   lastCommitChecks: GraphQL_LastCommitWithChecks,
+  requiredStatusCheckContexts: GraphQL_BaseRef['branchProtectionRule']['requiredStatusCheckContexts'],
 ): CommitCheck[] {
   const commitChecks: CommitCheck[] = []
 
@@ -151,6 +154,7 @@ function extractLastCommitChecks(
         ),
         result: extractCommitCheckRunResult(checkRun),
         runUrl: checkRun.permalink,
+        required: false,
         startedAt,
         completedAt,
         checker,
@@ -166,6 +170,7 @@ function extractLastCommitChecks(
       result: convertContextStateToCommitCheckResult(context.state),
       runUrl: context.targetUrl,
       startedAt: new Date(context.createdAt),
+      required: false,
       completedAt: null,
       checker: {
         login: context.creator.login,
@@ -173,6 +178,31 @@ function extractLastCommitChecks(
         backgroundColor: '000000',
       },
     })
+  })
+
+  requiredStatusCheckContexts?.forEach((contextName, i) => {
+    const index = commitChecks.findIndex(
+      commitCheck => commitCheck.name === contextName,
+    )
+    if (index >= 0) {
+      commitChecks[index].required = true
+    } else {
+      commitChecks.push({
+        id: `required-${i}`,
+        name: contextName,
+        description: '',
+        result: 'PENDING',
+        runUrl: '',
+        startedAt: null,
+        completedAt: null,
+        required: true,
+        checker: {
+          login: contextName.toLocaleUpperCase(),
+          avatarUrl: 'fakeurl',
+          backgroundColor: '000000',
+        },
+      })
+    }
   })
 
   // Only fix the order when there are check contexts
@@ -238,12 +268,16 @@ function extractCommitCheckRunResult(
 
 function getLastCommitChecks(
   lastCommitChecks: GraphQL_LastCommitWithChecks,
+  requiredStatusCheckContexts: GraphQL_BaseRef['branchProtectionRule']['requiredStatusCheckContexts'],
 ): PullRequest['lastCommitChecks'] {
   const state = lastCommitChecks.statusCheckRollup?.state
   const result = state ? convertContextStateToCommitCheckResult(state) : null
 
   return {
-    commitChecks: extractLastCommitChecks(lastCommitChecks),
+    commitChecks: extractLastCommitChecks(
+      lastCommitChecks,
+      requiredStatusCheckContexts,
+    ),
     result,
   }
 }
@@ -313,7 +347,10 @@ async function fetchPullRequests(
       requestedReviewers: getReviewers(pr.reviewRequests.nodes),
       contributors: getContributors(pr.commits.nodes, pr.author),
       assignees: pr.assignees.nodes,
-      lastCommitChecks: getLastCommitChecks(pr.lastCommit.nodes[0].commit),
+      lastCommitChecks: getLastCommitChecks(
+        pr.lastCommit.nodes[0].commit,
+        pr.baseRef.branchProtectionRule?.requiredStatusCheckContexts,
+      ),
     }),
   )
 

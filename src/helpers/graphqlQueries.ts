@@ -1,5 +1,10 @@
 const UserNode = `login avatarUrl`
 const LastCommitChecksNode = `
+baseRef {
+  branchProtectionRule {
+    requiredStatusCheckContexts
+  }
+}
 lastCommit: commits(last: 1) {
   nodes {
     commit {

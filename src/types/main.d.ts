@@ -53,6 +53,7 @@ type CommitCheck = {
   result: 'SUCCESS' | 'FAILURE' | 'IN_PROGRESS' | 'PENDING' | 'SKIPPED'
   name: string
   description: string
+  required: boolean
   runUrl: string
   startedAt: Date | null
   completedAt: Date | null

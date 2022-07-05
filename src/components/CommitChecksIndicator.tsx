@@ -2,6 +2,7 @@ import { SxProps, Theme } from '@mui/system'
 import { forwardRef, useRef, useState } from 'react'
 
 import Box from '@mui/material/Box'
+import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
 import ClickAwayListener from '@mui/material/ClickAwayListener'
 import FailureIcon from '@mui/icons-material/Close'
@@ -249,13 +250,23 @@ export default function CommitChecksIndicator({
                             width={200}
                           />
                         ) : (
-                          <Link
-                            href={commitCheck.runUrl}
-                            target="_blank"
-                            rel="noopener"
-                          >
-                            {commitCheck.name}
-                          </Link>
+                          <>
+                            <Link
+                              href={commitCheck.runUrl}
+                              target="_blank"
+                              rel="noopener"
+                            >
+                              {commitCheck.name}
+                            </Link>
+                            {commitCheck.required && (
+                              <Chip
+                                label="Required"
+                                size="small"
+                                variant="outlined"
+                                sx={{ marginLeft: 1 }}
+                              />
+                            )}
+                          </>
                         )
                       }
                       secondary={
