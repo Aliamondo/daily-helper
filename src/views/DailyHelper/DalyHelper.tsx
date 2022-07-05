@@ -44,7 +44,7 @@ export default function DailyHelper() {
     isPullRequestsWithoutLabelsHidden,
     setIsPullRequestsWithoutLabelsHidden,
   ] = useState(false)
-  const [hiddenLabels, setHiddenLabels] = useState(new Set<string>())
+  const [hiddenLabels, setHiddenLabels] = useState(new Set<string>()) // always keep them lowercase
   const [pullRequestRefs, setPullRequestRefs] = useState<
     RefObject<HTMLElement>[]
   >([])
@@ -116,7 +116,9 @@ export default function DailyHelper() {
     setShouldLoad(true)
   }
 
-  const handleLabelClick = (labelName: string) => {
+  const handleLabelClick = (labelNameRaw: string) => {
+    const labelName = labelNameRaw.toLocaleLowerCase()
+
     if (hiddenLabels.has(labelName)) {
       hiddenLabels.delete(labelName)
     } else {
@@ -136,8 +138,8 @@ export default function DailyHelper() {
   const getVisibility = (labels: Label[]): boolean => {
     if (!labels.length) return !isPullRequestsWithoutLabelsHidden
     return !labels
-      .map(label => label.name)
-      .some(labelName => hiddenLabels.has(labelName))
+      .map(label => label.name.toLocaleLowerCase())
+      .every(labelName => hiddenLabels.has(labelName))
   }
 
   return (
@@ -323,7 +325,7 @@ function DrawerContents({
             key={label.id}
             label={label}
             countTooltip="Total pull requests with this label"
-            isHidden={hiddenLabels.has(label.name)}
+            isHidden={hiddenLabels.has(label.name.toLocaleLowerCase())}
             handleClick={() => handleLabelClick(label.name)}
           />
         ))}
