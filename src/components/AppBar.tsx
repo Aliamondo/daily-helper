@@ -15,6 +15,8 @@ import IconButton from '@mui/material/IconButton'
 import LinearProgress from '@mui/material/LinearProgress'
 import MenuIcon from '@mui/icons-material/Menu'
 import ReloadIcon from '@mui/icons-material/Replay'
+import Settings from './Settings'
+import SettingsIcon from '@mui/icons-material/Settings'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 import Toolbar from '@mui/material/Toolbar'
@@ -23,24 +25,29 @@ import Typography from '@mui/material/Typography'
 
 type AppBarElementProps = {
   teamNames: string[]
+  orgName: string
   handleReload: (teamName: string) => void
   loadingProgress: number
   isLoadingAnimationPlaying: boolean
-  showSettings?: (marginTop?: number) => ReactElement | null
-  isSettingsOpen: boolean
-  setIsSettingsOpen: (newState: boolean) => void
+  showDrawbar?: (marginTop?: number) => ReactElement | null
+  drawbarName: string
+  isDrawbarOpen: boolean
+  setIsDrawbarOpen: (newState: boolean) => void
 }
 export default function AppBarElement({
   teamNames,
+  orgName,
   handleReload,
   loadingProgress,
   isLoadingAnimationPlaying,
-  showSettings,
-  isSettingsOpen,
-  setIsSettingsOpen,
+  showDrawbar,
+  drawbarName,
+  isDrawbarOpen,
+  setIsDrawbarOpen,
 }: AppBarElementProps) {
   const [teamTabValue, setTeamTabValue] = useState(0)
-  const settingsButtonRef = useRef(null)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const DrawbarButtonRef = useRef(null)
   const toolbarRef = useRef<HTMLHeadingElement>(null)
 
   const handlePullRequestsReload = (
@@ -53,6 +60,14 @@ export default function AppBarElement({
   const handleTabChange = (_e: SyntheticEvent, newValue: number) => {
     setTeamTabValue(newValue)
     handlePullRequestsReload(null, newValue)
+  }
+
+  const handleToggleDrawbar = () => {
+    setIsDrawbarOpen(!isDrawbarOpen)
+  }
+
+  const handleHideDrawbar = () => {
+    setIsDrawbarOpen(false)
   }
 
   const handleToggleSettings = () => {
@@ -70,7 +85,7 @@ export default function AppBarElement({
           ref={toolbarRef}
           sx={{ paddingBottom: isLoadingAnimationPlaying ? 0 : 0.5 }}
           onKeyUp={({ code }: KeyboardEvent) => {
-            code === 'Escape' && handleHideSettings()
+            code === 'Escape' && handleHideDrawbar()
           }}
         >
           <Typography variant="h6" whiteSpace="nowrap" paddingRight={2}>
@@ -86,24 +101,44 @@ export default function AppBarElement({
               <Tab key={teamName} value={index} label={teamName} />
             ))}
           </Tabs>
+
           <Box sx={{ flexGrow: 1 }} />
-          {showSettings && (
-            <ClickAwayListener onClickAway={handleHideSettings}>
+          {showDrawbar && (
+            <ClickAwayListener onClickAway={handleHideDrawbar}>
               <Box>
-                <Tooltip title="Settings">
+                <Tooltip title={drawbarName}>
                   <IconButton
-                    ref={settingsButtonRef}
+                    ref={DrawbarButtonRef}
                     size="large"
                     color="inherit"
-                    onClick={handleToggleSettings}
+                    onClick={handleToggleDrawbar}
                   >
                     <MenuIcon />
                   </IconButton>
                 </Tooltip>
-                {showSettings(toolbarRef.current?.offsetHeight)}
+                {showDrawbar(toolbarRef.current?.offsetHeight)}
               </Box>
             </ClickAwayListener>
           )}
+
+          <Tooltip title="Settings">
+            <IconButton
+              size="large"
+              color="inherit"
+              onClick={handleToggleSettings}
+            >
+              <SettingsIcon />
+            </IconButton>
+          </Tooltip>
+          <Settings
+            isOpen={isSettingsOpen}
+            close={handleHideSettings}
+            teamName={teamNames[teamTabValue]}
+            orgName={orgName}
+            handleReload={handleReload}
+            isLoading={isLoadingAnimationPlaying}
+          />
+
           <Tooltip title="Refresh pull requests">
             <IconButton
               edge="end"
@@ -115,6 +150,7 @@ export default function AppBarElement({
             </IconButton>
           </Tooltip>
         </Toolbar>
+
         {isLoadingAnimationPlaying && (
           <LinearProgress variant="determinate" value={loadingProgress} />
         )}

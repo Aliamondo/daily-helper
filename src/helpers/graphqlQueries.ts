@@ -1,4 +1,5 @@
 const UserNode = `login avatarUrl`
+
 const LastCommitChecksNode = `
 baseRef {
   branchProtectionRule {
@@ -59,6 +60,94 @@ lastCommit: commits(last: 1) {
   }
 }`
 
+const PullRequestNode = `
+... on PullRequest {
+  title
+  permalink
+  number
+  createdAt
+  state
+  id
+  isDraft
+  reviewDecision
+  author {
+    ${UserNode}
+  }
+  repository {
+    name
+    url
+    defaultBranchRef {
+      name
+    }
+  }
+  baseRef {
+    name
+    branchProtectionRule {
+      requiredStatusCheckContexts
+    }
+  }
+  comments {
+    totalCount
+  }
+  reviews(first: 100) {
+    nodes {
+      body
+      state
+      author {
+        ${UserNode}
+      }
+      comments {
+        totalCount
+      }
+    }
+  }
+  assignees(first: 100) {
+    nodes {
+      ${UserNode}
+    }
+  }
+  reviewRequests(first: 100) {
+    nodes {
+      requestedReviewer {
+        ... on Team {
+          avatarUrl
+          name
+        }
+        ... on User {
+          ${UserNode}
+        }
+      }
+    }
+  }
+  commits(first: 100) {
+    nodes {
+      ... on PullRequestCommit {
+        commit {
+          author {
+            user {
+              ${UserNode}
+            }
+          }
+          committer {
+            user {
+              ${UserNode}
+            }
+          }
+        }
+      }
+    }
+  }
+  ${LastCommitChecksNode}
+  labels(first: 100) {
+    nodes {
+      id
+      color
+      name
+      description
+    }
+  }
+}`
+
 type GetTeamUsersProps = {
   orgName: string
   teamName: string
@@ -71,6 +160,46 @@ export function getTeamUsersQuery({ orgName, teamName }: GetTeamUsersProps) {
           members(first: 100){
             nodes{
               ${UserNode}
+            }
+          }
+        }
+      }
+    }
+  }`
+}
+
+type GetTeamRepositoriesProps = GetTeamUsersProps & {
+  pageInfoCursor: string
+  isNextPage: boolean // if "true" -> fetch next page, else -> fetch previous page
+}
+export function getTeamRepositories({
+  orgName,
+  teamName,
+  pageInfoCursor,
+  isNextPage,
+}: GetTeamRepositoriesProps) {
+  return `{
+    organization(login: "${orgName}") {
+      teams(query: "${teamName}", first: 1) {
+        nodes {
+          repositories(
+            ${isNextPage ? 'first' : 'last'}: 36,
+            orderBy: {field: NAME, direction: ASC},
+            ${isNextPage ? 'after' : 'before'}: "${pageInfoCursor}"
+            ) {
+            edges {
+              permission
+              node {
+                name
+                nameWithOwner
+              }
+            }
+            totalCount
+            pageInfo {
+              startCursor
+              endCursor
+              hasNextPage
+              hasPreviousPage
             }
           }
         }
@@ -94,92 +223,28 @@ export function getPullRequestsByUserQuery({
       type: ISSUE
     ) {
         nodes {
-          ... on PullRequest {
-            title
-            permalink
-            number
-            createdAt
-            state
-            id
-            isDraft
-            reviewDecision
-            author {
-              ${UserNode}
-            }
-            repository {
-              name
-              url
-              defaultBranchRef {
-                name
-              }
-            }
-            baseRef {
-              name
-              branchProtectionRule {
-                requiredStatusCheckContexts
-              }
-            }
-            comments {
-              totalCount
-            }
-            reviews(first: 100) {
-              nodes {
-                body
-                state
-                author {
-                  ${UserNode}
-                }
-                comments {
-                  totalCount
-                }
-              }
-            }
-            assignees(first: 100) {
-              nodes {
-                ${UserNode}
-              }
-            }
-            reviewRequests(first: 100) {
-              nodes {
-                requestedReviewer {
-                  ... on Team {
-                    avatarUrl
-                    name
-                  }
-                  ... on User {
-                    ${UserNode}
-                  }
-                }
-              }
-            }
-            commits(first: 100) {
-              nodes {
-                ... on PullRequestCommit {
-                  commit {
-                    author {
-                      user {
-                        ${UserNode}
-                      }
-                    }
-                    committer {
-                      user {
-                        ${UserNode}
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            ${LastCommitChecksNode}
-            labels(first: 100) {
-              nodes {
-                id
-                color
-                name
-                description
-              }
-            }
-          }
+          ${PullRequestNode}
+        }
+      }
+    }`
+}
+
+type GetPullRequestsByRepositoriesQueryProps = {
+  repositories: string[]
+}
+export function getPullRequestsByRepositoriesQuery({
+  repositories,
+}: GetPullRequestsByRepositoriesQueryProps) {
+  return `{
+    search(
+      query: "is:open type:pr ${repositories
+        .map(name => `repo:${name}`)
+        .join(' ')}"
+      first: 100
+      type: ISSUE
+    ) {
+        nodes {
+          ${PullRequestNode}
         }
       }
     }`

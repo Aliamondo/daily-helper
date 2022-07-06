@@ -1,3 +1,11 @@
+type Pageable = {
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+  startCursor: string
+  endCursor: string
+  total: number
+}
+
 type PullRequest = {
   id: string
   title: string
@@ -63,3 +71,13 @@ type CommitCheck = {
 type CommitChecker = User & {
   backgroundColor: string
 }
+
+type TeamRepository = {
+  name: string
+  nameWithOwner: string
+  permission: 'ADMIN' | 'MAINTAIN' | 'WRITE' | 'TRIAGE' | 'READ'
+}
+
+type TeamRepositoryPageable = {
+  teamRepositories: TeamRepository[]
+} & Pageable

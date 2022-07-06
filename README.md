@@ -11,15 +11,16 @@
 - [x] Add filters to hide/show tickets with certain labels (such as `WiP`)
 - [x] Add filters to hide/show tickets without any labels and reset filters
 - [x] Research how to get missing `PENDING` `CheckRun`s. Might be related to required repository checks.
-- [ ] List appropriate pull requests where a review from the team was requested
-- [ ] Show automatic review requests from the repositories where the team is `CODEOWNERS`
+- [x] Show which branch the PR was created against (hide against `master`/`base`?)
+- [x] Select team owned repositories per team
+- [ ] Search team repositories in settings
 - [ ] Add no PRs message for no PRs found and all PRs filtered out
-- [ ] Show which branch the PR was created against (hide against `master`/`base`?)
 - [ ] Add tests
 - [ ] Show missing required `CheckRun`s, if possible
 - [ ] Research and add tab with currently ran github actions for recently merged PRs (potentially filter by `CODEOWNERS`)
 - [ ] Extract wording to translations file
 - [ ] (Low priority) Rework `UserGroup`s empty states (reconsider what's shown on `DRAFT` PRs)
+- [ ] List appropriate pull requests where a review from the team was requested
 - [ ] Research how to make application start faster
 
 ## Environment variables

@@ -39,7 +39,7 @@ export default function DailyHelper() {
   )
   const [isLoadingAnimationPlaying, setIsLoadingAnimationPlaying] =
     useState(true)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isDrawbarOpen, setIsDrawbarOpen] = useState(false)
   const [
     isPullRequestsWithoutLabelsHidden,
     setIsPullRequestsWithoutLabelsHidden,
@@ -146,21 +146,23 @@ export default function DailyHelper() {
     <Box ref={main} sx={{ mx: 'auto' }} maxWidth={1150}>
       <AppBar
         teamNames={teamNames}
+        orgName={orgName}
         loadingProgress={loadingProgress}
         isLoadingAnimationPlaying={isLoadingAnimationPlaying}
         handleReload={handleReload}
-        showSettings={getDrawer({
+        showDrawbar={getDrawer({
           allLabels,
           handleLabelClick,
           handlePullRequestsWithoutLabelsClick,
           hiddenLabels,
           isPullRequestsWithoutLabelsHidden,
-          isSettingsOpen,
+          isDrawbarOpen,
           pullRequestsWithoutLabelsCount,
           resetFilters,
         })}
-        isSettingsOpen={isSettingsOpen}
-        setIsSettingsOpen={setIsSettingsOpen}
+        drawbarName="Search filters"
+        isDrawbarOpen={isDrawbarOpen}
+        setIsDrawbarOpen={setIsDrawbarOpen}
       />
       <Stack spacing={0.5}>
         {pullRequests.map((pr, index) => (
@@ -226,7 +228,7 @@ function generateDummyPullRequests(total: number): PullRequest[] {
 }
 
 type DrawerComponentProps = {
-  isSettingsOpen: boolean
+  isDrawbarOpen: boolean
   allLabels: Map<string, LabelWithCount>
   hiddenLabels: Set<string>
   handleLabelClick: (labelName: string) => void
@@ -236,7 +238,7 @@ type DrawerComponentProps = {
   resetFilters: VoidFunction
 }
 function getDrawer({
-  isSettingsOpen,
+  isDrawbarOpen,
   ...drawerContentsProps
 }: DrawerComponentProps) {
   return (marginTopRaw?: number) => {
@@ -245,7 +247,7 @@ function getDrawer({
     return (
       <>
         <Drawer
-          open={isSettingsOpen}
+          open={isDrawbarOpen}
           variant="persistent"
           anchor="right"
           ModalProps={{
@@ -263,7 +265,7 @@ function getDrawer({
           <DrawerContents {...drawerContentsProps} />
         </Drawer>
         <Drawer
-          open={isSettingsOpen}
+          open={isDrawbarOpen}
           variant="persistent"
           anchor="right"
           PaperProps={{
@@ -282,7 +284,7 @@ function getDrawer({
   }
 }
 
-type DrawerContentsProps = Omit<DrawerComponentProps, 'isSettingsOpen'>
+type DrawerContentsProps = Omit<DrawerComponentProps, 'isDrawbarOpen'>
 function DrawerContents({
   allLabels,
   hiddenLabels,
