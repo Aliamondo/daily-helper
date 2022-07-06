@@ -1,6 +1,12 @@
 import './AppBar.css'
 
-import { ReactElement, SyntheticEvent, useRef, useState } from 'react'
+import {
+  KeyboardEvent,
+  ReactElement,
+  SyntheticEvent,
+  useRef,
+  useState,
+} from 'react'
 
 import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
@@ -63,6 +69,9 @@ export default function AppBarElement({
         <Toolbar
           ref={toolbarRef}
           sx={{ paddingBottom: isLoadingAnimationPlaying ? 0 : 0.5 }}
+          onKeyUp={({ code }: KeyboardEvent) => {
+            code === 'Escape' && handleHideSettings()
+          }}
         >
           <Typography variant="h6" whiteSpace="nowrap" paddingRight={2}>
             Daily Helper

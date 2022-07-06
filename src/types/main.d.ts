@@ -50,7 +50,7 @@ type ReviewState =
 
 type CommitCheck = {
   id: string
-  result: 'SUCCESS' | 'FAILURE' | 'IN_PROGRESS' | 'PENDING' | 'SKIPPED'
+  result: 'SUCCESS' | 'FAILURE' | 'IN_PROGRESS' | 'PENDING' | 'SKIPPED' | null
   name: string
   description: string
   required: boolean

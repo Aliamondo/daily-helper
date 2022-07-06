@@ -168,7 +168,7 @@ export default function PullRequest({
                 >
                   (#{number})
                 </Link>
-                {lastCommitChecks.result ? (
+                {!!lastCommitChecks ? (
                   <CommitChecksIndicator
                     commitChecks={lastCommitChecks.commitChecks}
                     result={lastCommitChecks.result}

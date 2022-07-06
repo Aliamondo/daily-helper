@@ -1,5 +1,5 @@
+import { KeyboardEvent, forwardRef, useRef, useState } from 'react'
 import { SxProps, Theme } from '@mui/system'
-import { forwardRef, useRef, useState } from 'react'
 
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
@@ -129,7 +129,13 @@ export default function CommitChecksIndicator({
   if (total) {
     return (
       <ClickAwayListener onClickAway={handleClose}>
-        <Box component="span" sx={{ margin: 1 }}>
+        <Box
+          component="span"
+          sx={{ margin: 1 }}
+          onKeyUp={({ code }: KeyboardEvent) => {
+            code === 'Escape' && handleClose()
+          }}
+        >
           <IconButton
             ref={container}
             edge="end"
@@ -269,13 +275,17 @@ export default function CommitChecksIndicator({
                           />
                         ) : (
                           <>
-                            <Link
-                              href={commitCheck.runUrl}
-                              target="_blank"
-                              rel="noopener"
-                            >
-                              {commitCheck.name}
-                            </Link>
+                            {commitCheck.runUrl ? (
+                              <Link
+                                href={commitCheck.runUrl}
+                                target="_blank"
+                                rel="noopener"
+                              >
+                                {commitCheck.name}
+                              </Link>
+                            ) : (
+                              commitCheck.name
+                            )}
                             {commitCheck.required && (
                               <Chip
                                 label="Required"
