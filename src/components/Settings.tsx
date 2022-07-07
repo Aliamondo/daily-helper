@@ -8,7 +8,6 @@ import CloseIcon from '@mui/icons-material/Close'
 import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
-import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import FormGroup from '@mui/material/FormGroup'
@@ -171,25 +170,27 @@ export default function Settings({
         </Stack>
       </DialogTitle>
       <DialogContent>
-        <DialogContentText>
+        <Typography component="div">
           <FormGroup>
             <Grid container>
               <Grid container item xs={12} justifyContent="space-between">
                 <Grid item>
-                  <Typography sx={{ fontWeight: 800 }}>
-                    <Stack direction="row" alignItems="center">
-                      <ListIcon sx={{ marginRight: 1 }} />
-                      {teamName} repositories ({teamRepositoriesPageable?.total}{' '}
-                      total
-                      {selectedSize > 0 &&
-                        selectedSize < (teamRepositoriesPageable?.total || 0) &&
-                        `, ${selectedSize} selected`}
-                      )
-                      {isRepositoriesLoading && (
-                        <CircularProgress size={20} sx={{ marginLeft: 1 }} />
-                      )}
-                    </Stack>
-                  </Typography>
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    sx={{ fontWeight: 800 }}
+                  >
+                    <ListIcon sx={{ marginRight: 1 }} />
+                    {teamName} repositories ({teamRepositoriesPageable?.total}
+                    total
+                    {selectedSize > 0 &&
+                      selectedSize < (teamRepositoriesPageable?.total || 0) &&
+                      `, ${selectedSize} selected`}
+                    )
+                    {isRepositoriesLoading && (
+                      <CircularProgress size={20} sx={{ marginLeft: 1 }} />
+                    )}
+                  </Stack>
                 </Grid>
                 <Grid item>
                   <Button
@@ -257,7 +258,7 @@ export default function Settings({
               </Grid>
             </Grid>
           </FormGroup>
-        </DialogContentText>
+        </Typography>
       </DialogContent>
       <DialogActions>
         <Button
