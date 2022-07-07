@@ -11,12 +11,14 @@ import {
 import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
 import ClickAwayListener from '@mui/material/ClickAwayListener'
+import DailyHelperIcon from '../icons/DailyHelper'
 import IconButton from '@mui/material/IconButton'
 import LinearProgress from '@mui/material/LinearProgress'
 import MenuIcon from '@mui/icons-material/Menu'
 import ReloadIcon from '@mui/icons-material/Replay'
 import Settings from './Settings'
 import SettingsIcon from '@mui/icons-material/Settings'
+import Stack from '@mui/material/Stack'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 import Toolbar from '@mui/material/Toolbar'
@@ -88,9 +90,12 @@ export default function AppBarElement({
             code === 'Escape' && handleHideDrawbar()
           }}
         >
-          <Typography variant="h6" whiteSpace="nowrap" paddingRight={2}>
-            Daily Helper
-          </Typography>
+          <Stack direction="row" alignItems="center" columnGap={1}>
+            <DailyHelperIcon sx={{ width: 52, height: 52 }} />
+            <Typography variant="h6" whiteSpace="nowrap" paddingRight={2}>
+              Daily Helper
+            </Typography>
+          </Stack>
           <Tabs
             variant="scrollable"
             value={teamTabValue}
