@@ -172,7 +172,7 @@ type GetTeamRepositoriesProps = GetTeamUsersProps & {
   pageInfoCursor: string
   isNextPage: boolean // if "true" -> fetch next page, else -> fetch previous page
 }
-export function getTeamRepositories({
+export function getTeamRepositoriesQuery({
   orgName,
   teamName,
   pageInfoCursor,

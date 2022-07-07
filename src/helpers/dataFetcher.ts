@@ -2,7 +2,7 @@ import {
   getCommitChecksQuery,
   getPullRequestsByRepositoriesQuery,
   getPullRequestsByUserQuery,
-  getTeamRepositories,
+  getTeamRepositoriesQuery,
   getTeamUsersQuery,
 } from './graphqlQueries'
 
@@ -399,7 +399,12 @@ async function fetchTeamRepositories(
     pageInfo,
   } = await octokit
     .graphql<GraphQL_TeamRepositoryResponse>(
-      getTeamRepositories({ orgName, teamName, pageInfoCursor, isNextPage }),
+      getTeamRepositoriesQuery({
+        orgName,
+        teamName,
+        pageInfoCursor,
+        isNextPage,
+      }),
     )
     .then(res => res.organization.teams.nodes[0].repositories)
 
