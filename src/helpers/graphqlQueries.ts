@@ -9,9 +9,9 @@ baseRef {
 lastCommit: commits(last: 1) {
   nodes {
     commit {
-      checkSuites(first: 10) {
+      checkSuites(last: 10) {
         nodes {
-          checkRuns(first: 100) {
+          checkRuns(last: 100) {
             nodes {
               id
               name
@@ -45,7 +45,7 @@ lastCommit: commits(last: 1) {
       }
       statusCheckRollup {
         state
-        contexts(first: 100) {
+        contexts(last: 100) {
           nodes {
             ... on CheckRun {
               id
@@ -89,7 +89,7 @@ const PullRequestNode = `
   comments {
     totalCount
   }
-  reviews(first: 100) {
+  reviews(last: 100) {
     nodes {
       body
       state
@@ -101,12 +101,12 @@ const PullRequestNode = `
       }
     }
   }
-  assignees(first: 100) {
+  assignees(last: 100) {
     nodes {
       ${UserNode}
     }
   }
-  reviewRequests(first: 100) {
+  reviewRequests(last: 100) {
     nodes {
       requestedReviewer {
         ... on Team {
@@ -119,7 +119,7 @@ const PullRequestNode = `
       }
     }
   }
-  commits(first: 100) {
+  commits(last: 100) {
     nodes {
       ... on PullRequestCommit {
         commit {
