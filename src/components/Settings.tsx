@@ -181,12 +181,13 @@ export default function Settings({
                     sx={{ fontWeight: 800 }}
                   >
                     <ListIcon sx={{ marginRight: 1 }} />
-                    {teamName} repositories ({teamRepositoriesPageable?.total}
-                    total
-                    {selectedSize > 0 &&
+                    {`${teamName} repositories (${
+                      teamRepositoriesPageable?.total
+                    } total${
+                      selectedSize > 0 &&
                       selectedSize < (teamRepositoriesPageable?.total || 0) &&
-                      `, ${selectedSize} selected`}
-                    )
+                      `, ${selectedSize} selected`
+                    })`}
                     {isRepositoriesLoading && (
                       <CircularProgress size={20} sx={{ marginLeft: 1 }} />
                     )}
