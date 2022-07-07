@@ -1,11 +1,9 @@
-namespace Settings {
-  type Team = {
-    repositories: string[]
-  }
+type Settings_Team = {
+  repositories: string[]
+}
 
-  type All = {
-    teams: {
-      [teamName: string]: Team
-    }
+type Settings_All = {
+  teams: {
+    [teamName: string]: Settings_Team
   }
 }

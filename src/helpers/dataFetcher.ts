@@ -18,7 +18,7 @@ const octokit = new Octokit({
 
 function calculateNumberOfComments(
   comments: number,
-  reviews: GraphQL.Review[],
+  reviews: GraphQL_Review[],
 ) {
   const reviewCommentedBody = reviews.filter(review =>
     Boolean(review.body),
@@ -30,7 +30,7 @@ function calculateNumberOfComments(
   return comments + reviewCommentedBody + reviewComments
 }
 
-function formatReviews(reviews: GraphQL.Review[]): Review[] {
+function formatReviews(reviews: GraphQL_Review[]): Review[] {
   const formattedReviews = reviews.map(
     (review): Review => ({
       state: review.state,
@@ -52,7 +52,7 @@ function formatReviews(reviews: GraphQL.Review[]): Review[] {
   return Array.from(reviewsMap.values())
 }
 
-function getReviewers(reviewRequests: GraphQL.ReviewRequest[]): User[] {
+function getReviewers(reviewRequests: GraphQL_ReviewRequest[]): User[] {
   return reviewRequests.map(entity => ({
     login:
       'login' in entity.requestedReviewer
@@ -63,15 +63,15 @@ function getReviewers(reviewRequests: GraphQL.ReviewRequest[]): User[] {
 }
 
 function extractContributor(
-  user: GraphQL.User | null,
-  author: GraphQL.User,
-): GraphQL.User {
+  user: GraphQL_User | null,
+  author: GraphQL_User,
+): GraphQL_User {
   return user || author
 }
 
 function getContributors(
-  commits: GraphQL.Commit[],
-  author: GraphQL.User,
+  commits: GraphQL_Commit[],
+  author: GraphQL_User,
 ): User[] {
   const contributors = new Map(
     commits
@@ -87,7 +87,7 @@ function getContributors(
 }
 
 function convertContextStateToCommitCheckResult(
-  state: GraphQL.CommitStatusContext['state'],
+  state: GraphQL_CommitStatusContext['state'],
 ): CommitCheck['result'] {
   if (state === 'EXPECTED') return 'IN_PROGRESS'
   if (state === 'PENDING') return 'PENDING'
@@ -106,7 +106,7 @@ async function refreshLastCommitChecks({
   prNumber,
 }: RefreshLastCommitChecksProps) {
   const commitChecks = await octokit
-    .graphql<GraphQL.CommitChecksPerPullRequestResponse>(
+    .graphql<GraphQL_CommitChecksPerPullRequestResponse>(
       getCommitChecksQuery({ orgName, repoName, prNumber }),
     )
     .then(res =>
@@ -127,8 +127,8 @@ async function refreshLastCommitChecks({
  * That number needs to be added to the number of contexts of a commit status.
  */
 function extractLastCommitChecks(
-  lastCommitChecks: GraphQL.LastCommitWithChecks,
-  requiredStatusCheckContexts: GraphQL.BaseRef['branchProtectionRule']['requiredStatusCheckContexts'],
+  lastCommitChecks: GraphQL_LastCommitWithChecks,
+  requiredStatusCheckContexts: GraphQL_BaseRef['branchProtectionRule']['requiredStatusCheckContexts'],
 ): CommitCheck[] {
   const commitChecks: CommitCheck[] = []
 
@@ -227,7 +227,7 @@ function extractLastCommitChecks(
 }
 
 function getCommitCheckDescription(
-  checkRun: GraphQL.CommitCheckRun,
+  checkRun: GraphQL_CommitCheckRun,
   startedAt: Date | null,
   completedAt: Date | null,
 ): string {
@@ -247,7 +247,7 @@ function getCommitCheckDescription(
 }
 
 function extractCommitCheckRunResult(
-  checkRun: GraphQL.CommitCheckRun,
+  checkRun: GraphQL_CommitCheckRun,
 ): CommitCheck['result'] {
   if (checkRun.status === 'COMPLETED') {
     if (checkRun.conclusion === 'SUCCESS') {
@@ -274,8 +274,8 @@ function extractCommitCheckRunResult(
 }
 
 function getLastCommitChecks(
-  lastCommitChecks: GraphQL.LastCommitWithChecks,
-  requiredStatusCheckContexts: GraphQL.BaseRef['branchProtectionRule']['requiredStatusCheckContexts'],
+  lastCommitChecks: GraphQL_LastCommitWithChecks,
+  requiredStatusCheckContexts: GraphQL_BaseRef['branchProtectionRule']['requiredStatusCheckContexts'],
 ): PullRequest['lastCommitChecks'] {
   const state = lastCommitChecks.statusCheckRollup?.state
   const result = state ? convertContextStateToCommitCheckResult(state) : null
@@ -300,10 +300,10 @@ async function fetchPullRequests(
   const teamRepositories = settingsHandler.loadTeam(teamName)?.repositories
 
   const teamUsers: string[] = await octokit
-    .graphql<GraphQL.UserResponse>(getTeamUsersQuery({ orgName, teamName }))
+    .graphql<GraphQL_UserResponse>(getTeamUsersQuery({ orgName, teamName }))
     .then(res =>
       res.organization.teams.nodes[0].members.nodes.map(
-        (user: GraphQL.User) => user.login,
+        (user: GraphQL_User) => user.login,
       ),
     )
   setProgress(10)
@@ -313,7 +313,7 @@ async function fetchPullRequests(
 
   const pullRequestPromises = teamUsers.map(user =>
     octokit
-      .graphql<GraphQL.PullRequestsResponse>(
+      .graphql<GraphQL_PullRequestsResponse>(
         getPullRequestsByUserQuery({ orgName, author: user }),
       )
       .then(res => {
@@ -326,7 +326,7 @@ async function fetchPullRequests(
   teamRepositories &&
     pullRequestPromises.push(
       octokit
-        .graphql<GraphQL.PullRequestsResponse>(
+        .graphql<GraphQL_PullRequestsResponse>(
           getPullRequestsByRepositoriesQuery({
             repositories: teamRepositories,
           }),
@@ -344,7 +344,7 @@ async function fetchPullRequests(
     .flat()
 
   // We have to get rid of duplicate PRs from team repositories from team users
-  const uniquePullRequests = new Map<string, GraphQL.PullRequest>()
+  const uniquePullRequests = new Map<string, GraphQL_PullRequest>()
   rawPullRequests.forEach(pr => uniquePullRequests.set(pr.id, pr))
 
   const pullRequests = Array.from(uniquePullRequests.values()).map(
@@ -398,7 +398,7 @@ async function fetchTeamRepositories(
     totalCount,
     pageInfo,
   } = await octokit
-    .graphql<GraphQL.TeamRepositoryResponse>(
+    .graphql<GraphQL_TeamRepositoryResponse>(
       getTeamRepositories({ orgName, teamName, pageInfoCursor, isNextPage }),
     )
     .then(res => res.organization.teams.nodes[0].repositories)
