@@ -24,13 +24,13 @@ import { fetchTeamRepositories } from '../helpers/dataFetcher'
 import { settingsHandler } from '../helpers/settingsHandler'
 
 type PageCursor = {
-  cursor: string
-  isNextPage: boolean
+  startCursor?: string
+  endCursor?: string
+  page: PageNavigation
 }
 
-const initialPageCursor = {
-  cursor: '',
-  isNextPage: true,
+const initialPageCursor: PageCursor = {
+  page: 'NEXT_PAGE',
 }
 
 function getPermissionColor(
@@ -84,8 +84,9 @@ export default function Settings({
         await fetchTeamRepositories(
           orgName,
           teamName,
-          pageCursor.cursor,
-          pageCursor.isNextPage,
+          pageCursor.page,
+          pageCursor.startCursor,
+          pageCursor.endCursor,
         ),
       )
       setIsRepositoriesLoading(false)
@@ -126,18 +127,20 @@ export default function Settings({
     setSelectedRepositories(new Set(selectedRepositories))
   }
 
-  const handleNextPage = () => {
+  const handlePageChange = (page: PageNavigation) => {
     setPageCursor({
-      cursor: teamRepositoriesPageable?.endCursor || '',
-      isNextPage: true,
+      startCursor: teamRepositoriesPageable?.startCursor,
+      endCursor: teamRepositoriesPageable?.endCursor,
+      page,
     })
   }
 
+  const handleNextPage = () => {
+    handlePageChange('NEXT_PAGE')
+  }
+
   const handlePrevPage = () => {
-    setPageCursor({
-      cursor: teamRepositoriesPageable?.startCursor || '',
-      isNextPage: false,
-    })
+    handlePageChange('PREVIOUS_PAGE')
   }
 
   const handleSave = () => {

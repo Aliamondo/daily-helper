@@ -1,5 +1,7 @@
 import {
   getCommitChecksQuery,
+  getNextPageQuery,
+  getPreviousPageQuery,
   getPullRequestsByRepositoriesQuery,
   getPullRequestsByUserQuery,
   getTeamRepositoriesQuery,
@@ -15,6 +17,22 @@ import { settingsHandler } from './settingsHandler'
 const octokit = new Octokit({
   auth: process.env.REACT_APP_GITHUB_TOKEN,
 })
+
+function handlePageNavigation(
+  pageSize: number,
+  page: PageNavigation,
+  startCursor?: string,
+  endCursor?: string,
+): string {
+  switch (page) {
+    case 'NEXT_PAGE':
+      return getNextPageQuery({ pageSize, pageCursor: endCursor || '' })
+    case 'PREVIOUS_PAGE':
+      return getPreviousPageQuery({ pageSize, pageCursor: startCursor || '' })
+    default:
+      throw new Error('Unexpected pagination type requested')
+  }
+}
 
 function calculateNumberOfComments(
   comments: number,
@@ -390,8 +408,9 @@ async function fetchPullRequests(
 async function fetchTeamRepositories(
   orgName: string,
   teamName: string,
-  pageInfoCursor: string,
-  isNextPage: boolean,
+  page: PageNavigation,
+  startCursor?: string,
+  endCursor?: string,
 ): Promise<TeamRepositoryPageable> {
   const {
     edges: repositoriesRaw,
@@ -402,8 +421,7 @@ async function fetchTeamRepositories(
       getTeamRepositoriesQuery({
         orgName,
         teamName,
-        pageInfoCursor,
-        isNextPage,
+        pagination: handlePageNavigation(36, page, startCursor, endCursor),
       }),
     )
     .then(res => res.organization.teams.nodes[0].repositories)

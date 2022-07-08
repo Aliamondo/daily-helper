@@ -5,6 +5,7 @@ type Pageable = {
   endCursor: string
   total: number
 }
+type PageNavigation = 'NEXT_PAGE' | 'PREVIOUS_PAGE'
 
 type PullRequest = {
   id: string

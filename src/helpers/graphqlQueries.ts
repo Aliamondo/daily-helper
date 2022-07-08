@@ -148,6 +148,23 @@ const PullRequestNode = `
   }
 }`
 
+type GetAdjacentPageQuery = {
+  pageSize: number
+  pageCursor: string
+}
+export function getNextPageQuery({
+  pageSize,
+  pageCursor: endCursor,
+}: GetAdjacentPageQuery) {
+  return `first:${pageSize} after:"${endCursor}"`
+}
+export function getPreviousPageQuery({
+  pageSize,
+  pageCursor: startCursor,
+}: GetAdjacentPageQuery) {
+  return `last:${pageSize} before:"${startCursor}"`
+}
+
 type GetTeamUsersProps = {
   orgName: string
   teamName: string
@@ -169,23 +186,20 @@ export function getTeamUsersQuery({ orgName, teamName }: GetTeamUsersProps) {
 }
 
 type GetTeamRepositoriesProps = GetTeamUsersProps & {
-  pageInfoCursor: string
-  isNextPage: boolean // if "true" -> fetch next page, else -> fetch previous page
+  pagination: string
 }
 export function getTeamRepositoriesQuery({
   orgName,
   teamName,
-  pageInfoCursor,
-  isNextPage,
+  pagination,
 }: GetTeamRepositoriesProps) {
   return `{
     organization(login: "${orgName}") {
       teams(query: "${teamName}", first: 1) {
         nodes {
           repositories(
-            ${isNextPage ? 'first' : 'last'}: 36,
+            ${pagination}
             orderBy: {field: NAME, direction: ASC},
-            ${isNextPage ? 'after' : 'before'}: "${pageInfoCursor}"
             ) {
             edges {
               permission
