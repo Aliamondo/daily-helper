@@ -137,7 +137,7 @@ function ReviewersColumn({
         .filter(({ state }) => state !== 'DISMISSED') // Hide dismissed and stale reviews
         .map(review => (
           <UserBadge
-            key={review.reviewer.login}
+            key={`reviewer-${review.reviewer.login}`}
             user={review.reviewer}
             reviewState={review.state}
             type="REVIEWER"
@@ -145,7 +145,7 @@ function ReviewersColumn({
         )),
       requestedReviewers.map(requestedReviewer => (
         <UserBadge
-          key={requestedReviewer.login}
+          key={`requestedReviewer-${requestedReviewer.login}`}
           user={requestedReviewer}
           type="REQUESTED_REVIEWER"
         />
