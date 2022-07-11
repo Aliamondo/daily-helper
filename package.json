@@ -1,6 +1,7 @@
 {
   "name": "daily-helper",
   "version": "0.1.0",
+  "homepage": "https://aliamondo.github.io",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.9.0",
@@ -14,6 +15,7 @@
     "@types/node": "^16.7.13",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "gh-pages": "^4.0.0",
     "moment": "^2.29.3",
     "octokit": "^1.7.2",
     "react": "^18.1.0",
@@ -24,6 +26,8 @@
   "scripts": {
     "start": "BROWSER=none react-scripts start",
     "build": "react-scripts build",
+    "predeploy": "yarn build",
+    "deploy": "gh-pages -d build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "fixlint": "yarn prettier --write src/"
