@@ -173,11 +173,11 @@ export default function Settings({
         </Stack>
       </DialogTitle>
       <DialogContent>
-        <Typography component="div">
-          <FormGroup>
-            <Grid container>
-              <Grid container item xs={12} justifyContent="space-between">
-                <Grid item>
+        <FormGroup>
+          <Grid container>
+            <Grid container item xs={12} justifyContent="space-between">
+              <Grid item>
+                <Typography component="div">
                   <Stack
                     direction="row"
                     alignItems="center"
@@ -195,74 +195,74 @@ export default function Settings({
                       <CircularProgress size={20} sx={{ marginLeft: 1 }} />
                     )}
                   </Stack>
-                </Grid>
-                <Grid item>
-                  <Button
-                    size="small"
-                    onClick={handleSelectAllRepositoriesOnPage}
-                  >
-                    Select all
-                  </Button>
-                  <Button
-                    size="small"
-                    onClick={handleUnselectAllRepositories}
-                    disabled={!selectedRepositories.size}
-                  >
-                    Unselect all
-                  </Button>
-                </Grid>
+                </Typography>
               </Grid>
-              {teamRepositoriesPageable?.teamRepositories.map(
-                ({ name, nameWithOwner, permission }) => (
-                  <Grid item key={nameWithOwner} lg={4} sm={6} xs={12}>
-                    <FormControlLabel
-                      label={
-                        <>
-                          <Stack direction="row" alignItems="center">
-                            {name}
-                            <Chip
-                              color={getPermissionColor(permission)}
-                              label={permission}
-                              size="small"
-                              variant="outlined"
-                              sx={{ marginLeft: 1 }}
-                            />
-                          </Stack>
-                        </>
-                      }
-                      control={
-                        <Checkbox
-                          checked={selectedRepositories.has(nameWithOwner)}
-                          onClick={() => handleRepositoryClick(nameWithOwner)}
-                        />
-                      }
-                    />
-                  </Grid>
-                ),
-              )}
-              <Grid container item xs={12} justifyContent="space-around">
-                <Grid item>
-                  <Button
-                    onClick={handlePrevPage}
-                    disabled={!teamRepositoriesPageable?.hasPreviousPage}
-                    startIcon={<PreviousIcon />}
-                  >
-                    Prev
-                  </Button>
-                </Grid>
-                <Grid item>
-                  <Button
-                    onClick={handleNextPage}
-                    disabled={!teamRepositoriesPageable?.hasNextPage}
-                    endIcon={<NextIcon />}
-                  >
-                    Next
-                  </Button>
-                </Grid>
+              <Grid item>
+                <Button
+                  size="small"
+                  onClick={handleSelectAllRepositoriesOnPage}
+                >
+                  Select all
+                </Button>
+                <Button
+                  size="small"
+                  onClick={handleUnselectAllRepositories}
+                  disabled={!selectedRepositories.size}
+                >
+                  Unselect all
+                </Button>
               </Grid>
             </Grid>
-          </FormGroup>
-        </Typography>
+            {teamRepositoriesPageable?.teamRepositories.map(
+              ({ name, nameWithOwner, permission }) => (
+                <Grid item key={nameWithOwner} lg={4} sm={6} xs={12}>
+                  <FormControlLabel
+                    label={
+                      <>
+                        <Stack direction="row" alignItems="center">
+                          {name}
+                          <Chip
+                            color={getPermissionColor(permission)}
+                            label={permission}
+                            size="small"
+                            variant="outlined"
+                            sx={{ marginLeft: 1 }}
+                          />
+                        </Stack>
+                      </>
+                    }
+                    control={
+                      <Checkbox
+                        checked={selectedRepositories.has(nameWithOwner)}
+                        onClick={() => handleRepositoryClick(nameWithOwner)}
+                      />
+                    }
+                  />
+                </Grid>
+              ),
+            )}
+            <Grid container item xs={12} justifyContent="space-around">
+              <Grid item>
+                <Button
+                  onClick={handlePrevPage}
+                  disabled={!teamRepositoriesPageable?.hasPreviousPage}
+                  startIcon={<PreviousIcon />}
+                >
+                  Prev
+                </Button>
+              </Grid>
+              <Grid item>
+                <Button
+                  onClick={handleNextPage}
+                  disabled={!teamRepositoriesPageable?.hasNextPage}
+                  endIcon={<NextIcon />}
+                >
+                  Next
+                </Button>
+              </Grid>
+            </Grid>
+          </Grid>
+        </FormGroup>
       </DialogContent>
       <DialogActions>
         <Button
