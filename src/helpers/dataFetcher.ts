@@ -9,14 +9,29 @@ import {
 } from './graphqlQueries'
 
 import { Octokit } from 'octokit'
+import { RequestError } from '@octokit/request-error'
 import { SetStateAction } from 'react'
 import { enumerationToSentenceCase } from './strings'
 import moment from 'moment'
 import { settingsHandler } from './settingsHandler'
 
-const octokit = new Octokit({
-  auth: process.env.REACT_APP_GITHUB_TOKEN,
+let octokit = new Octokit({
+  auth: settingsHandler.loadGithubToken() || '',
 })
+
+const dataFetcher = {
+  fetchPullRequests,
+  refreshLastCommitChecks,
+  fetchTeamRepositories,
+  setToken(newToken: string) {
+    octokit = new Octokit({
+      auth: newToken,
+    })
+  },
+}
+
+Object.freeze(dataFetcher)
+export { dataFetcher }
 
 function handlePageNavigation(
   pageSize: number,
@@ -307,14 +322,21 @@ function getLastCommitChecks(
   }
 }
 
-async function fetchPullRequests(
-  orgName: string,
-  teamName: string,
+type FetchPullRequestsProps = {
+  orgName: string
+  teamName: string
   setProgress: {
     (value: SetStateAction<number>): void
     (arg0: number): void
-  },
-): Promise<PullRequest[]> {
+  }
+  handleInvalidTokenError: VoidFunction
+}
+async function fetchPullRequests({
+  orgName,
+  teamName,
+  setProgress,
+  handleInvalidTokenError,
+}: FetchPullRequestsProps): Promise<PullRequest[]> {
   const teamRepositories = settingsHandler.loadTeam(teamName)?.repositories
 
   const teamUsers: string[] = await octokit
@@ -324,6 +346,18 @@ async function fetchPullRequests(
         (user: GraphQL_User) => user.login,
       ),
     )
+    .catch((error: RequestError) => {
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        handleInvalidTokenError()
+        return []
+      } else throw error
+    })
+
+  if (!teamUsers.length) {
+    setProgress(100)
+    return []
+  }
+
   setProgress(10)
 
   let progress = 10
@@ -409,6 +443,7 @@ async function fetchTeamRepositories(
   orgName: string,
   teamName: string,
   page: PageNavigation,
+  pageSize: number = 36,
   startCursor?: string,
   endCursor?: string,
 ): Promise<TeamRepositoryPageable> {
@@ -421,7 +456,12 @@ async function fetchTeamRepositories(
       getTeamRepositoriesQuery({
         orgName,
         teamName,
-        pagination: handlePageNavigation(36, page, startCursor, endCursor),
+        pagination: handlePageNavigation(
+          pageSize,
+          page,
+          startCursor,
+          endCursor,
+        ),
       }),
     )
     .then(res => res.organization.teams.nodes[0].repositories)
@@ -439,5 +479,3 @@ async function fetchTeamRepositories(
     endCursor: pageInfo.endCursor,
   }
 }
-
-export { fetchPullRequests, refreshLastCommitChecks, fetchTeamRepositories }

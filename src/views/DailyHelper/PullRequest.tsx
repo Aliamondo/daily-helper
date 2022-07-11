@@ -16,7 +16,7 @@ import PullRequestStatus from './PullRequestStatus'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
-import { refreshLastCommitChecks } from '../../helpers/dataFetcher'
+import { dataFetcher } from '../../helpers/dataFetcher'
 import useOnScreen from '../../helpers/useOnScreen'
 
 function getBackgroundColor({
@@ -84,7 +84,7 @@ export default function PullRequest({
   const handleCommitChecksReload = async () => {
     setIsLastCommitChecksLoading(true)
     setLastCommitChecks(
-      await refreshLastCommitChecks({
+      await dataFetcher.refreshLastCommitChecks({
         orgName,
         repoName: repositoryName,
         prNumber: number,

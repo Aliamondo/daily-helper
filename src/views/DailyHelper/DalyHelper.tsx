@@ -1,5 +1,7 @@
 import { RefObject, createRef, useEffect, useRef, useState } from 'react'
 
+import Alert from '@mui/material/Alert'
+import AlertTitle from '@mui/material/AlertTitle'
 import AppBar from '../../components/AppBar'
 import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
@@ -13,13 +15,15 @@ import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 import ListSubheader from '@mui/material/ListSubheader'
 import PullRequest from './PullRequest'
+import SettingsIcon from '@mui/icons-material/Settings'
 import Slide from '@mui/material/Slide'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import VisibleIcon from '@mui/icons-material/Visibility'
-import { fetchPullRequests } from '../../helpers/dataFetcher'
+import { dataFetcher } from '../../helpers/dataFetcher'
 import moment from 'moment'
+import { settingsHandler } from '../../helpers/settingsHandler'
 
 const orgName = process.env.REACT_APP_ORG_NAME || 'ePages-de'
 const teamNamesRaw = process.env.REACT_APP_TEAM_NAMES || 'team-black'
@@ -31,14 +35,18 @@ type LabelWithCount = Label & {
 }
 
 export default function DailyHelper() {
+  const [isInvalidToken, setIsInvalidToken] = useState(
+    settingsHandler.loadGithubToken() === '',
+  )
   const [teamName, setTeamName] = useState(teamNames[0])
   const [shouldLoad, setShouldLoad] = useState(true)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [pullRequests, setPullRequests] = useState<PullRequest[]>(
     generateDummyPullRequests(5),
   )
-  const [isLoadingAnimationPlaying, setIsLoadingAnimationPlaying] =
-    useState(true)
+  const [isLoadingAnimationPlaying, setIsLoadingAnimationPlaying] = useState(
+    true && !isInvalidToken,
+  )
   const [isDrawbarOpen, setIsDrawbarOpen] = useState(false)
   const [
     isPullRequestsWithoutLabelsHidden,
@@ -54,10 +62,24 @@ export default function DailyHelper() {
 
   const main = useRef(null)
 
+  const handleInvalidTokenError = () => {
+    setIsInvalidToken(true)
+  }
+
   useEffect(() => {
-    if (shouldLoad) {
-      fetchPullRequests(orgName, teamName, setLoadingProgress).then(
-        pullRequests => {
+    if (isInvalidToken) {
+      setIsInvalidToken(settingsHandler.loadGithubToken() === '')
+    }
+
+    if (!isInvalidToken && shouldLoad) {
+      dataFetcher
+        .fetchPullRequests({
+          orgName,
+          teamName,
+          setProgress: setLoadingProgress,
+          handleInvalidTokenError,
+        })
+        .then(pullRequests => {
           setPullRequests(pullRequests)
           setIsLoadingAnimationPlaying(false)
           setPullRequestRefs(
@@ -65,12 +87,12 @@ export default function DailyHelper() {
               .fill(null)
               .map((_, index) => pullRequestRefs[index] || createRef()),
           )
-        },
-      )
+        })
       setShouldLoad(false)
     }
-    setPullRequestRefs(pullRequestRefs)
-  }, [shouldLoad, teamName, pullRequestRefs])
+
+    !isInvalidToken && setPullRequestRefs(pullRequestRefs)
+  }, [shouldLoad, teamName, pullRequestRefs, isInvalidToken])
 
   const setPullRequestInViewport = (
     pullRequestId: string,
@@ -164,32 +186,43 @@ export default function DailyHelper() {
         isDrawbarOpen={isDrawbarOpen}
         setIsDrawbarOpen={setIsDrawbarOpen}
       />
-      <Stack spacing={0.5}>
-        {pullRequests.map((pr, index) => (
-          <Slide
-            key={pr.id}
-            direction="up"
-            in={getVisibility(pr.labels)}
-            timeout={400}
-            mountOnEnter
-            unmountOnExit
-            appear={false}
-            container={main.current}
-            enter={isPullRequestInViewport.has(pr.id)}
-            exit={false} // disable exit transitions as they lag when multiple are played at once
-          >
-            <Box ref={pullRequestRefs[index]}>
-              <PullRequest
-                customRef={pullRequestRefs[index]}
-                setIsInViewport={setPullRequestInViewport}
-                orgName={orgName}
-                isLoading={isLoadingAnimationPlaying}
-                {...pr}
-              />
-            </Box>
-          </Slide>
-        ))}
-      </Stack>
+      {isInvalidToken ? (
+        <Alert severity="error">
+          <AlertTitle>Authorization error</AlertTitle>
+          <Typography display="flex" variant="h6" alignItems="center">
+            Github token is not provided or is invalid. Please edit it in the
+            <SettingsIcon fontSize="medium" sx={{ marginLeft: 0.5 }} />
+            Settings
+          </Typography>
+        </Alert>
+      ) : (
+        <Stack spacing={0.5}>
+          {pullRequests.map((pr, index) => (
+            <Slide
+              key={pr.id}
+              direction="up"
+              in={getVisibility(pr.labels)}
+              timeout={400}
+              mountOnEnter
+              unmountOnExit
+              appear={false}
+              container={main.current}
+              enter={isPullRequestInViewport.has(pr.id)}
+              exit={false} // disable exit transitions as they lag when multiple are played at once
+            >
+              <Box ref={pullRequestRefs[index]}>
+                <PullRequest
+                  customRef={pullRequestRefs[index]}
+                  setIsInViewport={setPullRequestInViewport}
+                  orgName={orgName}
+                  isLoading={isLoadingAnimationPlaying}
+                  {...pr}
+                />
+              </Box>
+            </Slide>
+          ))}
+        </Stack>
+      )}
     </Box>
   )
 }

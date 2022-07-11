@@ -3,6 +3,7 @@ type Settings_Team = {
 }
 
 type Settings_All = {
+  githubToken: string
   teams: {
     [teamName: string]: Settings_Team
   }

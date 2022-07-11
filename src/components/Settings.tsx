@@ -1,5 +1,5 @@
+import { ChangeEventHandler, useEffect, useState } from 'react'
 import Chip, { ChipProps } from '@mui/material/Chip'
-import { useEffect, useState } from 'react'
 
 import Button from '@mui/material/Button'
 import Checkbox from '@mui/material/Checkbox'
@@ -13,15 +13,20 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import FormGroup from '@mui/material/FormGroup'
 import Grid from '@mui/material/Grid'
 import IconButton from '@mui/material/IconButton'
-import ListIcon from '@mui/icons-material/ViewList'
+import KeyIcon from '@mui/icons-material/Key'
+import Link from '@mui/material/Link'
+import ListIcon from '@mui/icons-material/Ballot'
 import NextIcon from '@mui/icons-material/ChevronRight'
 import PreviousIcon from '@mui/icons-material/ChevronLeft'
 import RestoreIcon from '@mui/icons-material/SettingsBackupRestore'
 import SaveIcon from '@mui/icons-material/Save'
 import Stack from '@mui/material/Stack'
+import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import { fetchTeamRepositories } from '../helpers/dataFetcher'
+import { dataFetcher } from '../helpers/dataFetcher'
 import { settingsHandler } from '../helpers/settingsHandler'
+
+const PAGE_SIZE = 24
 
 type PageCursor = {
   startCursor?: string
@@ -68,6 +73,9 @@ export default function Settings({
   handleReload,
   isLoading,
 }: SettingsProps) {
+  const [githubToken, setGithubToken] = useState(
+    settingsHandler.loadGithubToken() || '',
+  )
   const [isRepositoriesLoading, setIsRepositoriesLoading] = useState(false)
   const [teamRepositoriesPageable, setTeamRepositoriesPageable] =
     useState<TeamRepositoryPageable>()
@@ -81,13 +89,19 @@ export default function Settings({
     const getTeamRepositories = async () => {
       setIsRepositoriesLoading(true)
       setTeamRepositoriesPageable(
-        await fetchTeamRepositories(
-          orgName,
-          teamName,
-          pageCursor.page,
-          pageCursor.startCursor,
-          pageCursor.endCursor,
-        ),
+        await dataFetcher
+          .fetchTeamRepositories(
+            orgName,
+            teamName,
+            pageCursor.page,
+            PAGE_SIZE,
+            pageCursor.startCursor,
+            pageCursor.endCursor,
+          )
+          .catch(error => {
+            setIsRepositoriesLoading(false)
+            throw error
+          }),
       )
       setIsRepositoriesLoading(false)
     }
@@ -104,50 +118,28 @@ export default function Settings({
       }
     }
 
-    getTeamRepositories()
+    Boolean(settingsHandler.loadGithubToken()) && getTeamRepositories()
   }, [teamName, orgName, pageCursor, currentTeam])
 
-  const handleRepositoryClick = (nameWithOwner: string) => {
-    if (selectedRepositories.has(nameWithOwner)) {
-      selectedRepositories.delete(nameWithOwner)
-    } else {
-      selectedRepositories.add(nameWithOwner)
-    }
-    setSelectedRepositories(new Set(selectedRepositories))
-  }
-
-  const handleUnselectAllRepositories = () => {
-    setSelectedRepositories(new Set())
-  }
-
-  const handleSelectAllRepositoriesOnPage = () => {
-    teamRepositoriesPageable?.teamRepositories.forEach(teamRepository =>
-      selectedRepositories.add(teamRepository.nameWithOwner),
-    )
-    setSelectedRepositories(new Set(selectedRepositories))
-  }
-
-  const handlePageChange = (page: PageNavigation) => {
-    setPageCursor({
-      startCursor: teamRepositoriesPageable?.startCursor,
-      endCursor: teamRepositoriesPageable?.endCursor,
-      page,
-    })
-  }
-
-  const handleNextPage = () => {
-    handlePageChange('NEXT_PAGE')
-  }
-
-  const handlePrevPage = () => {
-    handlePageChange('PREVIOUS_PAGE')
+  const handleGithubTokenChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setGithubToken(event.target.value)
   }
 
   const handleSave = () => {
-    settingsHandler.partialSaveTeam(
-      currentTeam,
-      Array.from(selectedRepositories),
-    )
+    settingsHandler.partialSave({
+      githubToken,
+      teams: {
+        [currentTeam]: { repositories: Array.from(selectedRepositories) },
+      },
+    })
+    if (!teamRepositoriesPageable) {
+      setPageCursor({
+        page: 'NEXT_PAGE',
+        endCursor: '',
+      })
+    }
     handleReload(currentTeam)
   }
 
@@ -155,8 +147,6 @@ export default function Settings({
     const savedTeam = settingsHandler.loadTeam(currentTeam)
     setSelectedRepositories(new Set(savedTeam?.repositories))
   }
-
-  const selectedSize = selectedRepositories.size
 
   return (
     <Dialog open={isOpen} onClose={close} scroll="paper" maxWidth="lg">
@@ -175,92 +165,18 @@ export default function Settings({
       <DialogContent>
         <FormGroup>
           <Grid container>
-            <Grid container item xs={12} justifyContent="space-between">
-              <Grid item>
-                <Typography component="div">
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    sx={{ fontWeight: 800 }}
-                  >
-                    <ListIcon sx={{ marginRight: 1 }} />
-                    {`${teamName} repositories (${
-                      teamRepositoriesPageable?.total
-                    } total${
-                      selectedSize > 0 &&
-                      selectedSize < (teamRepositoriesPageable?.total || 0) &&
-                      `, ${selectedSize} selected`
-                    })`}
-                    {isRepositoriesLoading && (
-                      <CircularProgress size={20} sx={{ marginLeft: 1 }} />
-                    )}
-                  </Stack>
-                </Typography>
-              </Grid>
-              <Grid item>
-                <Button
-                  size="small"
-                  onClick={handleSelectAllRepositoriesOnPage}
-                >
-                  Select all
-                </Button>
-                <Button
-                  size="small"
-                  onClick={handleUnselectAllRepositories}
-                  disabled={!selectedRepositories.size}
-                >
-                  Unselect all
-                </Button>
-              </Grid>
-            </Grid>
-            {teamRepositoriesPageable?.teamRepositories.map(
-              ({ name, nameWithOwner, permission }) => (
-                <Grid item key={nameWithOwner} lg={4} sm={6} xs={12}>
-                  <FormControlLabel
-                    label={
-                      <>
-                        <Stack direction="row" alignItems="center">
-                          {name}
-                          <Chip
-                            color={getPermissionColor(permission)}
-                            label={permission}
-                            size="small"
-                            variant="outlined"
-                            sx={{ marginLeft: 1 }}
-                          />
-                        </Stack>
-                      </>
-                    }
-                    control={
-                      <Checkbox
-                        checked={selectedRepositories.has(nameWithOwner)}
-                        onClick={() => handleRepositoryClick(nameWithOwner)}
-                      />
-                    }
-                  />
-                </Grid>
-              ),
-            )}
-            <Grid container item xs={12} justifyContent="space-around">
-              <Grid item>
-                <Button
-                  onClick={handlePrevPage}
-                  disabled={!teamRepositoriesPageable?.hasPreviousPage}
-                  startIcon={<PreviousIcon />}
-                >
-                  Prev
-                </Button>
-              </Grid>
-              <Grid item>
-                <Button
-                  onClick={handleNextPage}
-                  disabled={!teamRepositoriesPageable?.hasNextPage}
-                  endIcon={<NextIcon />}
-                >
-                  Next
-                </Button>
-              </Grid>
-            </Grid>
+            <AuthorizationSetting
+              githubToken={githubToken}
+              handleGithubTokenChange={handleGithubTokenChange}
+            />
+            <TeamRepositoriesSetting
+              teamName={teamName}
+              isRepositoriesLoading={isRepositoriesLoading}
+              setPageCursor={setPageCursor}
+              selectedRepositories={selectedRepositories}
+              setSelectedRepositories={setSelectedRepositories}
+              teamRepositoriesPageable={teamRepositoriesPageable}
+            />
           </Grid>
         </FormGroup>
       </DialogContent>
@@ -285,5 +201,195 @@ export default function Settings({
         </Button>
       </DialogActions>
     </Dialog>
+  )
+}
+
+type AuthorizationSettingProps = {
+  githubToken: string
+  handleGithubTokenChange: ChangeEventHandler<HTMLInputElement>
+}
+function AuthorizationSetting({
+  githubToken,
+  handleGithubTokenChange,
+}: AuthorizationSettingProps) {
+  return (
+    <Grid
+      container
+      item
+      xs={12}
+      justifyContent="space-between"
+      rowGap={2}
+      sx={{ marginBottom: 2 }}
+    >
+      <Grid item xs={12}>
+        <Typography component="div">
+          <Stack direction="row" alignItems="center" sx={{ fontWeight: 800 }}>
+            <KeyIcon sx={{ marginRight: 1 }} />
+            Authorization (
+            <Link
+              href="https://github.com/settings/tokens"
+              target="_blank"
+              rel="noopener"
+            >
+              link
+            </Link>
+            )
+          </Stack>
+        </Typography>
+      </Grid>
+      <Grid item xs={12}>
+        <TextField
+          id="github-token"
+          label="Github token"
+          fullWidth
+          value={githubToken}
+          onChange={handleGithubTokenChange}
+        />
+      </Grid>
+    </Grid>
+  )
+}
+
+type TeamRepositoriesSettingProps = {
+  teamName: string
+  teamRepositoriesPageable?: TeamRepositoryPageable
+  selectedRepositories: Set<string>
+  setSelectedRepositories: (newValue: Set<string>) => void
+  setPageCursor: (newValue: PageCursor) => void
+  isRepositoriesLoading: boolean
+}
+function TeamRepositoriesSetting({
+  teamName,
+  teamRepositoriesPageable,
+  selectedRepositories,
+  setSelectedRepositories,
+  isRepositoriesLoading,
+  setPageCursor,
+}: TeamRepositoriesSettingProps) {
+  const handleUnselectAllRepositories = () => {
+    setSelectedRepositories(new Set())
+  }
+
+  const handleSelectAllRepositoriesOnPage = () => {
+    teamRepositoriesPageable?.teamRepositories.forEach(teamRepository =>
+      selectedRepositories.add(teamRepository.nameWithOwner),
+    )
+    setSelectedRepositories(new Set(selectedRepositories))
+  }
+
+  const handleRepositoryClick = (nameWithOwner: string) => {
+    if (selectedRepositories.has(nameWithOwner)) {
+      selectedRepositories.delete(nameWithOwner)
+    } else {
+      selectedRepositories.add(nameWithOwner)
+    }
+    setSelectedRepositories(new Set(selectedRepositories))
+  }
+
+  const handlePageChange = (page: PageNavigation) => {
+    setPageCursor({
+      startCursor: teamRepositoriesPageable?.startCursor,
+      endCursor: teamRepositoriesPageable?.endCursor,
+      page,
+    })
+  }
+
+  const handleNextPage = () => {
+    handlePageChange('NEXT_PAGE')
+  }
+
+  const handlePrevPage = () => {
+    handlePageChange('PREVIOUS_PAGE')
+  }
+
+  const selectedSize = selectedRepositories.size
+
+  return (
+    <>
+      <Grid container item xs={12} justifyContent="space-between">
+        <Grid item>
+          <Typography component="div">
+            <Stack direction="row" alignItems="center" sx={{ fontWeight: 800 }}>
+              <ListIcon sx={{ marginRight: 1 }} />
+              {`Repositories of ${teamName} (${
+                teamRepositoriesPageable?.total || 0
+              } total${`, ${
+                selectedSize > 0 &&
+                selectedSize < (teamRepositoriesPageable?.total || 0)
+                  ? selectedSize
+                  : 'none'
+              } selected`})`}
+              {isRepositoriesLoading && (
+                <CircularProgress size={20} sx={{ marginLeft: 1 }} />
+              )}
+            </Stack>
+          </Typography>
+        </Grid>
+        {teamRepositoriesPageable && (
+          <Grid item>
+            <Button size="small" onClick={handleSelectAllRepositoriesOnPage}>
+              Select all
+            </Button>
+            <Button
+              size="small"
+              onClick={handleUnselectAllRepositories}
+              disabled={!selectedRepositories.size}
+            >
+              Unselect all
+            </Button>
+          </Grid>
+        )}
+      </Grid>
+      {teamRepositoriesPageable?.teamRepositories.map(
+        ({ name, nameWithOwner, permission }) => (
+          <Grid item key={nameWithOwner} lg={4} sm={6} xs={12}>
+            <FormControlLabel
+              label={
+                <>
+                  <Stack direction="row" alignItems="center">
+                    {name}
+                    <Chip
+                      color={getPermissionColor(permission)}
+                      label={permission}
+                      size="small"
+                      variant="outlined"
+                      sx={{ marginLeft: 1 }}
+                    />
+                  </Stack>
+                </>
+              }
+              control={
+                <Checkbox
+                  checked={selectedRepositories.has(nameWithOwner)}
+                  onClick={() => handleRepositoryClick(nameWithOwner)}
+                />
+              }
+            />
+          </Grid>
+        ),
+      )}
+      {teamRepositoriesPageable && teamRepositoriesPageable.total > PAGE_SIZE && (
+        <Grid container item xs={12} justifyContent="space-around">
+          <Grid item>
+            <Button
+              onClick={handlePrevPage}
+              disabled={!teamRepositoriesPageable?.hasPreviousPage}
+              startIcon={<PreviousIcon />}
+            >
+              Prev
+            </Button>
+          </Grid>
+          <Grid item>
+            <Button
+              onClick={handleNextPage}
+              disabled={!teamRepositoriesPageable?.hasNextPage}
+              endIcon={<NextIcon />}
+            >
+              Next
+            </Button>
+          </Grid>
+        </Grid>
+      )}
+    </>
   )
 }
