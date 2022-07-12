@@ -124,14 +124,14 @@ export default function DailyHelper() {
     }),
   )
 
-  const handleReload = (newTeamName: string) => {
+  const handleReload = (newTeamName: string, isValidToken: boolean) => {
     if (newTeamName !== teamName) {
       setIsPullRequestsWithoutLabelsHidden(false)
       setHiddenLabels(new Set())
     }
     setTeamName(newTeamName)
     setLoadingProgress(0)
-    setIsLoadingAnimationPlaying(true)
+    isValidToken && setIsLoadingAnimationPlaying(true)
     setPullRequests(generateDummyPullRequests(isPullRequestInViewport.size))
     setPullRequestRefs([])
     setIsPullRequestInViewport(new Map())

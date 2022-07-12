@@ -22,11 +22,12 @@ import Tabs from '@mui/material/Tabs'
 import Toolbar from '@mui/material/Toolbar'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
+import { settingsHandler } from '../helpers/settingsHandler'
 
 type AppBarElementProps = {
   teamNames: string[]
   orgName: string
-  handleReload: (teamName: string) => void
+  handleReload: (teamName: string, isValidToken: boolean) => void
   loadingProgress: number
   isLoadingAnimationPlaying: boolean
   showDrawbar?: (marginTop?: number) => ReactElement | null
@@ -54,7 +55,10 @@ export default function AppBarElement({
     _e: SyntheticEvent | null,
     newTeamTabValue: number = teamTabValue,
   ) => {
-    handleReload(teamNames[newTeamTabValue])
+    handleReload(
+      teamNames[newTeamTabValue],
+      Boolean(settingsHandler.loadGithubToken()),
+    )
   }
 
   const handleTabChange = (_e: SyntheticEvent, newValue: number) => {

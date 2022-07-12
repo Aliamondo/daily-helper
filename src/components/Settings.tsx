@@ -62,7 +62,7 @@ type SettingsProps = {
   close: VoidFunction
   orgName: string
   teamName: string
-  handleReload: (teamName: string) => void
+  handleReload: (teamName: string, isValidToken: boolean) => void
   isLoading: boolean
 }
 export default function Settings({
@@ -134,13 +134,21 @@ export default function Settings({
         [currentTeam]: { repositories: Array.from(selectedRepositories) },
       },
     })
+
     if (!teamRepositoriesPageable) {
       setPageCursor({
-        page: 'NEXT_PAGE',
+        page: pageCursor.page === 'NEXT_PAGE' ? 'PREVIOUS_PAGE' : 'NEXT_PAGE',
         endCursor: '',
+        startCursor: '',
       })
     }
-    handleReload(currentTeam)
+
+    // reset the view on github token removal
+    if (!githubToken) {
+      setTeamRepositoriesPageable(undefined)
+    }
+
+    handleReload(currentTeam, Boolean(githubToken))
   }
 
   const handleReset = () => {
@@ -367,6 +375,10 @@ function TeamRepositoriesSetting({
             />
           </Grid>
         ),
+      ) || (
+        <Grid item marginTop={2}>
+          <Typography color="GrayText">No data available</Typography>
+        </Grid>
       )}
       {teamRepositoriesPageable && teamRepositoriesPageable.total > PAGE_SIZE && (
         <Grid container item xs={12} justifyContent="space-around">
