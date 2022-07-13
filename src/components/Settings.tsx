@@ -9,11 +9,13 @@ import Dialog from '@mui/material/Dialog'
 import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogTitle from '@mui/material/DialogTitle'
+import FirstPageIcon from '@mui/icons-material/FirstPage'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import FormGroup from '@mui/material/FormGroup'
 import Grid from '@mui/material/Grid'
 import IconButton from '@mui/material/IconButton'
 import KeyIcon from '@mui/icons-material/Key'
+import LastPageIcon from '@mui/icons-material/LastPage'
 import Link from '@mui/material/Link'
 import ListIcon from '@mui/icons-material/Ballot'
 import NextIcon from '@mui/icons-material/ChevronRight'
@@ -97,6 +99,7 @@ export default function Settings({
             PAGE_SIZE,
             pageCursor.startCursor,
             pageCursor.endCursor,
+            teamRepositoriesPageable?.total,
           )
           .catch(error => {
             setIsRepositoriesLoading(false)
@@ -310,6 +313,14 @@ function TeamRepositoriesSetting({
     handlePageChange('PREVIOUS_PAGE')
   }
 
+  const handleFirstPage = () => {
+    handlePageChange('FIRST_PAGE')
+  }
+
+  const handleLastPage = () => {
+    handlePageChange('LAST_PAGE')
+  }
+
   const selectedSize = selectedRepositories.size
 
   return (
@@ -382,23 +393,45 @@ function TeamRepositoriesSetting({
       )}
       {teamRepositoriesPageable && teamRepositoriesPageable.total > PAGE_SIZE && (
         <Grid container item xs={12} justifyContent="space-around">
-          <Grid item>
-            <Button
-              onClick={handlePrevPage}
-              disabled={!teamRepositoriesPageable?.hasPreviousPage}
-              startIcon={<PreviousIcon />}
-            >
-              Prev
-            </Button>
+          <Grid container item xs={6} columnGap={2} justifyContent="center">
+            <Grid item xs={3}>
+              <Button
+                onClick={handleFirstPage}
+                disabled={!teamRepositoriesPageable?.hasPreviousPage}
+                startIcon={<FirstPageIcon />}
+              >
+                First
+              </Button>
+            </Grid>
+            <Grid item xs={3}>
+              <Button
+                onClick={handlePrevPage}
+                disabled={!teamRepositoriesPageable?.hasPreviousPage}
+                startIcon={<PreviousIcon />}
+              >
+                Prev
+              </Button>
+            </Grid>
           </Grid>
-          <Grid item>
-            <Button
-              onClick={handleNextPage}
-              disabled={!teamRepositoriesPageable?.hasNextPage}
-              endIcon={<NextIcon />}
-            >
-              Next
-            </Button>
+          <Grid container item xs={6} columnGap={2} justifyContent="center">
+            <Grid item xs={3}>
+              <Button
+                onClick={handleNextPage}
+                disabled={!teamRepositoriesPageable?.hasNextPage}
+                endIcon={<NextIcon />}
+              >
+                Next
+              </Button>
+            </Grid>
+            <Grid item xs={3}>
+              <Button
+                onClick={handleLastPage}
+                disabled={!teamRepositoriesPageable?.hasNextPage}
+                endIcon={<LastPageIcon />}
+              >
+                Last
+              </Button>
+            </Grid>
           </Grid>
         </Grid>
       )}

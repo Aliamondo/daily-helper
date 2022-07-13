@@ -38,14 +38,20 @@ function handlePageNavigation(
   page: PageNavigation,
   startCursor?: string,
   endCursor?: string,
+  total?: number,
 ): string {
   switch (page) {
     case 'NEXT_PAGE':
       return getNextPageQuery({ pageSize, pageCursor: endCursor || '' })
     case 'PREVIOUS_PAGE':
       return getPreviousPageQuery({ pageSize, pageCursor: startCursor || '' })
+    case 'FIRST_PAGE':
+      return getNextPageQuery({ pageSize, pageCursor: '' })
+    case 'LAST_PAGE':
+      const actualPageSize = (total || 0) % pageSize || pageSize
+      return getPreviousPageQuery({ pageSize: actualPageSize, pageCursor: '' })
     default:
-      throw new Error('Unexpected pagination type requested')
+      throw new Error('Unexpected pagination type requested: ' + page)
   }
 }
 
@@ -446,6 +452,7 @@ async function fetchTeamRepositories(
   pageSize: number = 36,
   startCursor?: string,
   endCursor?: string,
+  total?: number,
 ): Promise<TeamRepositoryPageable> {
   const {
     edges: repositoriesRaw,
@@ -461,6 +468,7 @@ async function fetchTeamRepositories(
           page,
           startCursor,
           endCursor,
+          total,
         ),
       }),
     )
