@@ -17,6 +17,7 @@ import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { dataFetcher } from '../../helpers/dataFetcher'
+import { settingsHandler } from '../../helpers/settingsHandler'
 import useOnScreen from '../../helpers/useOnScreen'
 
 function getBackgroundColor({
@@ -40,14 +41,12 @@ function getBackgroundColor({
 type PullRequestProps = {
   customRef: RefObject<HTMLElement>
   setIsInViewport: (id: string, visible: boolean) => void
-  orgName: string
   isLoading: boolean
 } & PullRequest
 
 export default function PullRequest({
   customRef,
   setIsInViewport,
-  orgName,
   isLoading,
   id,
   title,
@@ -85,7 +84,7 @@ export default function PullRequest({
     setIsLastCommitChecksLoading(true)
     setLastCommitChecks(
       await dataFetcher.refreshLastCommitChecks({
-        orgName,
+        orgName: settingsHandler.loadOrgName() || '',
         repoName: repositoryName,
         prNumber: number,
       }),

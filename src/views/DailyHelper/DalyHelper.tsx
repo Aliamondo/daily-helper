@@ -25,7 +25,6 @@ import { dataFetcher } from '../../helpers/dataFetcher'
 import moment from 'moment'
 import { settingsHandler } from '../../helpers/settingsHandler'
 
-const orgName = process.env.REACT_APP_ORG_NAME || 'ePages-de'
 const teamNamesRaw = process.env.REACT_APP_TEAM_NAMES || 'team-black'
 const teamNames = teamNamesRaw.split(',')
 export const ICON_BUTTON_SIZE = 40
@@ -38,6 +37,7 @@ export default function DailyHelper() {
   const [isInvalidToken, setIsInvalidToken] = useState(
     settingsHandler.loadGithubToken() === '',
   )
+  const [orgName, setOrgName] = useState(settingsHandler.loadOrgName())
   const [teamName, setTeamName] = useState(teamNames[0])
   const [shouldLoad, setShouldLoad] = useState(true)
   const [loadingProgress, setLoadingProgress] = useState(0)
@@ -45,7 +45,7 @@ export default function DailyHelper() {
     generateDummyPullRequests(5),
   )
   const [isLoadingAnimationPlaying, setIsLoadingAnimationPlaying] = useState(
-    true && !isInvalidToken,
+    true && !isInvalidToken && Boolean(orgName),
   )
   const [isDrawbarOpen, setIsDrawbarOpen] = useState(false)
   const [
@@ -71,10 +71,10 @@ export default function DailyHelper() {
       setIsInvalidToken(settingsHandler.loadGithubToken() === '')
     }
 
-    if (!isInvalidToken && shouldLoad) {
+    if (!isInvalidToken && Boolean(orgName) && shouldLoad) {
       dataFetcher
         .fetchPullRequests({
-          orgName,
+          orgName: orgName || '',
           teamName,
           setProgress: setLoadingProgress,
           handleInvalidTokenError,
@@ -91,8 +91,8 @@ export default function DailyHelper() {
       setShouldLoad(false)
     }
 
-    !isInvalidToken && setPullRequestRefs(pullRequestRefs)
-  }, [shouldLoad, teamName, pullRequestRefs, isInvalidToken])
+    !isInvalidToken && Boolean(orgName) && setPullRequestRefs(pullRequestRefs)
+  }, [shouldLoad, teamName, pullRequestRefs, isInvalidToken, orgName])
 
   const setPullRequestInViewport = (
     pullRequestId: string,
@@ -129,6 +129,7 @@ export default function DailyHelper() {
       setIsPullRequestsWithoutLabelsHidden(false)
       setHiddenLabels(new Set())
     }
+    setOrgName(settingsHandler.loadOrgName())
     setTeamName(newTeamName)
     setLoadingProgress(0)
     isValidToken && setIsLoadingAnimationPlaying(true)
@@ -168,7 +169,6 @@ export default function DailyHelper() {
     <Box ref={main} sx={{ mx: 'auto' }} maxWidth={1150}>
       <AppBar
         teamNames={teamNames}
-        orgName={orgName}
         loadingProgress={loadingProgress}
         isLoadingAnimationPlaying={isLoadingAnimationPlaying}
         handleReload={handleReload}
@@ -186,7 +186,7 @@ export default function DailyHelper() {
         isDrawbarOpen={isDrawbarOpen}
         setIsDrawbarOpen={setIsDrawbarOpen}
       />
-      {isInvalidToken ? (
+      {isInvalidToken && (
         <Alert severity="error">
           <AlertTitle>Authorization error</AlertTitle>
           <Typography display="flex" variant="h6" alignItems="center">
@@ -195,7 +195,18 @@ export default function DailyHelper() {
             Settings
           </Typography>
         </Alert>
-      ) : (
+      )}
+      {!orgName && (
+        <Alert severity="error">
+          <AlertTitle>Error</AlertTitle>
+          <Typography display="flex" variant="h6" alignItems="center">
+            Organization name is not provided. Please edit it in the
+            <SettingsIcon fontSize="medium" sx={{ marginLeft: 0.5 }} />
+            Settings
+          </Typography>
+        </Alert>
+      )}
+      {!isInvalidToken && Boolean(orgName) && (
         <Stack spacing={0.5}>
           {pullRequests.map((pr, index) => (
             <Slide
@@ -214,7 +225,6 @@ export default function DailyHelper() {
                 <PullRequest
                   customRef={pullRequestRefs[index]}
                   setIsInViewport={setPullRequestInViewport}
-                  orgName={orgName}
                   isLoading={isLoadingAnimationPlaying}
                   {...pr}
                 />

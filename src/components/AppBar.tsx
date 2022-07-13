@@ -26,7 +26,6 @@ import { settingsHandler } from '../helpers/settingsHandler'
 
 type AppBarElementProps = {
   teamNames: string[]
-  orgName: string
   handleReload: (teamName: string, isValidToken: boolean) => void
   loadingProgress: number
   isLoadingAnimationPlaying: boolean
@@ -37,7 +36,6 @@ type AppBarElementProps = {
 }
 export default function AppBarElement({
   teamNames,
-  orgName,
   handleReload,
   loadingProgress,
   isLoadingAnimationPlaying,
@@ -57,7 +55,8 @@ export default function AppBarElement({
   ) => {
     handleReload(
       teamNames[newTeamTabValue],
-      Boolean(settingsHandler.loadGithubToken()),
+      Boolean(settingsHandler.loadGithubToken()) &&
+        Boolean(settingsHandler.loadOrgName()),
     )
   }
 
@@ -138,7 +137,6 @@ export default function AppBarElement({
             isOpen={isSettingsOpen}
             close={handleHideSettings}
             teamName={teamNames[teamTabValue]}
-            orgName={orgName}
             handleReload={handleReload}
             isLoading={isLoadingAnimationPlaying}
           />

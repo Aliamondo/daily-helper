@@ -1,6 +1,14 @@
-import { ChangeEventHandler, useEffect, useState } from 'react'
+import {
+  ChangeEvent,
+  ChangeEventHandler,
+  SyntheticEvent,
+  useEffect,
+  useState,
+} from 'react'
 import Chip, { ChipProps } from '@mui/material/Chip'
 
+import Autocomplete from '@mui/material/Autocomplete'
+import Avatar from '@mui/material/Avatar'
 import Button from '@mui/material/Button'
 import Checkbox from '@mui/material/Checkbox'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -19,6 +27,7 @@ import LastPageIcon from '@mui/icons-material/LastPage'
 import Link from '@mui/material/Link'
 import ListIcon from '@mui/icons-material/Ballot'
 import NextIcon from '@mui/icons-material/ChevronRight'
+import OrganizationIcon from '@mui/icons-material/CorporateFare'
 import PreviousIcon from '@mui/icons-material/ChevronLeft'
 import RestoreIcon from '@mui/icons-material/SettingsBackupRestore'
 import SaveIcon from '@mui/icons-material/Save'
@@ -34,6 +43,7 @@ type PageCursor = {
   startCursor?: string
   endCursor?: string
   page: PageNavigation
+  total?: number
 }
 
 const initialPageCursor: PageCursor = {
@@ -62,7 +72,6 @@ function getPermissionColor(
 type SettingsProps = {
   isOpen: boolean
   close: VoidFunction
-  orgName: string
   teamName: string
   handleReload: (teamName: string, isValidToken: boolean) => void
   isLoading: boolean
@@ -71,13 +80,13 @@ export default function Settings({
   isOpen,
   close,
   teamName,
-  orgName,
   handleReload,
   isLoading,
 }: SettingsProps) {
   const [githubToken, setGithubToken] = useState(
     settingsHandler.loadGithubToken() || '',
   )
+  const [orgName, setOrgName] = useState(settingsHandler.loadOrgName())
   const [isRepositoriesLoading, setIsRepositoriesLoading] = useState(false)
   const [teamRepositoriesPageable, setTeamRepositoriesPageable] =
     useState<TeamRepositoryPageable>()
@@ -93,13 +102,13 @@ export default function Settings({
       setTeamRepositoriesPageable(
         await dataFetcher
           .fetchTeamRepositories(
-            orgName,
+            settingsHandler.loadOrgName() || '',
             teamName,
             pageCursor.page,
             PAGE_SIZE,
             pageCursor.startCursor,
             pageCursor.endCursor,
-            teamRepositoriesPageable?.total,
+            pageCursor.total,
           )
           .catch(error => {
             setIsRepositoriesLoading(false)
@@ -121,24 +130,23 @@ export default function Settings({
       }
     }
 
-    Boolean(settingsHandler.loadGithubToken()) && getTeamRepositories()
-  }, [
-    teamName,
-    orgName,
-    pageCursor,
-    currentTeam,
-    teamRepositoriesPageable?.total,
-  ])
+    Boolean(settingsHandler.loadGithubToken()) &&
+      Boolean(settingsHandler.loadOrgName()) &&
+      getTeamRepositories()
+  }, [teamName, pageCursor, currentTeam])
 
-  const handleGithubTokenChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleGithubTokenChange = (event: ChangeEvent<HTMLInputElement>) => {
     setGithubToken(event.target.value)
+  }
+
+  const handleOrgNameChange = (_e: SyntheticEvent, newValue: unknown) => {
+    setOrgName((newValue as Organization)?.login || null)
   }
 
   const handleSave = () => {
     settingsHandler.partialSave({
       githubToken,
+      orgName: githubToken ? orgName : null,
       teams: {
         [currentTeam]: { repositories: Array.from(selectedRepositories) },
       },
@@ -146,24 +154,33 @@ export default function Settings({
 
     if (!teamRepositoriesPageable) {
       setPageCursor({
-        page: pageCursor.page === 'NEXT_PAGE' ? 'PREVIOUS_PAGE' : 'NEXT_PAGE',
+        page: pageCursor.page === 'NEXT_PAGE' ? 'FIRST_PAGE' : 'NEXT_PAGE',
         endCursor: '',
         startCursor: '',
       })
     }
 
     // reset the view on github token removal
-    if (!githubToken) {
+    if (!githubToken || !orgName) {
       setTeamRepositoriesPageable(undefined)
+      setOrgName(null)
     }
 
-    handleReload(currentTeam, Boolean(githubToken))
+    handleReload(currentTeam, Boolean(githubToken) && Boolean(orgName))
   }
 
   const handleReset = () => {
     const savedTeam = settingsHandler.loadTeam(currentTeam)
     setSelectedRepositories(new Set(savedTeam?.repositories))
+    setGithubToken(settingsHandler.loadGithubToken())
+    setOrgName(settingsHandler.loadOrgName())
   }
+
+  const isResetSettingsDisabled =
+    settingsHandler.loadTeam(currentTeam)?.repositories.length ===
+      selectedRepositories.size &&
+    settingsHandler.loadGithubToken() === githubToken &&
+    settingsHandler.loadOrgName() === orgName
 
   return (
     <Dialog open={isOpen} onClose={close} scroll="paper" maxWidth="lg">
@@ -186,6 +203,11 @@ export default function Settings({
               githubToken={githubToken}
               handleGithubTokenChange={handleGithubTokenChange}
             />
+            <OrganizationSetting
+              orgName={orgName}
+              handleOrgNameChange={handleOrgNameChange}
+              githubToken={githubToken}
+            />
             <TeamRepositoriesSetting
               teamName={teamName}
               isRepositoriesLoading={isRepositoriesLoading}
@@ -202,10 +224,7 @@ export default function Settings({
           size="large"
           onClick={handleReset}
           startIcon={<RestoreIcon />}
-          disabled={
-            settingsHandler.loadTeam(currentTeam)?.repositories.length ===
-            selectedRepositories.size
-          }
+          disabled={isResetSettingsDisabled}
         >
           Reset changes
         </Button>
@@ -259,10 +278,100 @@ function AuthorizationSetting({
           id="github-token"
           label="Github token"
           error={!githubToken}
+          autoComplete="off"
           helperText={'Must include scopes "repo" and "read:org"'}
           fullWidth
           value={githubToken}
           onChange={handleGithubTokenChange}
+        />
+      </Grid>
+    </Grid>
+  )
+}
+
+type OrganizationSettingProps = {
+  orgName: string | null
+  handleOrgNameChange: (_e: SyntheticEvent, newValue: unknown) => void
+  githubToken?: string
+}
+function OrganizationSetting({
+  orgName,
+  handleOrgNameChange,
+  githubToken,
+}: OrganizationSettingProps) {
+  const [options, setOptions] = useState<Organization[]>([])
+  const [isOrgOpen, setIsOrgOpen] = useState(false)
+  const [isOrgLoading, setIsOrgLoading] = useState(false)
+  const [inputValue, setInputValue] = useState(
+    options.find(org => org.login === orgName) ||
+      (orgName && { login: orgName, avatarUrl: '', name: orgName }) ||
+      null,
+  )
+
+  useEffect(() => {
+    const getOrganizations = async () => {
+      setIsOrgLoading(true)
+      setOptions(await dataFetcher.fetchOrganizations(githubToken))
+      setIsOrgLoading(false)
+    }
+
+    setInputValue(
+      options.find(org => org.login === orgName) ||
+        (orgName && { login: orgName, avatarUrl: '', name: orgName }) ||
+        null,
+    )
+
+    isOrgOpen && githubToken && options.length === 0 && getOrganizations()
+    !githubToken && options.length > 0 && setOptions([])
+  }, [orgName, options, isOrgOpen, githubToken])
+
+  return (
+    <Grid
+      container
+      item
+      xs={12}
+      justifyContent="space-between"
+      rowGap={2}
+      sx={{ marginBottom: 2 }}
+    >
+      <Grid item xs={12}>
+        <Typography component="div">
+          <Stack direction="row" alignItems="center" sx={{ fontWeight: 800 }}>
+            <OrganizationIcon sx={{ marginRight: 1 }} />
+            Organization
+          </Stack>
+        </Typography>
+      </Grid>
+      <Grid item xs={12}>
+        <Autocomplete
+          id="organization-name"
+          fullWidth
+          value={inputValue}
+          onChange={handleOrgNameChange}
+          options={options}
+          open={isOrgOpen}
+          onOpen={() => setIsOrgOpen(true)}
+          onClose={() => setIsOrgOpen(false)}
+          loading={isOrgLoading}
+          getOptionLabel={option => option.login}
+          isOptionEqualToValue={(option, value) => option.login === value.login}
+          renderOption={(props, option) => (
+            <li {...props}>
+              <Stack direction="row" alignItems="center" gap={1}>
+                <Avatar src={option.avatarUrl} />
+                <Typography>{option.name}</Typography>
+                <Typography color="GrayText">({option.login})</Typography>
+              </Stack>
+            </li>
+          )}
+          renderInput={params => (
+            <TextField
+              {...params}
+              id="orgName"
+              label="Select organization"
+              error={!orgName}
+            />
+          )}
         />
       </Grid>
     </Grid>
@@ -310,6 +419,7 @@ function TeamRepositoriesSetting({
       startCursor: teamRepositoriesPageable?.startCursor,
       endCursor: teamRepositoriesPageable?.endCursor,
       page,
+      total: teamRepositoriesPageable?.total,
     })
   }
 

@@ -14,6 +14,7 @@
 - [x] Show which branch the PR was created against (hide against `master`/`base`?)
 - [x] Select team owned repositories per team
 - [ ] Search team repositories in settings
+- [ ] Sanitize GraphQL queries before sending requests
 - [ ] Add no PRs message for no PRs found and all PRs filtered out
 - [ ] Add tests
 - [ ] Show missing required `CheckRun`s, if possible
@@ -27,7 +28,6 @@
 
 | Variable | Description | Default value |
 |:---:|:---:|:---:|
-| `REACT_APP_ORG_NAME` | The name of an organization on Github. Can be found at [https://github.com/{ORG_NAME}](https://github.com/ePages-de). | ePages-de |
 | `REACT_APP_TEAM_NAMES` | The name of teams to track on Github separated by commas. Can be found at [https://github.com/orgs/{ORG_NAME}/teams/{TEAM_NAME}](https://github.com/orgs/ePages-de/teams/team-black). | team-black |
 
 ## General info
@@ -42,6 +42,6 @@ Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
 ### `yarn build`
 
-Builds the app for production to the `build` folder.\
+Builds the app for production to the `build` folder.
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.

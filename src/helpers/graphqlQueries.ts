@@ -152,24 +152,38 @@ type GetAdjacentPageQuery = {
   pageSize: number
   pageCursor: string
 }
-export function getNextPageQuery({
+function getNextPageQuery({
   pageSize,
   pageCursor: endCursor,
 }: GetAdjacentPageQuery) {
   return `first:${pageSize} after:"${endCursor}"`
 }
-export function getPreviousPageQuery({
+function getPreviousPageQuery({
   pageSize,
   pageCursor: startCursor,
 }: GetAdjacentPageQuery) {
   return `last:${pageSize} before:"${startCursor}"`
 }
 
+function getOrganizationsQuery() {
+  return `{
+    viewer {
+      organizations(first: 100) {
+        nodes {
+          name
+          login
+          avatarUrl
+        }
+      }
+    }
+  }`
+}
+
 type GetTeamUsersProps = {
   orgName: string
   teamName: string
 }
-export function getTeamUsersQuery({ orgName, teamName }: GetTeamUsersProps) {
+function getTeamUsersQuery({ orgName, teamName }: GetTeamUsersProps) {
   return `{
     organization(login: "${orgName}"){
       teams(query: "${teamName}",first: 1){
@@ -188,7 +202,7 @@ export function getTeamUsersQuery({ orgName, teamName }: GetTeamUsersProps) {
 type GetTeamRepositoriesProps = GetTeamUsersProps & {
   pagination: string
 }
-export function getTeamRepositoriesQuery({
+function getTeamRepositoriesQuery({
   orgName,
   teamName,
   pagination,
@@ -226,7 +240,7 @@ type GetPullRequestsByUserProps = {
   orgName: string
   author: string
 }
-export function getPullRequestsByUserQuery({
+function getPullRequestsByUserQuery({
   orgName,
   author,
 }: GetPullRequestsByUserProps) {
@@ -246,7 +260,7 @@ export function getPullRequestsByUserQuery({
 type GetPullRequestsByRepositoriesQueryProps = {
   repositories: string[]
 }
-export function getPullRequestsByRepositoriesQuery({
+function getPullRequestsByRepositoriesQuery({
   repositories,
 }: GetPullRequestsByRepositoriesQueryProps) {
   return `{
@@ -269,7 +283,7 @@ type GetCommitChecksProps = {
   repoName: string
   prNumber: number
 }
-export function getCommitChecksQuery({
+function getCommitChecksQuery({
   orgName,
   repoName,
   prNumber,
@@ -284,3 +298,13 @@ export function getCommitChecksQuery({
     }
   }`
 }
+
+export {
+  getOrganizationsQuery,
+  getTeamUsersQuery,
+  getTeamRepositoriesQuery,
+  getPullRequestsByUserQuery,
+  getPullRequestsByRepositoriesQuery,
+  getCommitChecksQuery,
+}
+export { getNextPageQuery, getPreviousPageQuery }

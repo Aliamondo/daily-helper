@@ -82,3 +82,7 @@ type TeamRepository = {
 type TeamRepositoryPageable = {
   teamRepositories: TeamRepository[]
 } & Pageable
+
+type Organization = User & {
+  name: string
+}

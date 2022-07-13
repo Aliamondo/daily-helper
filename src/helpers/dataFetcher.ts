@@ -1,6 +1,7 @@
 import {
   getCommitChecksQuery,
   getNextPageQuery,
+  getOrganizationsQuery,
   getPreviousPageQuery,
   getPullRequestsByRepositoriesQuery,
   getPullRequestsByUserQuery,
@@ -20,6 +21,7 @@ let octokit = new Octokit({
 })
 
 const dataFetcher = {
+  fetchOrganizations,
   fetchPullRequests,
   refreshLastCommitChecks,
   fetchTeamRepositories,
@@ -486,4 +488,30 @@ async function fetchTeamRepositories(
     startCursor: pageInfo.startCursor,
     endCursor: pageInfo.endCursor,
   }
+}
+
+async function fetchOrganizations(
+  githubToken?: string,
+): Promise<Organization[]> {
+  let localOctokit: Octokit
+
+  if (githubToken && !settingsHandler.loadGithubToken()) {
+    localOctokit = new Octokit({ auth: githubToken })
+  } else {
+    localOctokit = octokit
+  }
+
+  const organizations = await localOctokit
+    .graphql<GraphQL_OrganizationsResponse>(getOrganizationsQuery(), {
+      headers: {
+        authorization: githubToken,
+      },
+    })
+    .then(res => res.viewer.organizations.nodes)
+
+  return organizations.map(org => ({
+    name: org.name,
+    login: org.login,
+    avatarUrl: org.avatarUrl,
+  }))
 }

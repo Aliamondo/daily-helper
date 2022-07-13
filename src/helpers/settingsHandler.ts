@@ -35,12 +35,16 @@ const settingsHandler = {
   },
 
   parse(rawSettings: string | null): Settings_All {
-    if (!rawSettings) return { githubToken: '', teams: {} }
+    if (!rawSettings) return { githubToken: '', orgName: null, teams: {} }
     return JSON.parse(rawSettings)
   },
 
   loadGithubToken(): string {
     return this.load().githubToken
+  },
+
+  loadOrgName(): string | null {
+    return this.load().orgName || null
   },
 
   loadTeam(teamName: string): Settings_Team | undefined {

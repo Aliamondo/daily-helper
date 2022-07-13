@@ -175,6 +175,18 @@ type GraphQL_CommitStatusContext = {
   targetUrl: string
 }
 
+type GraphQL_Organization = GraphQL_User & {
+  name: string
+}
+
+type GraphQL_OrganizationsResponse = {
+  viewer: {
+    organizations: {
+      nodes: GraphQL_Organization[]
+    }
+  }
+}
+
 type GraphQL_CommitChecksPerPullRequestResponse = {
   organization: {
     repository: {
