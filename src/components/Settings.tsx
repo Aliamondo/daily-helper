@@ -122,7 +122,7 @@ export default function Settings({
     }
 
     Boolean(settingsHandler.loadGithubToken()) && getTeamRepositories()
-  }, [teamName, orgName, pageCursor, currentTeam])
+  }, [teamName, orgName, pageCursor, currentTeam, teamRepositoriesPageable?.total])
 
   const handleGithubTokenChange = (
     event: React.ChangeEvent<HTMLInputElement>,
