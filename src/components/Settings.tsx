@@ -122,7 +122,13 @@ export default function Settings({
     }
 
     Boolean(settingsHandler.loadGithubToken()) && getTeamRepositories()
-  }, [teamName, orgName, pageCursor, currentTeam, teamRepositoriesPageable?.total])
+  }, [
+    teamName,
+    orgName,
+    pageCursor,
+    currentTeam,
+    teamRepositoriesPageable?.total,
+  ])
 
   const handleGithubTokenChange = (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -252,6 +258,8 @@ function AuthorizationSetting({
         <TextField
           id="github-token"
           label="Github token"
+          error={!githubToken}
+          helperText={'Must include scopes "repo" and "read:org"'}
           fullWidth
           value={githubToken}
           onChange={handleGithubTokenChange}
