@@ -1,3 +1,4 @@
+import { minify } from './strings'
 const UserNode = `login avatarUrl`
 
 const LastCommitChecksNode = `
@@ -166,7 +167,7 @@ function getPreviousPageQuery({
 }
 
 function getOrganizationsQuery() {
-  return `{
+  const query = `{
     viewer {
       organizations(first: 100) {
         nodes {
@@ -177,6 +178,8 @@ function getOrganizationsQuery() {
       }
     }
   }`
+
+  return minify(query)
 }
 
 type GetTeamUsersProps = {
@@ -184,7 +187,7 @@ type GetTeamUsersProps = {
   teamName: string
 }
 function getTeamUsersQuery({ orgName, teamName }: GetTeamUsersProps) {
-  return `{
+  const query = `{
     organization(login: "${orgName}"){
       teams(query: "${teamName}",first: 1){
         nodes{
@@ -197,6 +200,8 @@ function getTeamUsersQuery({ orgName, teamName }: GetTeamUsersProps) {
       }
     }
   }`
+
+  return minify(query)
 }
 
 type GetTeamRepositoriesProps = GetTeamUsersProps & {
@@ -207,7 +212,7 @@ function getTeamRepositoriesQuery({
   teamName,
   pagination,
 }: GetTeamRepositoriesProps) {
-  return `{
+  const query = `{
     organization(login: "${orgName}") {
       teams(query: "${teamName}", first: 1) {
         nodes {
@@ -234,6 +239,8 @@ function getTeamRepositoriesQuery({
       }
     }
   }`
+
+  return minify(query)
 }
 
 type GetPullRequestsByUserProps = {
@@ -244,7 +251,7 @@ function getPullRequestsByUserQuery({
   orgName,
   author,
 }: GetPullRequestsByUserProps) {
-  return `{
+  const query = `{
     search(
       query: "is:open org:${orgName} type:pr author:${author}"
       first: 100
@@ -255,6 +262,8 @@ function getPullRequestsByUserQuery({
         }
       }
     }`
+
+  return minify(query)
 }
 
 type GetPullRequestsByRepositoriesQueryProps = {
@@ -263,7 +272,7 @@ type GetPullRequestsByRepositoriesQueryProps = {
 function getPullRequestsByRepositoriesQuery({
   repositories,
 }: GetPullRequestsByRepositoriesQueryProps) {
-  return `{
+  const query = `{
     search(
       query: "is:open type:pr ${repositories
         .map(name => `repo:${name}`)
@@ -276,6 +285,8 @@ function getPullRequestsByRepositoriesQuery({
         }
       }
     }`
+
+  return minify(query)
 }
 
 type GetCommitChecksProps = {
@@ -288,7 +299,7 @@ function getCommitChecksQuery({
   repoName,
   prNumber,
 }: GetCommitChecksProps) {
-  return `{
+  const query = `{
     organization(login: "${orgName}"){
       repository(name: "${repoName}") {
         pullRequest(number: ${prNumber}) {
@@ -297,6 +308,8 @@ function getCommitChecksQuery({
       }
     }
   }`
+
+  return minify(query)
 }
 
 export {

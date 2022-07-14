@@ -22,6 +22,7 @@ import Tabs from '@mui/material/Tabs'
 import Toolbar from '@mui/material/Toolbar'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
+import packageData from '../../package.json'
 import { settingsHandler } from '../helpers/settingsHandler'
 
 type AppBarElementProps = {
@@ -91,9 +92,10 @@ export default function AppBarElement({
             code === 'Escape' && handleHideDrawbar()
           }}
         >
-          <Typography variant="h6" whiteSpace="nowrap" paddingRight={2}>
+          <Typography variant="h6" whiteSpace="nowrap" paddingRight={1}>
             Daily Helper
           </Typography>
+          <Typography variant="caption">v{packageData.version}</Typography>
           <Tabs
             variant="scrollable"
             value={teamTabValue}

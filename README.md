@@ -13,8 +13,8 @@
 - [x] Research how to get missing `PENDING` `CheckRun`s. Might be related to required repository checks.
 - [x] Show which branch the PR was created against (hide against `master`/`base`?)
 - [x] Select team owned repositories per team
+- [x] Minify GraphQL queries before sending requests
 - [ ] Search team repositories in settings
-- [ ] Sanitize GraphQL queries before sending requests
 - [ ] Add no PRs message for no PRs found and all PRs filtered out
 - [ ] Add tests
 - [ ] Show missing required `CheckRun`s, if possible

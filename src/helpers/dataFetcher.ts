@@ -14,10 +14,14 @@ import { RequestError } from '@octokit/request-error'
 import { SetStateAction } from 'react'
 import { enumerationToSentenceCase } from './strings'
 import moment from 'moment'
+import packageData from '../../package.json'
 import { settingsHandler } from './settingsHandler'
+
+const userAgent = `daily-helper/v${packageData.version}`
 
 let octokit = new Octokit({
   auth: settingsHandler.loadGithubToken() || '',
+  userAgent,
 })
 
 const dataFetcher = {
@@ -28,6 +32,7 @@ const dataFetcher = {
   setToken(newToken: string) {
     octokit = new Octokit({
       auth: newToken,
+      userAgent,
     })
   },
 }
