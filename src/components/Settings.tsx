@@ -128,11 +128,12 @@ export default function Settings({
       } else {
         setSelectedRepositories(new Set())
       }
+    } else {
+      // we only want to fetch team repositories when team switch fully happens
+      Boolean(settingsHandler.loadGithubToken()) &&
+        Boolean(settingsHandler.loadOrgName()) &&
+        getTeamRepositories()
     }
-
-    Boolean(settingsHandler.loadGithubToken()) &&
-      Boolean(settingsHandler.loadOrgName()) &&
-      getTeamRepositories()
   }, [teamName, pageCursor, currentTeam])
 
   const handleGithubTokenChange = (event: ChangeEvent<HTMLInputElement>) => {

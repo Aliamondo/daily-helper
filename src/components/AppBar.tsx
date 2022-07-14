@@ -95,7 +95,9 @@ export default function AppBarElement({
           <Typography variant="h6" whiteSpace="nowrap" paddingRight={1}>
             Daily Helper
           </Typography>
-          <Typography variant="caption">v{packageData.version}</Typography>
+          <Typography variant="caption" paddingRight={1}>
+            v{packageData.version}
+          </Typography>
           <Tabs
             variant="scrollable"
             value={teamTabValue}
