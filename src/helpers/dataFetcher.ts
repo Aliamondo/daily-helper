@@ -493,19 +493,14 @@ async function fetchTeamRepositories(
 async function fetchOrganizations(
   githubToken?: string,
 ): Promise<Organization[]> {
-  let localOctokit: Octokit
-
-  if (githubToken && !settingsHandler.loadGithubToken()) {
-    localOctokit = new Octokit({ auth: githubToken })
-  } else {
-    localOctokit = octokit
-  }
-
-  const organizations = await localOctokit
+  const organizations = await octokit
     .graphql<GraphQL_OrganizationsResponse>(getOrganizationsQuery(), {
-      headers: {
-        authorization: githubToken,
-      },
+      headers:
+        githubToken && !settingsHandler.loadGithubToken()
+          ? {
+              authorization: `token ${githubToken}`,
+            }
+          : undefined,
     })
     .then(res => res.viewer.organizations.nodes)
 
