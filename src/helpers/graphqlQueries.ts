@@ -182,6 +182,30 @@ function getOrganizationsQuery() {
   return minify(query)
 }
 
+type GetTeamsQueryProps = {
+  orgName: string
+}
+function getTeamsQuery({ orgName }: GetTeamsQueryProps) {
+  const query = `{
+    viewer {
+      organization(login: "${orgName}"){
+        teams(
+          first: 100,
+          orderBy: {field: NAME, direction: ASC},
+        ){
+          nodes{
+            name
+            description
+            avatarUrl
+          }
+        }
+      }
+    }
+  }`
+
+  return minify(query)
+}
+
 type GetTeamUsersProps = {
   orgName: string
   teamName: string
@@ -314,6 +338,7 @@ function getCommitChecksQuery({
 
 export {
   getOrganizationsQuery,
+  getTeamsQuery,
   getTeamUsersQuery,
   getTeamRepositoriesQuery,
   getPullRequestsByUserQuery,

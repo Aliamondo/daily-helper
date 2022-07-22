@@ -5,6 +5,7 @@ type Settings_Team = {
 type Settings_All = {
   githubToken: string
   orgName: string | null
+  teamNames: string[]
   teams: {
     [teamName: string]: Settings_Team
   }

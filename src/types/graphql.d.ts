@@ -187,6 +187,16 @@ type GraphQL_OrganizationsResponse = {
   }
 }
 
+type GraphQL_TeamsResponse = {
+  viewer: {
+    organization: {
+      teams: {
+        nodes: (GraphQL_Team & { description: string | null })[]
+      }
+    }
+  }
+}
+
 type GraphQL_CommitChecksPerPullRequestResponse = {
   organization: {
     repository: {

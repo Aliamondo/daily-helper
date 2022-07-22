@@ -26,7 +26,6 @@ import packageData from '../../package.json'
 import { settingsHandler } from '../helpers/settingsHandler'
 
 type AppBarElementProps = {
-  teamNames: string[]
   handleReload: (teamName: string, isValidToken: boolean) => void
   loadingProgress: number
   isLoadingAnimationPlaying: boolean
@@ -36,8 +35,7 @@ type AppBarElementProps = {
   setIsDrawbarOpen: (newState: boolean) => void
 }
 export default function AppBarElement({
-  teamNames,
-  handleReload,
+  handleReload: initialHandleReload,
   loadingProgress,
   isLoadingAnimationPlaying,
   showDrawbar,
@@ -46,15 +44,21 @@ export default function AppBarElement({
   setIsDrawbarOpen,
 }: AppBarElementProps) {
   const [teamTabValue, setTeamTabValue] = useState(0)
+  const [teamNames, setTeamNames] = useState(settingsHandler.loadTeamNames())
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const DrawbarButtonRef = useRef(null)
   const toolbarRef = useRef<HTMLHeadingElement>(null)
+
+  const handleReload = (teamName: string, isValidToken: boolean) => {
+    setTeamNames(settingsHandler.loadTeamNames())
+    initialHandleReload(teamName, isValidToken)
+  }
 
   const handlePullRequestsReload = (
     _e: SyntheticEvent | null,
     newTeamTabValue: number = teamTabValue,
   ) => {
-    handleReload(
+    initialHandleReload(
       teamNames[newTeamTabValue],
       Boolean(settingsHandler.loadGithubToken()) &&
         Boolean(settingsHandler.loadOrgName()),
@@ -140,7 +144,7 @@ export default function AppBarElement({
           <Settings
             isOpen={isSettingsOpen}
             close={handleHideSettings}
-            teamName={teamNames[teamTabValue]}
+            selectedTeamName={teamNames[teamTabValue]}
             handleReload={handleReload}
             isLoading={isLoadingAnimationPlaying}
           />

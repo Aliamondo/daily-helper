@@ -25,8 +25,7 @@ import { dataFetcher } from '../../helpers/dataFetcher'
 import moment from 'moment'
 import { settingsHandler } from '../../helpers/settingsHandler'
 
-const teamNamesRaw = process.env.REACT_APP_TEAM_NAMES || 'team-black'
-const teamNames = teamNamesRaw.split(',')
+const teamNames = settingsHandler.loadTeamNames()
 export const ICON_BUTTON_SIZE = 40
 
 type LabelWithCount = Label & {
@@ -45,7 +44,7 @@ export default function DailyHelper() {
     generateDummyPullRequests(5),
   )
   const [isLoadingAnimationPlaying, setIsLoadingAnimationPlaying] = useState(
-    true && !isInvalidToken && Boolean(orgName),
+    true && !isInvalidToken && Boolean(orgName) && teamNames.length > 0,
   )
   const [isDrawbarOpen, setIsDrawbarOpen] = useState(false)
   const [
@@ -71,11 +70,14 @@ export default function DailyHelper() {
       setIsInvalidToken(settingsHandler.loadGithubToken() === '')
     }
 
-    if (!isInvalidToken && Boolean(orgName) && shouldLoad) {
+    const isMandatoryDataPresent =
+      !isInvalidToken && Boolean(orgName) && Boolean(teamName)
+
+    if (isMandatoryDataPresent && shouldLoad) {
       dataFetcher
         .fetchPullRequests({
           orgName: orgName || '',
-          teamName,
+          teamName: teamName,
           setProgress: setLoadingProgress,
           handleInvalidTokenError,
         })
@@ -91,7 +93,7 @@ export default function DailyHelper() {
       setShouldLoad(false)
     }
 
-    !isInvalidToken && Boolean(orgName) && setPullRequestRefs(pullRequestRefs)
+    isMandatoryDataPresent && setPullRequestRefs(pullRequestRefs)
   }, [shouldLoad, teamName, pullRequestRefs, isInvalidToken, orgName])
 
   const setPullRequestInViewport = (
@@ -168,7 +170,6 @@ export default function DailyHelper() {
   return (
     <Box ref={main} sx={{ mx: 'auto' }} maxWidth={1150}>
       <AppBar
-        teamNames={teamNames}
         loadingProgress={loadingProgress}
         isLoadingAnimationPlaying={isLoadingAnimationPlaying}
         handleReload={handleReload}
@@ -206,7 +207,17 @@ export default function DailyHelper() {
           </Typography>
         </Alert>
       )}
-      {!isInvalidToken && Boolean(orgName) && (
+      {!teamName && (
+        <Alert severity="error">
+          <AlertTitle>Error</AlertTitle>
+          <Typography display="flex" variant="h6" alignItems="center">
+            No teams are selected. Please select them in the
+            <SettingsIcon fontSize="medium" sx={{ marginLeft: 0.5 }} />
+            Settings
+          </Typography>
+        </Alert>
+      )}
+      {!isInvalidToken && Boolean(orgName) && Boolean(teamName) && (
         <Stack spacing={0.5}>
           {pullRequests.map((pr, index) => (
             <Slide

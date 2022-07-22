@@ -7,6 +7,7 @@ import {
   getPullRequestsByUserQuery,
   getTeamRepositoriesQuery,
   getTeamUsersQuery,
+  getTeamsQuery,
 } from './graphqlQueries'
 
 import { Octokit } from 'octokit'
@@ -26,6 +27,7 @@ let octokit = new Octokit({
 
 const dataFetcher = {
   fetchOrganizations,
+  fetchTeams,
   fetchPullRequests,
   refreshLastCommitChecks,
   fetchTeamRepositories,
@@ -352,6 +354,8 @@ async function fetchPullRequests({
 }: FetchPullRequestsProps): Promise<PullRequest[]> {
   const teamRepositories = settingsHandler.loadTeam(teamName)?.repositories
 
+  if (!orgName || !teamName) return []
+
   const teamUsers: string[] = await octokit
     .graphql<GraphQL_UserResponse>(getTeamUsersQuery({ orgName, teamName }))
     .then(res =>
@@ -388,7 +392,7 @@ async function fetchPullRequests({
       }),
   )
 
-  teamRepositories &&
+  teamRepositories?.length &&
     pullRequestPromises.push(
       octokit
         .graphql<GraphQL_PullRequestsResponse>(
@@ -513,5 +517,27 @@ async function fetchOrganizations(
     name: org.name,
     login: org.login,
     avatarUrl: org.avatarUrl,
+  }))
+}
+
+async function fetchTeams(
+  orgName: string,
+  githubToken?: string,
+): Promise<Team[]> {
+  const teams = await octokit
+    .graphql<GraphQL_TeamsResponse>(getTeamsQuery({ orgName }), {
+      headers:
+        githubToken && !settingsHandler.loadGithubToken()
+          ? {
+              authorization: `token ${githubToken}`,
+            }
+          : undefined,
+    })
+    .then(res => res.viewer.organization.teams.nodes)
+
+  return teams.map(team => ({
+    name: team.name,
+    description: team.description,
+    avatarUrl: team.avatarUrl,
   }))
 }

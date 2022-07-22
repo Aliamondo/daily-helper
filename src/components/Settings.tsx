@@ -35,6 +35,7 @@ import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import { dataFetcher } from '../helpers/dataFetcher'
+import { equals } from '../helpers/core'
 import { settingsHandler } from '../helpers/settingsHandler'
 
 const PAGE_SIZE = 24
@@ -72,14 +73,14 @@ function getPermissionColor(
 type SettingsProps = {
   isOpen: boolean
   close: VoidFunction
-  teamName: string
+  selectedTeamName: string
   handleReload: (teamName: string, isValidToken: boolean) => void
   isLoading: boolean
 }
 export default function Settings({
   isOpen,
   close,
-  teamName,
+  selectedTeamName,
   handleReload,
   isLoading,
 }: SettingsProps) {
@@ -87,6 +88,7 @@ export default function Settings({
     settingsHandler.loadGithubToken() || '',
   )
   const [orgName, setOrgName] = useState(settingsHandler.loadOrgName())
+  const [teamNames, setTeamNames] = useState(settingsHandler.loadTeamNames())
   const [isRepositoriesLoading, setIsRepositoriesLoading] = useState(false)
   const [teamRepositoriesPageable, setTeamRepositoriesPageable] =
     useState<TeamRepositoryPageable>()
@@ -103,7 +105,7 @@ export default function Settings({
         await dataFetcher
           .fetchTeamRepositories(
             settingsHandler.loadOrgName() || '',
-            teamName,
+            selectedTeamName,
             pageCursor.page,
             PAGE_SIZE,
             pageCursor.startCursor,
@@ -118,11 +120,11 @@ export default function Settings({
       setIsRepositoriesLoading(false)
     }
 
-    if (currentTeam !== teamName) {
-      setCurrentTeam(teamName)
+    if (currentTeam !== selectedTeamName) {
+      setCurrentTeam(selectedTeamName)
       setPageCursor(initialPageCursor)
 
-      const savedTeam = settingsHandler.loadTeam(teamName)
+      const savedTeam = settingsHandler.loadTeam(selectedTeamName)
       if (savedTeam) {
         setSelectedRepositories(new Set(savedTeam.repositories))
       } else {
@@ -132,9 +134,10 @@ export default function Settings({
       // we only want to fetch team repositories when team switch fully happens
       Boolean(settingsHandler.loadGithubToken()) &&
         Boolean(settingsHandler.loadOrgName()) &&
+        settingsHandler.loadTeamNames().length > 0 &&
         getTeamRepositories()
     }
-  }, [teamName, pageCursor, currentTeam])
+  }, [selectedTeamName, pageCursor, currentTeam])
 
   const handleGithubTokenChange = (event: ChangeEvent<HTMLInputElement>) => {
     setGithubToken(event.target.value)
@@ -144,10 +147,15 @@ export default function Settings({
     setOrgName((newValue as Organization)?.login || null)
   }
 
+  const handleTeamNamesChange = (_e: SyntheticEvent, newValues: unknown[]) => {
+    setTeamNames((newValues as Team[]).map(team => team.name))
+  }
+
   const handleSave = () => {
     settingsHandler.partialSave({
       githubToken,
       orgName: githubToken ? orgName : null,
+      teamNames: githubToken && orgName ? teamNames : [],
       teams: {
         [currentTeam]: { repositories: Array.from(selectedRepositories) },
       },
@@ -165,9 +173,17 @@ export default function Settings({
     if (!githubToken || !orgName) {
       setTeamRepositoriesPageable(undefined)
       setOrgName(null)
+      setTeamNames([])
     }
 
-    handleReload(currentTeam, Boolean(githubToken) && Boolean(orgName))
+    if (teamNames.length === 0) {
+      setTeamRepositoriesPageable(undefined)
+    }
+
+    handleReload(
+      teamNames.includes(currentTeam) ? currentTeam : teamNames[0],
+      Boolean(githubToken) && Boolean(orgName) && teamNames.length > 0,
+    )
   }
 
   const handleReset = () => {
@@ -175,13 +191,18 @@ export default function Settings({
     setSelectedRepositories(new Set(savedTeam?.repositories))
     setGithubToken(settingsHandler.loadGithubToken())
     setOrgName(settingsHandler.loadOrgName())
+    setTeamNames(settingsHandler.loadTeamNames())
   }
 
   const isResetSettingsDisabled =
-    settingsHandler.loadTeam(currentTeam)?.repositories.length ===
-      selectedRepositories.size &&
+    equals(
+      settingsHandler.loadTeam(currentTeam)?.repositories.length,
+      selectedRepositories.size,
+    ) &&
     settingsHandler.loadGithubToken() === githubToken &&
-    settingsHandler.loadOrgName() === orgName
+    settingsHandler.loadOrgName() === orgName &&
+    JSON.stringify(settingsHandler.loadTeamNames()) ===
+      JSON.stringify(teamNames)
 
   return (
     <Dialog open={isOpen} onClose={close} scroll="paper" maxWidth="lg">
@@ -206,11 +227,13 @@ export default function Settings({
             />
             <OrganizationSetting
               orgName={orgName}
+              teamNames={teamNames}
               handleOrgNameChange={handleOrgNameChange}
+              handleTeamNamesChange={handleTeamNamesChange}
               githubToken={githubToken}
             />
             <TeamRepositoriesSetting
-              teamName={teamName}
+              teamName={selectedTeamName}
               isRepositoriesLoading={isRepositoriesLoading}
               setPageCursor={setPageCursor}
               selectedRepositories={selectedRepositories}
@@ -292,39 +315,102 @@ function AuthorizationSetting({
 
 type OrganizationSettingProps = {
   orgName: string | null
+  teamNames: string[]
   handleOrgNameChange: (_e: SyntheticEvent, newValue: unknown) => void
+  handleTeamNamesChange: (_e: SyntheticEvent, newValues: unknown[]) => void
   githubToken?: string
 }
 function OrganizationSetting({
   orgName,
+  teamNames,
   handleOrgNameChange,
+  handleTeamNamesChange,
   githubToken,
 }: OrganizationSettingProps) {
-  const [options, setOptions] = useState<Organization[]>([])
+  const [orgOptions, setOrgOptions] = useState<Organization[]>([])
   const [isOrgOpen, setIsOrgOpen] = useState(false)
   const [isOrgLoading, setIsOrgLoading] = useState(false)
-  const [inputValue, setInputValue] = useState(
-    options.find(org => org.login === orgName) ||
+  const [orgInputValue, setOrgInputValue] = useState(
+    orgOptions.find(org => org.login === orgName) ||
       (orgName && { login: orgName, avatarUrl: '', name: orgName }) ||
       null,
   )
 
+  const [teamOptions, setTeamOptions] = useState<Team[]>([])
+  const [isTeamOpen, setIsTeamOpen] = useState(false)
+  const [isTeamLoading, setIsTeamLoading] = useState(false)
+
+  const teamsIntersection = teamOptions.filter(option =>
+    teamNames.find(teamName => teamName === option.name),
+  )
+  const initialTeamsInputValue: Team[] = teamNames.map(
+    teamName =>
+      teamsIntersection.find(option => option.name === teamName) || {
+        name: teamName,
+        avatarUrl: '',
+        description: null,
+      },
+  )
+
+  const [teamsInputValue, setTeamsInputValue] = useState(initialTeamsInputValue)
+
   useEffect(() => {
     const getOrganizations = async () => {
       setIsOrgLoading(true)
-      setOptions(await dataFetcher.fetchOrganizations(githubToken))
+      setOrgOptions(await dataFetcher.fetchOrganizations(githubToken))
       setIsOrgLoading(false)
     }
 
-    setInputValue(
-      options.find(org => org.login === orgName) ||
+    const getTeams = async () => {
+      if (orgName) {
+        setIsTeamLoading(true)
+        setTeamOptions(await dataFetcher.fetchTeams(orgName, githubToken))
+        setIsTeamLoading(false)
+      }
+    }
+
+    setOrgInputValue(
+      orgOptions.find(org => org.login === orgName) ||
         (orgName && { login: orgName, avatarUrl: '', name: orgName }) ||
         null,
     )
 
-    isOrgOpen && githubToken && options.length === 0 && getOrganizations()
-    !githubToken && options.length > 0 && setOptions([])
-  }, [orgName, options, isOrgOpen, githubToken])
+    const tempTeamsIntersection = teamOptions.filter(option =>
+      teamNames.find(teamName => teamName === option.name),
+    )
+    const tempTeamsInputValue: Team[] = teamNames.map(
+      teamName =>
+        tempTeamsIntersection.find(option => option.name === teamName) || {
+          name: teamName,
+          avatarUrl: '',
+          description: null,
+        },
+    )
+    setTeamsInputValue(tempTeamsInputValue)
+
+    if (githubToken) {
+      isOrgOpen && orgOptions.length === 0 && getOrganizations()
+
+      isTeamOpen && orgName && teamOptions.length === 0 && getTeams()
+    } else {
+      // remove all loaded options if there is no token
+      orgOptions.length > 0 && setOrgOptions([])
+
+      teamOptions.length > 0 && setTeamOptions([])
+    }
+
+    if (!orgName && teamOptions.length > 0) {
+      setTeamOptions([])
+    }
+  }, [
+    orgName,
+    orgOptions,
+    isOrgOpen,
+    githubToken,
+    isTeamOpen,
+    teamOptions,
+    teamNames,
+  ])
 
   return (
     <Grid
@@ -347,14 +433,15 @@ function OrganizationSetting({
         <Autocomplete
           id="organization-name"
           fullWidth
-          value={inputValue}
+          value={orgInputValue}
           onChange={handleOrgNameChange}
-          options={options}
+          options={orgOptions}
           open={isOrgOpen}
           onOpen={() => setIsOrgOpen(true)}
           onClose={() => setIsOrgOpen(false)}
           loading={isOrgLoading}
           getOptionLabel={option => option.login}
+          sx={{ marginBottom: 1 }}
           isOptionEqualToValue={(option, value) => option.login === value.login}
           renderOption={(props, option) => (
             <li {...props}>
@@ -371,6 +458,46 @@ function OrganizationSetting({
               id="orgName"
               label="Select organization"
               error={!orgName}
+            />
+          )}
+        />
+        <Autocomplete
+          id="team-names"
+          fullWidth
+          multiple
+          disableCloseOnSelect
+          value={teamsInputValue}
+          onChange={handleTeamNamesChange}
+          options={teamOptions}
+          open={isTeamOpen}
+          onOpen={() => setIsTeamOpen(true)}
+          onClose={() => setIsTeamOpen(false)}
+          loading={isTeamLoading}
+          getOptionLabel={option => option.name}
+          isOptionEqualToValue={(option, value) => option.name === value.name}
+          renderOption={(props, option, { selected }) => (
+            <li {...props}>
+              <Checkbox checked={selected} sx={{ marginRight: 1 }} />
+              <Stack
+                direction="row"
+                alignItems="center"
+                gap={1}
+                overflow="hidden"
+              >
+                <Avatar src={option.avatarUrl} />
+                <Typography>{option.name}</Typography>
+                {option.description && (
+                  <Typography color="GrayText">{option.description}</Typography>
+                )}
+              </Stack>
+            </li>
+          )}
+          renderInput={params => (
+            <TextField
+              {...params}
+              id="teamName"
+              label="Select teams"
+              error={teamNames.length === 0}
             />
           )}
         />
@@ -446,17 +573,22 @@ function TeamRepositoriesSetting({
     <>
       <Grid container item xs={12} justifyContent="space-between">
         <Grid item>
-          <Typography component="div">
+          <Typography
+            component="div"
+            color={!teamName ? 'GrayText' : undefined}
+          >
             <Stack direction="row" alignItems="center" sx={{ fontWeight: 800 }}>
               <ListIcon sx={{ marginRight: 1 }} />
-              {`Repositories of ${teamName} (${
-                teamRepositoriesPageable?.total || 0
-              } total${`, ${
-                selectedSize > 0 &&
-                selectedSize < (teamRepositoriesPageable?.total || 0)
-                  ? selectedSize
-                  : 'none'
-              } selected`})`}
+              {teamName
+                ? `Repositories of ${teamName} (${
+                    teamRepositoriesPageable?.total || 0
+                  } total${`, ${
+                    selectedSize > 0 &&
+                    selectedSize < (teamRepositoriesPageable?.total || 0)
+                      ? selectedSize
+                      : 'none'
+                  } selected`})`
+                : 'Repositories'}
               {isRepositoriesLoading && (
                 <CircularProgress size={20} sx={{ marginLeft: 1 }} />
               )}
