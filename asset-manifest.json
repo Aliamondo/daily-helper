@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/daily-picker/static/css/main.5d9a307a.css",
+    "main.js": "/daily-picker/static/js/main.cdd70d97.js",
+    "static/js/787.4511608d.chunk.js": "/daily-picker/static/js/787.4511608d.chunk.js",
+    "index.html": "/daily-picker/index.html",
+    "main.5d9a307a.css.map": "/daily-picker/static/css/main.5d9a307a.css.map",
+    "main.cdd70d97.js.map": "/daily-picker/static/js/main.cdd70d97.js.map",
+    "787.4511608d.chunk.js.map": "/daily-picker/static/js/787.4511608d.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.5d9a307a.css",
+    "static/js/main.cdd70d97.js"
+  ]
+}
