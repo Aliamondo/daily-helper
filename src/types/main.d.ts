@@ -43,6 +43,7 @@ type Label = {
 type User = {
   login: string
   avatarUrl: string
+  name: string | null
 }
 
 type Review = {

@@ -1,5 +1,5 @@
 import { minify } from './strings'
-const UserNode = `login avatarUrl`
+const UserNode = `login avatarUrl ... on User { name }`
 
 const LastCommitChecksNode = `
 baseRef {

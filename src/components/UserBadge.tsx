@@ -17,12 +17,16 @@ function getReviewIcon(state: ReviewState): ReactElement | null {
     case 'CHANGES_REQUESTED':
       return <ChangesRequestedIcon color="error" />
     case 'COMMENTED':
-      return <CommentedIcon color="action" />
+      return <CommentedIcon color="info" />
     case 'PENDING':
       return <ReviewPendingIcon color="disabled" />
     default:
       return null
   }
+}
+
+function displayName(user: User): string {
+  return user.name || user.login
 }
 
 function getReviewStatusTooltip({
@@ -33,11 +37,11 @@ function getReviewStatusTooltip({
   user: User
 }): string {
   if (reviewState === 'PENDING')
-    return `Currently being reviewed by ${user.login}`
+    return `Currently being reviewed by ${displayName(user)}`
 
   const state = enumerationToSentenceCase(reviewState)
 
-  return `${state} by ${user.login}`
+  return `${state} by ${displayName(user)}`
 }
 
 function getTooltip({
@@ -45,17 +49,17 @@ function getTooltip({
   reviewState,
   type,
 }: Pick<UserBadgeProps, 'user' | 'reviewState' | 'type'>) {
-  if (type === 'AUTHOR') return `Opened by ${user.login}`
-  if (type === 'CONTRIBUTOR') return `Contributed by ${user.login}`
-  if (type === 'ASSIGNEE') return `Assigned to ${user.login}`
+  if (type === 'AUTHOR') return `Opened by ${displayName(user)}`
+  if (type === 'CONTRIBUTOR') return `Contributed by ${displayName(user)}`
+  if (type === 'ASSIGNEE') return `Assigned to ${displayName(user)}`
   if (type === 'REQUESTED_REVIEWER')
-    return `Review requested from ${user.login}`
+    return `Review requested from ${displayName(user)}`
   if (type === 'REVIEWER' && reviewState) {
     return getReviewStatusTooltip({ reviewState, user })
   }
-  if (type === 'COMMIT_CHECK_RUNNER') return `Started by ${user.login}`
+  if (type === 'COMMIT_CHECK_RUNNER') return `Started by ${displayName(user)}`
 
-  return user.login
+  return displayName(user)
 }
 
 function getBadgeContent({

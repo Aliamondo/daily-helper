@@ -2,6 +2,7 @@ import UserGroup, { AvatarGroupPopper } from '../../components/UserGroup'
 import { useRef, useState } from 'react'
 
 import AvatarGroup from '@mui/material/AvatarGroup'
+import Box from '@mui/material/Box'
 import Grid from '@mui/material/Grid'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
@@ -36,7 +37,7 @@ export default function PullRequestStatus({
 
   return (
     <>
-      <Grid item xs={2.5} ref={authorRef}>
+      <Grid item xs={2.5} ref={authorRef} sx={{ userSelect: 'none' }}>
         {isLoading ? (
           <Skeleton
             variant="rectangular"
@@ -49,7 +50,7 @@ export default function PullRequestStatus({
           <AuthorColumn author={author} createdAtFromNow={createdAtFromNow} />
         )}
       </Grid>
-      <Grid item xs={2.5}>
+      <Grid item xs={2.5} sx={{ userSelect: 'none' }}>
         {isLoading ? (
           <Skeleton
             variant="rectangular"
@@ -64,7 +65,7 @@ export default function PullRequestStatus({
           />
         )}
       </Grid>
-      <Grid item xs={2.5}>
+      <Grid item xs={2.5} sx={{ userSelect: 'none' }}>
         {isLoading ? (
           <Skeleton
             variant="rectangular"
@@ -75,7 +76,7 @@ export default function PullRequestStatus({
           <UserGroup users={assignees} groupName="Assignees" type="ASSIGNEE" />
         )}
       </Grid>
-      <Grid item xs={2.5}>
+      <Grid item xs={2.5} sx={{ userSelect: 'none' }}>
         {isLoading ? (
           <Skeleton
             variant="rectangular"
@@ -101,7 +102,7 @@ type AuthorColumnProps = {
 function AuthorColumn({ author, createdAtFromNow }: AuthorColumnProps) {
   return (
     <Stack direction="column">
-      <Typography variant="subtitle1" align="center">
+      <Typography variant="overline" align="center" sx={{ userSelect: 'none' }}>
         Author
       </Typography>
       <Stack direction="row" spacing={1} alignItems="center">
@@ -155,9 +156,9 @@ function ReviewersColumn({
 
   return (
     <Stack direction="column" alignItems="center">
+      <Typography variant="overline" sx={{ userSelect: 'none' }}>Reviewers</Typography>
       {reviews.length || requestedReviewers.length ? (
         <>
-          <Typography variant="subtitle1">Reviewers</Typography>
           <AvatarGroup
             max={3}
             componentsProps={{
@@ -178,12 +179,7 @@ function ReviewersColumn({
           />
         </>
       ) : (
-        <Typography
-          variant="subtitle1"
-          color={isDraft ? 'GrayText' : 'InfoText'}
-        >
-          {isDraft ? 'Draft pull request' : 'Review required'}
-        </Typography>
+        <Box sx={{ height: 40 }} />
       )}
     </Stack>
   )

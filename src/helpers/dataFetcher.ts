@@ -106,6 +106,10 @@ function getReviewers(reviewRequests: GraphQL_ReviewRequest[]): User[] {
       'login' in entity.requestedReviewer
         ? entity.requestedReviewer.login
         : entity.requestedReviewer.name,
+    name:
+      'login' in entity.requestedReviewer
+        ? entity.requestedReviewer.name
+        : null,
     avatarUrl: entity.requestedReviewer.avatarUrl,
   }))
 }
@@ -189,6 +193,7 @@ function extractLastCommitChecks(
   checkSuites.forEach(checkSuite => {
     const checker: CommitChecker = {
       login: checkSuite.app.slug,
+      name: null,
       avatarUrl: checkSuite.app.logoUrl,
       backgroundColor: checkSuite.app.logoBackgroundColor,
     }
@@ -229,6 +234,7 @@ function extractLastCommitChecks(
       completedAt: null,
       checker: {
         login: context.creator.login,
+        name: null,
         avatarUrl: context.avatarUrl,
         backgroundColor: '000000',
       },
@@ -253,6 +259,7 @@ function extractLastCommitChecks(
         required: true,
         checker: {
           login: contextName.toLocaleUpperCase(),
+          name: null,
           avatarUrl: 'fakeurl',
           backgroundColor: '000000',
         },
@@ -356,6 +363,7 @@ async function fetchTeamUsers(
       res.organization.teams.nodes[0].members.nodes.map(
         (user: GraphQL_User): User => ({
           login: user.login,
+          name: user.name,
           avatarUrl: user.avatarUrl,
         }),
       ),
