@@ -10,19 +10,24 @@ import {
   getTeamsQuery,
 } from './graphqlQueries'
 
-import { Octokit } from 'octokit'
+import { graphql } from '@octokit/graphql'
 import { SetStateAction } from 'react'
+import { durationBetween } from './time'
 import { enumerationToSentenceCase } from './strings'
-import moment from 'moment'
 import packageData from '../../package.json'
 import { settingsHandler } from './settingsHandler'
 
 const userAgent = `daily-helper/v${packageData.version}`
 
-let octokit = new Octokit({
-  auth: settingsHandler.loadGithubToken() || '',
-  userAgent,
-})
+const makeClient = (token: string) =>
+  graphql.defaults({
+    headers: {
+      authorization: `token ${token}`,
+      'user-agent': userAgent,
+    },
+  })
+
+let gql = makeClient(settingsHandler.loadGithubToken() || '')
 
 const dataFetcher = {
   fetchOrganizations,
@@ -32,10 +37,7 @@ const dataFetcher = {
   refreshLastCommitChecks,
   fetchTeamRepositories,
   setToken(newToken: string) {
-    octokit = new Octokit({
-      auth: newToken,
-      userAgent,
-    })
+    gql = makeClient(newToken)
   },
 }
 
@@ -157,7 +159,7 @@ async function refreshLastCommitChecks({
   repoName,
   prNumber,
 }: RefreshLastCommitChecksProps) {
-  const commitChecks = await octokit
+  const commitChecks = await gql
     .graphql<GraphQL_CommitChecksPerPullRequestResponse>(
       getCommitChecksQuery({ orgName, repoName, prNumber }),
     )
@@ -294,7 +296,7 @@ function getCommitCheckDescription(
       return 'Skipped'
     }
 
-    const runTime = moment(completedAt).from(moment(startedAt), true)
+    const runTime = durationBetween(startedAt, completedAt)
     return enumerationToSentenceCase(`${checkRun.status} in ${runTime}`)
   }
 
@@ -357,7 +359,7 @@ async function fetchTeamUsers(
   orgName: string,
   teamName: string,
 ): Promise<User[]> {
-  return octokit
+  return gql
     .graphql<GraphQL_UserResponse>(getTeamUsersQuery({ orgName, teamName }))
     .then((res: GraphQL_UserResponse) =>
       res.organization.teams.nodes[0].members.nodes.map(
@@ -383,7 +385,7 @@ async function fetchPullRequests({
 
   if (!orgName || !teamName) return []
 
-  const allTeamUsers: string[] = await octokit
+  const allTeamUsers: string[] = await gql
     .graphql<GraphQL_UserResponse>(getTeamUsersQuery({ orgName, teamName }))
     .then((res: GraphQL_UserResponse) =>
       res.organization.teams.nodes[0].members.nodes.map(
@@ -411,7 +413,7 @@ async function fetchPullRequests({
   const totalResources = teamUsers.length + (teamRepositories ? 1 : 0)
 
   const pullRequestPromises = teamUsers.map(user =>
-    octokit
+    gql
       .graphql<GraphQL_PullRequestsResponse>(
         getPullRequestsByUserQuery({ orgName, author: user, includeChecks }),
       )
@@ -424,7 +426,7 @@ async function fetchPullRequests({
 
   teamRepositories?.length &&
     pullRequestPromises.push(
-      octokit
+      gql
         .graphql<GraphQL_PullRequestsResponse>(
           getPullRequestsByRepositoriesQuery({
             repositories: teamRepositories,
@@ -505,7 +507,7 @@ async function fetchTeamRepositories(
     edges: repositoriesRaw,
     totalCount,
     pageInfo,
-  } = await octokit
+  } = await gql
     .graphql<GraphQL_TeamRepositoryResponse>(
       getTeamRepositoriesQuery({
         orgName,
@@ -543,7 +545,7 @@ async function fetchTeamRepositories(
 async function fetchOrganizations(
   githubToken?: string,
 ): Promise<Organization[]> {
-  const organizations = await octokit
+  const organizations = await gql
     .graphql<GraphQL_OrganizationsResponse>(getOrganizationsQuery(), {
       headers:
         githubToken && !settingsHandler.loadGithubToken()
@@ -567,7 +569,7 @@ async function fetchTeams(
   orgName: string,
   githubToken?: string,
 ): Promise<Team[]> {
-  const teams = await octokit
+  const teams = await gql
     .graphql<GraphQL_TeamsResponse>(getTeamsQuery({ orgName }), {
       headers:
         githubToken && !settingsHandler.loadGithubToken()

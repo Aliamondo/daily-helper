@@ -8,7 +8,7 @@ import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import UserBadge from '../../components/UserBadge'
-import moment from 'moment'
+import { fromNow } from '../../helpers/time'
 
 export default function PullRequestStatus({
   isLoading,
@@ -33,7 +33,7 @@ export default function PullRequestStatus({
   const skeletonHeight =
     authorRef.current?.offsetHeight && authorRef.current.offsetHeight - 16
 
-  const createdAtFromNow = moment(createdAt).fromNow()
+  const createdAtFromNow = fromNow(createdAt)
 
   return (
     <>
