@@ -161,7 +161,7 @@ async function refreshLastCommitChecks({
     .graphql<GraphQL_CommitChecksPerPullRequestResponse>(
       getCommitChecksQuery({ orgName, repoName, prNumber }),
     )
-    .then(res =>
+    .then((res: GraphQL_CommitChecksPerPullRequestResponse) =>
       getLastCommitChecks(
         res.organization.repository.pullRequest.lastCommit.nodes[0].commit,
         res.organization.repository.pullRequest.baseRef.branchProtectionRule
@@ -359,7 +359,7 @@ async function fetchTeamUsers(
 ): Promise<User[]> {
   return octokit
     .graphql<GraphQL_UserResponse>(getTeamUsersQuery({ orgName, teamName }))
-    .then(res =>
+    .then((res: GraphQL_UserResponse) =>
       res.organization.teams.nodes[0].members.nodes.map(
         (user: GraphQL_User): User => ({
           login: user.login,
@@ -385,7 +385,7 @@ async function fetchPullRequests({
 
   const allTeamUsers: string[] = await octokit
     .graphql<GraphQL_UserResponse>(getTeamUsersQuery({ orgName, teamName }))
-    .then(res =>
+    .then((res: GraphQL_UserResponse) =>
       res.organization.teams.nodes[0].members.nodes.map(
         (user: GraphQL_User) => user.login,
       ),
@@ -415,7 +415,7 @@ async function fetchPullRequests({
       .graphql<GraphQL_PullRequestsResponse>(
         getPullRequestsByUserQuery({ orgName, author: user, includeChecks }),
       )
-      .then(res => {
+      .then((res: GraphQL_PullRequestsResponse) => {
         progress += 90 / totalResources
         setProgress(progress)
         return res
@@ -431,7 +431,7 @@ async function fetchPullRequests({
             includeChecks,
           }),
         )
-        .then(res => {
+        .then((res: GraphQL_PullRequestsResponse) => {
           progress += 90 / totalResources
           setProgress(progress)
           return res
@@ -440,12 +440,14 @@ async function fetchPullRequests({
 
   const rawPullRequestsData = await Promise.all(pullRequestPromises)
   const rawPullRequests = rawPullRequestsData
-    .map(res => res.search.nodes)
+    .map((res: GraphQL_PullRequestsResponse) => res.search.nodes)
     .flat()
 
   // We have to get rid of duplicate PRs from team repositories from team users
   const uniquePullRequests = new Map<string, GraphQL_PullRequest>()
-  rawPullRequests.forEach(pr => uniquePullRequests.set(pr.id, pr))
+  rawPullRequests.forEach((pr: GraphQL_PullRequest) =>
+    uniquePullRequests.set(pr.id, pr),
+  )
 
   const pullRequests = Array.from(uniquePullRequests.values()).map(
     (pr): PullRequest => ({
@@ -517,14 +519,19 @@ async function fetchTeamRepositories(
         ),
       }),
     )
-    .then(res => res.organization.teams.nodes[0].repositories)
+    .then(
+      (res: GraphQL_TeamRepositoryResponse) =>
+        res.organization.teams.nodes[0].repositories,
+    )
 
   return {
-    teamRepositories: repositoriesRaw.map(repository => ({
-      permission: repository.permission,
-      name: repository.node.name,
-      nameWithOwner: repository.node.nameWithOwner,
-    })),
+    teamRepositories: repositoriesRaw.map(
+      (repository: GraphQL_TeamRepository) => ({
+        permission: repository.permission,
+        name: repository.node.name,
+        nameWithOwner: repository.node.nameWithOwner,
+      }),
+    ),
     total: totalCount,
     hasNextPage: pageInfo.hasNextPage,
     hasPreviousPage: pageInfo.hasPreviousPage,
@@ -545,9 +552,11 @@ async function fetchOrganizations(
             }
           : undefined,
     })
-    .then(res => res.viewer.organizations.nodes)
+    .then(
+      (res: GraphQL_OrganizationsResponse) => res.viewer.organizations.nodes,
+    )
 
-  return organizations.map(org => ({
+  return organizations.map((org: GraphQL_Organization) => ({
     name: org.name,
     login: org.login,
     avatarUrl: org.avatarUrl,
@@ -567,9 +576,9 @@ async function fetchTeams(
             }
           : undefined,
     })
-    .then(res => res.viewer.organization.teams.nodes)
+    .then((res: GraphQL_TeamsResponse) => res.viewer.organization.teams.nodes)
 
-  return teams.map(team => ({
+  return teams.map((team: GraphQL_Team & { description: string | null }) => ({
     name: team.name,
     description: team.description,
     avatarUrl: team.avatarUrl,

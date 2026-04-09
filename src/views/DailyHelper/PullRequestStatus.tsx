@@ -156,7 +156,9 @@ function ReviewersColumn({
 
   return (
     <Stack direction="column" alignItems="center">
-      <Typography variant="overline" sx={{ userSelect: 'none' }}>Reviewers</Typography>
+      <Typography variant="overline" sx={{ userSelect: 'none' }}>
+        Reviewers
+      </Typography>
       {reviews.length || requestedReviewers.length ? (
         <>
           <AvatarGroup

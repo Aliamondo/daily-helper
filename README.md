@@ -14,7 +14,7 @@
 
 ## General info
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project uses [Vite](https://vitejs.dev/) + React + TypeScript.
 
 ### Prerequisites
 
@@ -22,7 +22,7 @@ A GitHub personal access token with the `repo` and `read:org` scopes is required
 
 ### Setup
 
-Install dependencies (pnpm recommended):
+Install dependencies:
 
 ```sh
 pnpm install
@@ -34,7 +34,7 @@ pnpm install
 pnpm start
 ```
 
-Opens the app at [http://localhost:3000](http://localhost:3000).
+Opens the app at [http://localhost:5173](http://localhost:5173).
 
 ### Building for production
 
@@ -42,13 +42,11 @@ Opens the app at [http://localhost:3000](http://localhost:3000).
 pnpm build
 ```
 
-Builds the app into the `build` folder.
+Builds the app into the `dist` folder.
 
 ### Deploying to GitHub Pages
 
-```sh
-pnpm deploy
-```
+Deployment happens automatically on every push to `master` via GitHub Actions.
 
 ### Formatting
 

@@ -556,7 +556,9 @@ function OrganizationSetting({
                 <Avatar src={option.avatarUrl} />
                 <Typography>{option.name}</Typography>
                 {option.description && (
-                  <Typography color="text.secondary">{option.description}</Typography>
+                  <Typography color="text.secondary">
+                    {option.description}
+                  </Typography>
                 )}
               </Stack>
             </li>

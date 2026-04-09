@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/daily-helper/static/css/main.5d9a307a.css",
+    "main.js": "/daily-helper/static/js/main.7ee361f0.js",
+    "index.html": "/daily-helper/index.html",
+    "main.5d9a307a.css.map": "/daily-helper/static/css/main.5d9a307a.css.map",
+    "main.7ee361f0.js.map": "/daily-helper/static/js/main.7ee361f0.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.5d9a307a.css",
+    "static/js/main.7ee361f0.js"
+  ]
+}

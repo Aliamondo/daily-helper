@@ -413,7 +413,12 @@ function DrawerListItem({
         <Tooltip title={countTooltip}>
           <Avatar
             variant="rounded"
-            sx={{ width: 30, height: 30, color: 'text.primary', bgcolor: 'action.selected' }}
+            sx={{
+              width: 30,
+              height: 30,
+              color: 'text.primary',
+              bgcolor: 'action.selected',
+            }}
           >
             <Typography variant="button">
               {label ? label.count : count}
