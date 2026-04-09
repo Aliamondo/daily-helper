@@ -22,7 +22,6 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import VisibleIcon from '@mui/icons-material/Visibility'
 import { dataFetcher } from '../../helpers/dataFetcher'
-import moment from 'moment'
 import { settingsHandler } from '../../helpers/settingsHandler'
 
 const teamNames = settingsHandler.loadTeamNames()
@@ -268,7 +267,7 @@ function generateDummyPullRequests(total: number): PullRequest[] {
       state: 'OPEN',
       isDraft: false,
       reviewDecision: 'REVIEW_REQUIRED',
-      createdAt: moment().subtract(1, 'days').toDate(),
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
       labels: [],
       reviews: [],
       comments: 0,

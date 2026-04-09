@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 
 import CssBaseline from '@mui/material/CssBaseline'
-import DailyHelper from './views/DailyHelper/DalyHelper'
 import { ThemeProvider } from '@mui/material/styles'
 import { ColorModeContext } from './ColorModeContext'
 import { createAppTheme } from './theme'
+
+const DailyHelper = lazy(() => import('./views/DailyHelper/DalyHelper'))
 
 function App() {
   const [mode, setMode] = useState<'light' | 'dark'>(
@@ -27,9 +28,9 @@ function App() {
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <div className="App">
+        <Suspense fallback={null}>
           <DailyHelper />
-        </div>
+        </Suspense>
       </ThemeProvider>
     </ColorModeContext.Provider>
   )
