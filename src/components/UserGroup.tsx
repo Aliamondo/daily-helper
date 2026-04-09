@@ -48,7 +48,9 @@ export default function UserGroup({
 
   return (
     <Stack direction="column" alignItems="center">
-      <Typography variant="overline" sx={{ userSelect: 'none' }}>{groupName}</Typography>
+      <Typography variant="overline" sx={{ userSelect: 'none' }}>
+        {groupName}
+      </Typography>
       {users.length ? (
         <>
           <AvatarGroup

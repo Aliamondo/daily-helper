@@ -21,7 +21,6 @@ import { dataFetcher } from '../../helpers/dataFetcher'
 import { settingsHandler } from '../../helpers/settingsHandler'
 import useOnScreen from '../../helpers/useOnScreen'
 
-
 type PullRequestProps = {
   customRef: RefObject<HTMLElement>
   setIsInViewport: (id: string, visible: boolean) => void
@@ -85,8 +84,10 @@ export default function PullRequest({
         minWidth: 700,
         bgcolor: (() => {
           if (state === 'OPEN' && !isLoading) {
-            if (reviewDecision === 'CHANGES_REQUESTED') return theme.palette.prCard.changesRequested
-            if (reviewDecision === 'APPROVED') return theme.palette.prCard.approved
+            if (reviewDecision === 'CHANGES_REQUESTED')
+              return theme.palette.prCard.changesRequested
+            if (reviewDecision === 'APPROVED')
+              return theme.palette.prCard.approved
             if (isDraft) return theme.palette.prCard.draft
           }
           return theme.palette.prCard.default

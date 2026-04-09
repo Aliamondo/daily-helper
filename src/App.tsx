@@ -8,7 +8,9 @@ import { createAppTheme } from './theme'
 
 function App() {
   const [mode, setMode] = useState<'light' | 'dark'>(
-    window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light',
   )
 
   const colorMode = useMemo(
