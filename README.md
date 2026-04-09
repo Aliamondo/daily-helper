@@ -2,7 +2,7 @@
 
 ## To-do checklist
 
-- [ ] Search team repositories in settings
+- [x] Search team repositories in settings
 - [ ] Add no PRs message for no PRs found and all PRs filtered out
 - [ ] Add tests
 - [ ] Show missing required `CheckRun`s, if possible
@@ -15,15 +15,43 @@
 ## General info
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
-In the project directory, you can run:
 
-### `yarn start`
+### Prerequisites
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+A GitHub personal access token with the `repo` and `read:org` scopes is required. [Create one here](https://github.com/settings/tokens).
 
-### `yarn build`
+### Setup
 
-Builds the app for production to the `build` folder.
+Install dependencies (pnpm recommended):
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```sh
+pnpm install
+```
+
+### Running locally
+
+```sh
+pnpm start
+```
+
+Opens the app at [http://localhost:3000](http://localhost:3000).
+
+### Building for production
+
+```sh
+pnpm build
+```
+
+Builds the app into the `build` folder.
+
+### Deploying to GitHub Pages
+
+```sh
+pnpm deploy
+```
+
+### Formatting
+
+```sh
+pnpm fixlint
+```

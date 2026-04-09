@@ -42,7 +42,7 @@ type GraphQL_PullRequest = {
   commits: {
     nodes: GraphQL_Commit[]
   }
-  lastCommit: {
+  lastCommit?: {
     nodes: {
       commit: GraphQL_LastCommitWithChecks
     }[]

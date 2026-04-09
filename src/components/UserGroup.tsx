@@ -6,9 +6,13 @@ import ClickAwayListener from '@mui/material/ClickAwayListener'
 import Grid from '@mui/material/Grid'
 import Paper from '@mui/material/Paper'
 import Stack from '@mui/material/Stack'
-import { StateRects } from '@popperjs/core/lib/types'
 import Typography from '@mui/material/Typography'
 import UserBadge from './UserBadge'
+
+type StateRects = {
+  popper: { width: number; height: number; x: number; y: number }
+  reference: { width: number; height: number; x: number; y: number }
+}
 
 type UserGroupProps = {
   users: User[]
