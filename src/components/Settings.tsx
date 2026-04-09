@@ -21,13 +21,18 @@ import FirstPageIcon from '@mui/icons-material/FirstPage'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import FormGroup from '@mui/material/FormGroup'
 import Grid from '@mui/material/Grid'
+import GroupIcon from '@mui/icons-material/Group'
 import IconButton from '@mui/material/IconButton'
+import InputAdornment from '@mui/material/InputAdornment'
 import KeyIcon from '@mui/icons-material/Key'
+import VisibilityIcon from '@mui/icons-material/Visibility'
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import LastPageIcon from '@mui/icons-material/LastPage'
 import Link from '@mui/material/Link'
 import ListIcon from '@mui/icons-material/Ballot'
 import NextIcon from '@mui/icons-material/ChevronRight'
 import OrganizationIcon from '@mui/icons-material/CorporateFare'
+import PipelineIcon from '@mui/icons-material/AccountTree'
 import PreviousIcon from '@mui/icons-material/ChevronLeft'
 import RestoreIcon from '@mui/icons-material/SettingsBackupRestore'
 import SaveIcon from '@mui/icons-material/Save'
@@ -49,6 +54,87 @@ type PageCursor = {
 
 const initialPageCursor: PageCursor = {
   page: 'NEXT_PAGE',
+}
+
+function usePagination() {
+  const [pageCursor, setPageCursor] = useState<PageCursor>(initialPageCursor)
+
+  const reset = () => setPageCursor(initialPageCursor)
+
+  const navigate = (
+    page: PageNavigation,
+    pageable?: Pick<Pageable, 'startCursor' | 'endCursor' | 'total'>,
+  ) =>
+    setPageCursor({
+      startCursor: pageable?.startCursor,
+      endCursor: pageable?.endCursor,
+      page,
+      total: pageable?.total,
+    })
+
+  return { pageCursor, reset, navigate }
+}
+
+type PaginationControlsProps = {
+  hasPreviousPage: boolean
+  hasNextPage: boolean
+  onFirst: VoidFunction
+  onPrev: VoidFunction
+  onNext: VoidFunction
+  onLast: VoidFunction
+}
+function PaginationControls({
+  hasPreviousPage,
+  hasNextPage,
+  onFirst,
+  onPrev,
+  onNext,
+  onLast,
+}: PaginationControlsProps) {
+  return (
+    <Grid container item xs={12} justifyContent="space-around">
+      <Grid container item xs={6} columnGap={2} justifyContent="center">
+        <Grid item xs={3}>
+          <Button
+            onClick={onFirst}
+            disabled={!hasPreviousPage}
+            startIcon={<FirstPageIcon />}
+          >
+            First
+          </Button>
+        </Grid>
+        <Grid item xs={3}>
+          <Button
+            onClick={onPrev}
+            disabled={!hasPreviousPage}
+            startIcon={<PreviousIcon />}
+          >
+            Prev
+          </Button>
+        </Grid>
+      </Grid>
+      <Grid container item xs={6} columnGap={2} justifyContent="center">
+        <Grid item xs={3}>
+          <Button
+            onClick={onNext}
+            disabled={!hasNextPage}
+            endIcon={<NextIcon />}
+          >
+            Next
+          </Button>
+        </Grid>
+        <Grid item xs={3}>
+          <Button
+            onClick={onLast}
+            disabled={!hasNextPage}
+            endIcon={<LastPageIcon />}
+          >
+            Last
+          </Button>
+        </Grid>
+      </Grid>
+    </Grid>
+  )
 }
 
 function getPermissionColor(
@@ -89,55 +175,20 @@ export default function Settings({
   )
   const [orgName, setOrgName] = useState(settingsHandler.loadOrgName())
   const [teamNames, setTeamNames] = useState(settingsHandler.loadTeamNames())
-  const [isRepositoriesLoading, setIsRepositoriesLoading] = useState(false)
-  const [teamRepositoriesPageable, setTeamRepositoriesPageable] =
-    useState<TeamRepositoryPageable>()
-  const [pageCursor, setPageCursor] = useState<PageCursor>(initialPageCursor)
-  const [currentTeam, setCurrentTeam] = useState('')
   const [selectedRepositories, setSelectedRepositories] = useState<Set<string>>(
     new Set(),
   )
+  const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
+  const [loadPipelineStatus, setLoadPipelineStatus] = useState(
+    settingsHandler.loadPipelineStatus(),
+  )
+  const [saveKey, setSaveKey] = useState(0)
 
   useEffect(() => {
-    const getTeamRepositories = async () => {
-      setIsRepositoriesLoading(true)
-      setTeamRepositoriesPageable(
-        await dataFetcher
-          .fetchTeamRepositories(
-            settingsHandler.loadOrgName() || '',
-            selectedTeamName,
-            pageCursor.page,
-            PAGE_SIZE,
-            pageCursor.startCursor,
-            pageCursor.endCursor,
-            pageCursor.total,
-          )
-          .catch(error => {
-            setIsRepositoriesLoading(false)
-            throw error
-          }),
-      )
-      setIsRepositoriesLoading(false)
-    }
-
-    if (currentTeam !== selectedTeamName) {
-      setCurrentTeam(selectedTeamName)
-      setPageCursor(initialPageCursor)
-
-      const savedTeam = settingsHandler.loadTeam(selectedTeamName)
-      if (savedTeam) {
-        setSelectedRepositories(new Set(savedTeam.repositories))
-      } else {
-        setSelectedRepositories(new Set())
-      }
-    } else {
-      // we only want to fetch team repositories when team switch fully happens
-      Boolean(settingsHandler.loadGithubToken()) &&
-        Boolean(settingsHandler.loadOrgName()) &&
-        settingsHandler.loadTeamNames().length > 0 &&
-        getTeamRepositories()
-    }
-  }, [selectedTeamName, pageCursor, currentTeam])
+    const savedTeam = settingsHandler.loadTeam(selectedTeamName)
+    setSelectedRepositories(new Set(savedTeam?.repositories))
+    setSelectedMembers(new Set(savedTeam?.members))
+  }, [selectedTeamName])
 
   const handleGithubTokenChange = (event: ChangeEvent<HTMLInputElement>) => {
     setGithubToken(event.target.value)
@@ -157,52 +208,46 @@ export default function Settings({
       orgName: githubToken ? orgName : null,
       teamNames: githubToken && orgName ? teamNames : [],
       teams: {
-        [currentTeam]: { repositories: Array.from(selectedRepositories) },
+        [selectedTeamName]: {
+          repositories: Array.from(selectedRepositories),
+          members: Array.from(selectedMembers),
+        },
       },
+      loadPipelineStatus,
     })
 
-    if (!teamRepositoriesPageable) {
-      setPageCursor({
-        page: pageCursor.page === 'NEXT_PAGE' ? 'FIRST_PAGE' : 'NEXT_PAGE',
-        endCursor: '',
-        startCursor: '',
-      })
-    }
+    setSaveKey(k => k + 1)
 
-    // reset the view on github token removal
     if (!githubToken || !orgName) {
-      setTeamRepositoriesPageable(undefined)
       setOrgName(null)
       setTeamNames([])
     }
 
-    if (teamNames.length === 0) {
-      setTeamRepositoriesPageable(undefined)
-    }
-
     handleReload(
-      teamNames.includes(currentTeam) ? currentTeam : teamNames[0],
+      teamNames.includes(selectedTeamName) ? selectedTeamName : teamNames[0],
       Boolean(githubToken) && Boolean(orgName) && teamNames.length > 0,
     )
   }
 
   const handleReset = () => {
-    const savedTeam = settingsHandler.loadTeam(currentTeam)
+    const savedTeam = settingsHandler.loadTeam(selectedTeamName)
     setSelectedRepositories(new Set(savedTeam?.repositories))
+    setSelectedMembers(new Set(savedTeam?.members))
     setGithubToken(settingsHandler.loadGithubToken())
     setOrgName(settingsHandler.loadOrgName())
     setTeamNames(settingsHandler.loadTeamNames())
+    setLoadPipelineStatus(settingsHandler.loadPipelineStatus())
   }
 
+  const savedTeam = settingsHandler.loadTeam(selectedTeamName)
   const isResetSettingsDisabled =
-    equals(
-      settingsHandler.loadTeam(currentTeam)?.repositories.length,
-      selectedRepositories.size,
-    ) &&
+    equals(savedTeam?.repositories.length, selectedRepositories.size) &&
+    equals(savedTeam?.members?.length ?? 0, selectedMembers.size) &&
     settingsHandler.loadGithubToken() === githubToken &&
     settingsHandler.loadOrgName() === orgName &&
     JSON.stringify(settingsHandler.loadTeamNames()) ===
-      JSON.stringify(teamNames)
+      JSON.stringify(teamNames) &&
+    settingsHandler.loadPipelineStatus() === loadPipelineStatus
 
   return (
     <Dialog open={isOpen} onClose={close} scroll="paper" maxWidth="lg">
@@ -232,13 +277,21 @@ export default function Settings({
               handleTeamNamesChange={handleTeamNamesChange}
               githubToken={githubToken}
             />
+            <PipelineStatusSetting
+              loadPipelineStatus={loadPipelineStatus}
+              setLoadPipelineStatus={setLoadPipelineStatus}
+            />
+            <TeamMembersSetting
+              teamName={selectedTeamName}
+              selectedMembers={selectedMembers}
+              setSelectedMembers={setSelectedMembers}
+              saveKey={saveKey}
+            />
             <TeamRepositoriesSetting
               teamName={selectedTeamName}
-              isRepositoriesLoading={isRepositoriesLoading}
-              setPageCursor={setPageCursor}
               selectedRepositories={selectedRepositories}
               setSelectedRepositories={setSelectedRepositories}
-              teamRepositoriesPageable={teamRepositoriesPageable}
+              saveKey={saveKey}
             />
           </Grid>
         </FormGroup>
@@ -272,6 +325,8 @@ function AuthorizationSetting({
   githubToken,
   handleGithubTokenChange,
 }: AuthorizationSettingProps) {
+  const [showToken, setShowToken] = useState(false)
+
   return (
     <Grid
       container
@@ -301,12 +356,26 @@ function AuthorizationSetting({
         <TextField
           id="github-token"
           label="Github token"
+          type={showToken ? 'text' : 'password'}
           error={!githubToken}
           autoComplete="off"
           helperText={'Must include scopes "repo" and "read:org"'}
           fullWidth
           value={githubToken}
           onChange={handleGithubTokenChange}
+          InputProps={{
+            endAdornment: githubToken ? (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowToken(v => !v)}
+                  edge="end"
+                  size="small"
+                >
+                  {showToken ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                </IconButton>
+              </InputAdornment>
+            ) : undefined,
+          }}
         />
       </Grid>
     </Grid>
@@ -506,29 +575,112 @@ function OrganizationSetting({
   )
 }
 
+type PipelineStatusSettingProps = {
+  loadPipelineStatus: boolean
+  setLoadPipelineStatus: (value: boolean) => void
+}
+function PipelineStatusSetting({
+  loadPipelineStatus,
+  setLoadPipelineStatus,
+}: PipelineStatusSettingProps) {
+  return (
+    <Grid
+      container
+      item
+      xs={12}
+      justifyContent="space-between"
+      sx={{ marginBottom: 2 }}
+    >
+      <Grid item xs={12}>
+        <FormControlLabel
+          label={
+            <Stack direction="row" alignItems="center">
+              <PipelineIcon sx={{ marginRight: 1 }} />
+              <Typography sx={{ fontWeight: 800 }}>
+                Load pipeline status for PRs
+              </Typography>
+            </Stack>
+          }
+          control={
+            <Checkbox
+              checked={loadPipelineStatus}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setLoadPipelineStatus(e.target.checked)
+              }
+            />
+          }
+        />
+      </Grid>
+    </Grid>
+  )
+}
+
 type TeamRepositoriesSettingProps = {
   teamName: string
-  teamRepositoriesPageable?: TeamRepositoryPageable
   selectedRepositories: Set<string>
   setSelectedRepositories: (newValue: Set<string>) => void
-  setPageCursor: (newValue: PageCursor) => void
-  isRepositoriesLoading: boolean
+  saveKey: number
 }
 function TeamRepositoriesSetting({
   teamName,
-  teamRepositoriesPageable,
   selectedRepositories,
   setSelectedRepositories,
-  isRepositoriesLoading,
-  setPageCursor,
+  saveKey,
 }: TeamRepositoriesSettingProps) {
+  const [isLoading, setIsLoading] = useState(false)
+  const [pageable, setPageable] = useState<TeamRepositoryPageable>()
+  const { pageCursor, reset, navigate } = usePagination()
+  const [currentTeam, setCurrentTeam] = useState('')
+
+  useEffect(() => {
+    if (currentTeam !== teamName) {
+      setCurrentTeam(teamName)
+      reset()
+      return
+    }
+
+    const canFetch =
+      Boolean(settingsHandler.loadGithubToken()) &&
+      Boolean(settingsHandler.loadOrgName()) &&
+      settingsHandler.loadTeamNames().length > 0
+
+    if (!canFetch) {
+      setPageable(undefined)
+      return
+    }
+
+    const fetch = async () => {
+      setIsLoading(true)
+      setPageable(
+        await dataFetcher
+          .fetchTeamRepositories(
+            settingsHandler.loadOrgName() || '',
+            teamName,
+            pageCursor.page,
+            PAGE_SIZE,
+            pageCursor.startCursor,
+            pageCursor.endCursor,
+            pageCursor.total,
+          )
+          .catch(error => {
+            setIsLoading(false)
+            throw error
+          }),
+      )
+      setIsLoading(false)
+    }
+
+    fetch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamName, pageCursor, currentTeam, saveKey])
+
   const handleUnselectAllRepositories = () => {
     setSelectedRepositories(new Set())
   }
 
   const handleSelectAllRepositoriesOnPage = () => {
-    teamRepositoriesPageable?.teamRepositories.forEach(teamRepository =>
-      selectedRepositories.add(teamRepository.nameWithOwner),
+    pageable?.teamRepositories.forEach(repo =>
+      selectedRepositories.add(repo.nameWithOwner),
     )
     setSelectedRepositories(new Set(selectedRepositories))
   }
@@ -540,31 +692,6 @@ function TeamRepositoriesSetting({
       selectedRepositories.add(nameWithOwner)
     }
     setSelectedRepositories(new Set(selectedRepositories))
-  }
-
-  const handlePageChange = (page: PageNavigation) => {
-    setPageCursor({
-      startCursor: teamRepositoriesPageable?.startCursor,
-      endCursor: teamRepositoriesPageable?.endCursor,
-      page,
-      total: teamRepositoriesPageable?.total,
-    })
-  }
-
-  const handleNextPage = () => {
-    handlePageChange('NEXT_PAGE')
-  }
-
-  const handlePrevPage = () => {
-    handlePageChange('PREVIOUS_PAGE')
-  }
-
-  const handleFirstPage = () => {
-    handlePageChange('FIRST_PAGE')
-  }
-
-  const handleLastPage = () => {
-    handlePageChange('LAST_PAGE')
   }
 
   const selectedSize = selectedRepositories.size
@@ -581,21 +708,20 @@ function TeamRepositoriesSetting({
               <ListIcon sx={{ marginRight: 1 }} />
               {teamName
                 ? `Repositories of ${teamName} (${
-                    teamRepositoriesPageable?.total || 0
+                    pageable?.total || 0
                   } total${`, ${
-                    selectedSize > 0 &&
-                    selectedSize < (teamRepositoriesPageable?.total || 0)
+                    selectedSize > 0 && selectedSize < (pageable?.total || 0)
                       ? selectedSize
                       : 'none'
                   } selected`})`
                 : 'Repositories'}
-              {isRepositoriesLoading && (
+              {isLoading && (
                 <CircularProgress size={20} sx={{ marginLeft: 1 }} />
               )}
             </Stack>
           </Typography>
         </Grid>
-        {teamRepositoriesPageable && (
+        {pageable && (
           <Grid item>
             <Button size="small" onClick={handleSelectAllRepositoriesOnPage}>
               Select all
@@ -610,80 +736,170 @@ function TeamRepositoriesSetting({
           </Grid>
         )}
       </Grid>
-      {teamRepositoriesPageable?.teamRepositories.map(
-        ({ name, nameWithOwner, permission }) => (
-          <Grid item key={nameWithOwner} lg={4} sm={6} xs={12}>
-            <FormControlLabel
-              label={
-                <>
-                  <Stack direction="row" alignItems="center">
-                    {name}
-                    <Chip
-                      color={getPermissionColor(permission)}
-                      label={permission}
-                      size="small"
-                      variant="outlined"
-                      sx={{ marginLeft: 1 }}
-                    />
-                  </Stack>
-                </>
-              }
-              control={
-                <Checkbox
-                  checked={selectedRepositories.has(nameWithOwner)}
-                  onClick={() => handleRepositoryClick(nameWithOwner)}
-                />
-              }
-            />
-          </Grid>
-        ),
-      ) || (
+      {pageable?.teamRepositories.map(({ name, nameWithOwner, permission }) => (
+        <Grid item key={nameWithOwner} lg={4} sm={6} xs={12}>
+          <FormControlLabel
+            label={
+              <>
+                <Stack direction="row" alignItems="center">
+                  {name}
+                  <Chip
+                    color={getPermissionColor(permission)}
+                    label={permission}
+                    size="small"
+                    variant="outlined"
+                    sx={{ marginLeft: 1 }}
+                  />
+                </Stack>
+              </>
+            }
+            control={
+              <Checkbox
+                checked={selectedRepositories.has(nameWithOwner)}
+                onClick={() => handleRepositoryClick(nameWithOwner)}
+              />
+            }
+          />
+        </Grid>
+      )) || (
         <Grid item marginTop={2}>
           <Typography color="GrayText">No data available</Typography>
         </Grid>
       )}
-      {teamRepositoriesPageable && teamRepositoriesPageable.total > PAGE_SIZE && (
-        <Grid container item xs={12} justifyContent="space-around">
-          <Grid container item xs={6} columnGap={2} justifyContent="center">
-            <Grid item xs={3}>
-              <Button
-                onClick={handleFirstPage}
-                disabled={!teamRepositoriesPageable?.hasPreviousPage}
-                startIcon={<FirstPageIcon />}
-              >
-                First
-              </Button>
-            </Grid>
-            <Grid item xs={3}>
-              <Button
-                onClick={handlePrevPage}
-                disabled={!teamRepositoriesPageable?.hasPreviousPage}
-                startIcon={<PreviousIcon />}
-              >
-                Prev
-              </Button>
-            </Grid>
+      {pageable && pageable.total > PAGE_SIZE && (
+        <PaginationControls
+          hasPreviousPage={pageable.hasPreviousPage}
+          hasNextPage={pageable.hasNextPage}
+          onFirst={() => navigate('FIRST_PAGE', pageable)}
+          onPrev={() => navigate('PREVIOUS_PAGE', pageable)}
+          onNext={() => navigate('NEXT_PAGE', pageable)}
+          onLast={() => navigate('LAST_PAGE', pageable)}
+        />
+      )}
+    </>
+  )
+}
+
+type TeamMembersSettingProps = {
+  teamName: string
+  selectedMembers: Set<string>
+  setSelectedMembers: (newValue: Set<string>) => void
+  saveKey: number
+}
+function TeamMembersSetting({
+  teamName,
+  selectedMembers,
+  setSelectedMembers,
+  saveKey,
+}: TeamMembersSettingProps) {
+  const [isLoading, setIsLoading] = useState(false)
+  const [members, setMembers] = useState<User[]>([])
+
+  useEffect(() => {
+    const canFetch =
+      Boolean(settingsHandler.loadGithubToken()) &&
+      Boolean(settingsHandler.loadOrgName()) &&
+      settingsHandler.loadTeamNames().length > 0 &&
+      Boolean(teamName)
+
+    if (!canFetch) {
+      setMembers([])
+      return
+    }
+
+    const fetch = async () => {
+      setIsLoading(true)
+      try {
+        const result = await dataFetcher.fetchTeamUsers(
+          settingsHandler.loadOrgName() || '',
+          teamName,
+        )
+        setMembers(result)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetch()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamName, saveKey])
+
+  const handleToggleMember = (login: string) => {
+    const next = new Set(selectedMembers)
+    if (next.has(login)) {
+      next.delete(login)
+    } else {
+      next.add(login)
+    }
+    setSelectedMembers(next)
+  }
+
+  const handleUnselectAll = () => setSelectedMembers(new Set())
+  const handleSelectAll = () =>
+    setSelectedMembers(new Set(members.map(m => m.login)))
+
+  const selectedSize = selectedMembers.size
+
+  return (
+    <>
+      <Grid container item xs={12} justifyContent="space-between">
+        <Grid item>
+          <Typography
+            component="div"
+            color={!teamName ? 'GrayText' : undefined}
+          >
+            <Stack direction="row" alignItems="center" sx={{ fontWeight: 800 }}>
+              <GroupIcon sx={{ marginRight: 1 }} />
+              {teamName
+                ? `Members of ${teamName} (${members.length} total${
+                    selectedSize > 0 && selectedSize < members.length
+                      ? `, ${selectedSize} selected`
+                      : ', none selected'
+                  })`
+                : 'Members'}
+              {isLoading && (
+                <CircularProgress size={20} sx={{ marginLeft: 1 }} />
+              )}
+            </Stack>
+          </Typography>
+        </Grid>
+        {members.length > 0 && (
+          <Grid item>
+            <Button size="small" onClick={handleSelectAll}>
+              Select all
+            </Button>
+            <Button
+              size="small"
+              onClick={handleUnselectAll}
+              disabled={!selectedMembers.size}
+            >
+              Unselect all
+            </Button>
           </Grid>
-          <Grid container item xs={6} columnGap={2} justifyContent="center">
-            <Grid item xs={3}>
-              <Button
-                onClick={handleNextPage}
-                disabled={!teamRepositoriesPageable?.hasNextPage}
-                endIcon={<NextIcon />}
-              >
-                Next
-              </Button>
-            </Grid>
-            <Grid item xs={3}>
-              <Button
-                onClick={handleLastPage}
-                disabled={!teamRepositoriesPageable?.hasNextPage}
-                endIcon={<LastPageIcon />}
-              >
-                Last
-              </Button>
-            </Grid>
+        )}
+      </Grid>
+      {members.length > 0 ? (
+        members.map(({ login, avatarUrl }) => (
+          <Grid item key={login} lg={4} sm={6} xs={12}>
+            <FormControlLabel
+              label={
+                <Stack direction="row" alignItems="center" gap={1}>
+                  <Avatar src={avatarUrl} sx={{ width: 24, height: 24 }} />
+                  <Typography>{login}</Typography>
+                </Stack>
+              }
+              control={
+                <Checkbox
+                  checked={selectedMembers.has(login)}
+                  onClick={() => handleToggleMember(login)}
+                />
+              }
+            />
           </Grid>
+        ))
+      ) : (
+        <Grid item marginTop={2}>
+          <Typography color="GrayText">No data available</Typography>
         </Grid>
       )}
     </>

@@ -61,7 +61,63 @@ lastCommit: commits(last: 1) {
   }
 }`
 
-const PullRequestNode = `
+const LastCommitNode = `
+lastCommit: commits(last: 1) {
+  nodes {
+    commit {
+      checkSuites(last: 10) {
+        nodes {
+          checkRuns(last: 100) {
+            nodes {
+              id
+              name
+              status
+              conclusion
+              permalink
+              startedAt
+              completedAt
+            }
+          }
+          app {
+            slug
+            logoUrl
+            logoBackgroundColor
+          }
+        }
+      }
+      status {
+        contexts {
+          id
+          context
+          description
+          state
+          createdAt
+          creator {
+            login
+          }
+          avatarUrl
+          targetUrl
+        }
+      }
+      statusCheckRollup {
+        state
+        contexts(last: 100) {
+          nodes {
+            ... on CheckRun {
+              id
+            }
+            ... on StatusContext {
+              id
+            }
+          }
+        }
+      }
+    }
+  }
+}`
+
+function getPullRequestNode(includeChecks = false) {
+  return `
 ... on PullRequest {
   title
   permalink
@@ -138,7 +194,6 @@ const PullRequestNode = `
       }
     }
   }
-  ${LastCommitChecksNode}
   labels(first: 100) {
     nodes {
       id
@@ -147,7 +202,9 @@ const PullRequestNode = `
       description
     }
   }
+  ${includeChecks ? LastCommitNode : ''}
 }`
+}
 
 type GetAdjacentPageQuery = {
   pageSize: number
@@ -270,10 +327,12 @@ function getTeamRepositoriesQuery({
 type GetPullRequestsByUserProps = {
   orgName: string
   author: string
+  includeChecks?: boolean
 }
 function getPullRequestsByUserQuery({
   orgName,
   author,
+  includeChecks = false,
 }: GetPullRequestsByUserProps) {
   const query = `{
     search(
@@ -282,7 +341,7 @@ function getPullRequestsByUserQuery({
       type: ISSUE
     ) {
         nodes {
-          ${PullRequestNode}
+          ${getPullRequestNode(includeChecks)}
         }
       }
     }`
@@ -292,9 +351,11 @@ function getPullRequestsByUserQuery({
 
 type GetPullRequestsByRepositoriesQueryProps = {
   repositories: string[]
+  includeChecks?: boolean
 }
 function getPullRequestsByRepositoriesQuery({
   repositories,
+  includeChecks = false,
 }: GetPullRequestsByRepositoriesQueryProps) {
   const query = `{
     search(
@@ -305,7 +366,7 @@ function getPullRequestsByRepositoriesQuery({
       type: ISSUE
     ) {
         nodes {
-          ${PullRequestNode}
+          ${getPullRequestNode(includeChecks)}
         }
       }
     }`

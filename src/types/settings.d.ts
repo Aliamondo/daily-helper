@@ -1,5 +1,6 @@
 type Settings_Team = {
   repositories: string[]
+  members?: string[]
 }
 
 type Settings_All = {
@@ -9,4 +10,5 @@ type Settings_All = {
   teams: {
     [teamName: string]: Settings_Team
   }
+  loadPipelineStatus?: boolean
 }

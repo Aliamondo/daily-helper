@@ -11,7 +11,6 @@ import {
 } from './graphqlQueries'
 
 import { Octokit } from 'octokit'
-import { RequestError } from '@octokit/request-error'
 import { SetStateAction } from 'react'
 import { enumerationToSentenceCase } from './strings'
 import moment from 'moment'
@@ -28,6 +27,7 @@ let octokit = new Octokit({
 const dataFetcher = {
   fetchOrganizations,
   fetchTeams,
+  fetchTeamUsers,
   fetchPullRequests,
   refreshLastCommitChecks,
   fetchTeamRepositories,
@@ -346,34 +346,56 @@ type FetchPullRequestsProps = {
   }
   handleInvalidTokenError: VoidFunction
 }
+async function fetchTeamUsers(
+  orgName: string,
+  teamName: string,
+): Promise<User[]> {
+  return octokit
+    .graphql<GraphQL_UserResponse>(getTeamUsersQuery({ orgName, teamName }))
+    .then(res =>
+      res.organization.teams.nodes[0].members.nodes.map(
+        (user: GraphQL_User): User => ({
+          login: user.login,
+          avatarUrl: user.avatarUrl,
+        }),
+      ),
+    )
+}
+
 async function fetchPullRequests({
   orgName,
   teamName,
   setProgress,
   handleInvalidTokenError,
 }: FetchPullRequestsProps): Promise<PullRequest[]> {
-  const teamRepositories = settingsHandler.loadTeam(teamName)?.repositories
+  const savedTeam = settingsHandler.loadTeam(teamName)
+  const teamRepositories = savedTeam?.repositories
+  const savedMembers = savedTeam?.members
+  const includeChecks = settingsHandler.loadPipelineStatus()
 
   if (!orgName || !teamName) return []
 
-  const teamUsers: string[] = await octokit
+  const allTeamUsers: string[] = await octokit
     .graphql<GraphQL_UserResponse>(getTeamUsersQuery({ orgName, teamName }))
     .then(res =>
       res.organization.teams.nodes[0].members.nodes.map(
         (user: GraphQL_User) => user.login,
       ),
     )
-    .catch((error: RequestError) => {
+    .catch((error: { response?: { status?: number } }) => {
       if (error.response?.status === 401 || error.response?.status === 403) {
         handleInvalidTokenError()
         return []
       } else throw error
     })
 
-  if (!teamUsers.length) {
+  if (!allTeamUsers.length) {
     setProgress(100)
     return []
   }
+
+  const teamUsers =
+    savedMembers && savedMembers.length > 0 ? savedMembers : allTeamUsers
 
   setProgress(10)
 
@@ -383,7 +405,7 @@ async function fetchPullRequests({
   const pullRequestPromises = teamUsers.map(user =>
     octokit
       .graphql<GraphQL_PullRequestsResponse>(
-        getPullRequestsByUserQuery({ orgName, author: user }),
+        getPullRequestsByUserQuery({ orgName, author: user, includeChecks }),
       )
       .then(res => {
         progress += 90 / totalResources
@@ -398,6 +420,7 @@ async function fetchPullRequests({
         .graphql<GraphQL_PullRequestsResponse>(
           getPullRequestsByRepositoriesQuery({
             repositories: teamRepositories,
+            includeChecks,
           }),
         )
         .then(res => {
@@ -440,10 +463,13 @@ async function fetchPullRequests({
       requestedReviewers: getReviewers(pr.reviewRequests.nodes),
       contributors: getContributors(pr.commits.nodes, pr.author),
       assignees: pr.assignees.nodes,
-      lastCommitChecks: getLastCommitChecks(
-        pr.lastCommit.nodes[0].commit,
-        pr.baseRef.branchProtectionRule?.requiredStatusCheckContexts,
-      ),
+      lastCommitChecks:
+        includeChecks && pr.lastCommit?.nodes[0]
+          ? getLastCommitChecks(
+              pr.lastCommit.nodes[0].commit,
+              pr.baseRef.branchProtectionRule?.requiredStatusCheckContexts,
+            )
+          : null,
     }),
   )
 

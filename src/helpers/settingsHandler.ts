@@ -56,6 +56,10 @@ const settingsHandler = {
     const settings = this.load()
     return settings.teams[teamName]
   },
+
+  loadPipelineStatus(): boolean {
+    return this.load().loadPipelineStatus ?? true
+  },
 }
 
 Object.freeze(settingsHandler)

@@ -30,7 +30,7 @@ type PullRequest = {
   lastCommitChecks: {
     commitChecks: CommitCheck[]
     result: CommitCheck['result'] | null
-  }
+  } | null
 }
 
 type Label = {

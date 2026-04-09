@@ -1,5 +1,5 @@
 import { KeyboardEvent, forwardRef, useRef, useState } from 'react'
-import { SxProps, Theme } from '@mui/system'
+import { SxProps, Theme } from '@mui/material/styles'
 
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
