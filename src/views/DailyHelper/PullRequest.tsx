@@ -1,4 +1,5 @@
 import { RefObject, useEffect, useState } from 'react'
+import { useTheme } from '@mui/material/styles'
 
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -20,23 +21,6 @@ import { dataFetcher } from '../../helpers/dataFetcher'
 import { settingsHandler } from '../../helpers/settingsHandler'
 import useOnScreen from '../../helpers/useOnScreen'
 
-function getBackgroundColor({
-  state,
-  reviewDecision,
-  isDraft,
-  isLoading,
-}: Pick<PullRequest, 'state' | 'reviewDecision' | 'isDraft'> & {
-  isLoading: boolean
-}) {
-  if (state === 'OPEN' && !isLoading) {
-    if (reviewDecision === 'CHANGES_REQUESTED') return 'rgb(250, 170, 180, 0.6)'
-    if (reviewDecision === 'APPROVED') return 'rgb(65, 200, 150, 0.5)'
-
-    if (isDraft) return 'rgb(200, 200, 200, 0.6)'
-  }
-
-  return 'rgb(244, 244, 247, 0.6)'
-}
 
 type PullRequestProps = {
   customRef: RefObject<HTMLElement>
@@ -69,6 +53,7 @@ export default function PullRequest({
   contributors,
   lastCommitChecks: originalLastCommitChecks,
 }: PullRequestProps) {
+  const theme = useTheme()
   const [lastCommitChecks, setLastCommitChecks] = useState(
     originalLastCommitChecks,
   )
@@ -98,12 +83,14 @@ export default function PullRequest({
       sx={{
         minHeight: 150,
         minWidth: 700,
-        bgcolor: getBackgroundColor({
-          state,
-          reviewDecision,
-          isDraft,
-          isLoading,
-        }),
+        bgcolor: (() => {
+          if (state === 'OPEN' && !isLoading) {
+            if (reviewDecision === 'CHANGES_REQUESTED') return theme.palette.prCard.changesRequested
+            if (reviewDecision === 'APPROVED') return theme.palette.prCard.approved
+            if (isDraft) return theme.palette.prCard.draft
+          }
+          return theme.palette.prCard.default
+        })(),
       }}
     >
       <CardContent>
@@ -129,11 +116,18 @@ export default function PullRequest({
               <>
                 <Link
                   href={repositoryUrl}
-                  variant="subtitle1"
-                  color="GrayText"
-                  underline="hover"
                   target="_blank"
                   rel="noopener"
+                  underline="hover"
+                  sx={{
+                    fontFamily: 'monospace',
+                    fontSize: '0.75rem',
+                    bgcolor: 'action.hover',
+                    color: 'text.primary',
+                    px: 0.75,
+                    py: 0.25,
+                    borderRadius: 1,
+                  }}
                 >
                   {repositoryName}
                 </Link>
@@ -159,7 +153,7 @@ export default function PullRequest({
                 <Link
                   href={url}
                   variant="subtitle1"
-                  color="InfoText"
+                  color="text.secondary"
                   underline="hover"
                   marginLeft={1}
                   target="_blank"
@@ -198,7 +192,7 @@ export default function PullRequest({
                 <Stack
                   direction="row"
                   spacing={0.5}
-                  color={'GrayText'}
+                  color="text.secondary"
                   marginRight={4}
                 >
                   {comments ? <CommentsIcon /> : <NoCommentsIcon />}

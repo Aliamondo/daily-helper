@@ -517,7 +517,7 @@ function OrganizationSetting({
               <Stack direction="row" alignItems="center" gap={1}>
                 <Avatar src={option.avatarUrl} />
                 <Typography>{option.name}</Typography>
-                <Typography color="GrayText">({option.login})</Typography>
+                <Typography color="text.secondary">({option.login})</Typography>
               </Stack>
             </li>
           )}
@@ -556,7 +556,7 @@ function OrganizationSetting({
                 <Avatar src={option.avatarUrl} />
                 <Typography>{option.name}</Typography>
                 {option.description && (
-                  <Typography color="GrayText">{option.description}</Typography>
+                  <Typography color="text.secondary">{option.description}</Typography>
                 )}
               </Stack>
             </li>
@@ -702,7 +702,7 @@ function TeamRepositoriesSetting({
         <Grid item>
           <Typography
             component="div"
-            color={!teamName ? 'GrayText' : undefined}
+            color={!teamName ? 'text.secondary' : undefined}
           >
             <Stack direction="row" alignItems="center" sx={{ fontWeight: 800 }}>
               <ListIcon sx={{ marginRight: 1 }} />
@@ -763,7 +763,7 @@ function TeamRepositoriesSetting({
         </Grid>
       )) || (
         <Grid item marginTop={2}>
-          <Typography color="GrayText">No data available</Typography>
+          <Typography color="text.secondary">No data available</Typography>
         </Grid>
       )}
       {pageable && pageable.total > PAGE_SIZE && (
@@ -846,7 +846,7 @@ function TeamMembersSetting({
         <Grid item>
           <Typography
             component="div"
-            color={!teamName ? 'GrayText' : undefined}
+            color={!teamName ? 'text.secondary' : undefined}
           >
             <Stack direction="row" alignItems="center" sx={{ fontWeight: 800 }}>
               <GroupIcon sx={{ marginRight: 1 }} />
@@ -899,7 +899,7 @@ function TeamMembersSetting({
         ))
       ) : (
         <Grid item marginTop={2}>
-          <Typography color="GrayText">No data available</Typography>
+          <Typography color="text.secondary">No data available</Typography>
         </Grid>
       )}
     </>

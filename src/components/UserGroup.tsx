@@ -1,5 +1,7 @@
+import Box from '@mui/material/Box'
 import Popper, { PopperPlacementType } from '@mui/material/Popper'
 import { ReactElement, RefObject, useRef, useState } from 'react'
+import { useTheme } from '@mui/material/styles'
 
 import AvatarGroup from '@mui/material/AvatarGroup'
 import ClickAwayListener from '@mui/material/ClickAwayListener'
@@ -17,7 +19,6 @@ type StateRects = {
 type UserGroupProps = {
   users: User[]
   groupName: string
-  emptyGroupName?: string
   type?:
     | 'DEFAULT'
     | 'AUTHOR'
@@ -28,7 +29,6 @@ type UserGroupProps = {
 export default function UserGroup({
   users,
   groupName,
-  emptyGroupName,
   type = 'DEFAULT',
 }: UserGroupProps) {
   const [isOpen, setIsOpen] = useState(false)
@@ -48,9 +48,9 @@ export default function UserGroup({
 
   return (
     <Stack direction="column" alignItems="center">
+      <Typography variant="overline" sx={{ userSelect: 'none' }}>{groupName}</Typography>
       {users.length ? (
         <>
-          <Typography variant="subtitle1">{groupName}</Typography>
           <AvatarGroup
             max={3}
             componentsProps={{
@@ -71,9 +71,7 @@ export default function UserGroup({
           />
         </>
       ) : (
-        <Typography variant="subtitle1" color="GrayText">
-          {emptyGroupName || `No ${groupName}`}
-        </Typography>
+        <Box sx={{ height: 40 }} />
       )}
     </Stack>
   )
@@ -93,6 +91,9 @@ export function AvatarGroupPopper({
   main,
   container,
 }: AvatarGroupPopperProps) {
+  const theme = useTheme()
+  const bgColor = theme.palette.prCard.popup
+
   if (!isOpen) return null
 
   const users = showUsers()
@@ -137,7 +138,7 @@ export function AvatarGroupPopper({
           sx={{
             maxWidth: 500,
             padding: 1,
-            bgcolor: 'rgb(245, 245, 245)',
+            bgcolor: bgColor,
             display: 'flex',
           }}
         >

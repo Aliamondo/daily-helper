@@ -255,6 +255,7 @@ function generateDummyPullRequests(total: number): PullRequest[] {
       id: index.toString(),
       author: {
         login: '',
+        name: null,
         avatarUrl: '',
       },
       title: '',
@@ -312,7 +313,7 @@ function getDrawer({
               marginTop: `${marginTop}px`,
               minWidth: '85%',
               display: { xs: 'block', sm: 'none' }, // show only on mobile
-              bgcolor: 'rgb(244, 244, 247)',
+              bgcolor: 'background.default',
             },
           }}
         >
@@ -327,7 +328,7 @@ function getDrawer({
               marginTop: `${marginTop}px`,
               minWidth: '35%',
               display: { xs: 'none', sm: 'block' }, // show on larger screens
-              bgcolor: 'rgb(244, 244, 247)',
+              bgcolor: 'background.default',
             },
           }}
         >
@@ -412,7 +413,7 @@ function DrawerListItem({
         <Tooltip title={countTooltip}>
           <Avatar
             variant="rounded"
-            sx={{ width: 30, height: 30, color: 'black', bgcolor: 'lightgray' }}
+            sx={{ width: 30, height: 30, color: 'text.primary', bgcolor: 'action.selected' }}
           >
             <Typography variant="button">
               {label ? label.count : count}
@@ -435,7 +436,7 @@ function DrawerListItem({
                   fullWidth
                   sx={{
                     textTransform: 'none',
-                    color: isHidden ? 'rgb(0, 0, 0, 0.2)' : 'primary',
+                    color: isHidden ? 'text.disabled' : 'primary',
                     ':hover': {
                       bgcolor: 'inherit',
                     },

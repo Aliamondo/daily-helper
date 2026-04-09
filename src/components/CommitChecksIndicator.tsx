@@ -1,5 +1,5 @@
 import { KeyboardEvent, forwardRef, useRef, useState } from 'react'
-import { SxProps, Theme } from '@mui/material/styles'
+import { SxProps, Theme, useTheme } from '@mui/material/styles'
 
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
@@ -110,6 +110,8 @@ export default function CommitChecksIndicator({
   isLoading,
   sx,
 }: CommitChecksIndicatorProps) {
+  const theme = useTheme()
+  const bgColor = theme.palette.prCard.popup
   const [isOpen, setIsOpen] = useState(false)
   const container = useRef(null)
   const main = useRef<HTMLHeadingElement>(null)
@@ -171,7 +173,7 @@ export default function CommitChecksIndicator({
               sx={{
                 minWidth: 400,
                 maxWidth: 800,
-                bgcolor: 'rgb(244,244,247)',
+                bgcolor: bgColor,
               }}
             >
               <List>

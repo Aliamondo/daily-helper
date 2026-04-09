@@ -13,6 +13,7 @@ type GraphQL_UserResponse = {
 type GraphQL_User = {
   login: string
   avatarUrl: string
+  name: string | null
 }
 
 type GraphQL_PullRequest = {
