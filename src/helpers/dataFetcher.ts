@@ -445,7 +445,7 @@ async function fetchPullRequests({
   setProgress(10)
 
   let progress = 10
-  const totalResources = teamUsers.length + (teamRepositories?.length ? 1 : 0)
+  const totalResources = teamUsers.length + (teamRepositories?.length ?? 0)
 
   const pullRequestPromises = teamUsers.map(user =>
     gql<GraphQL_PullRequestsResponse>(
@@ -457,11 +457,11 @@ async function fetchPullRequests({
     }),
   )
 
-  if (teamRepositories?.length) {
+  teamRepositories?.forEach(repo =>
     pullRequestPromises.push(
       gql<GraphQL_PullRequestsResponse>(
         getPullRequestsByRepositoriesQuery({
-          repositories: teamRepositories,
+          repository: repo,
           excludeAuthors: teamUsers,
           includeChecks,
         }),
@@ -470,8 +470,8 @@ async function fetchPullRequests({
         setProgress(progress)
         return res
       }),
-    )
-  }
+    ),
+  )
 
   const rawPullRequestsData = await Promise.all(pullRequestPromises)
   const rawPullRequests = rawPullRequestsData
