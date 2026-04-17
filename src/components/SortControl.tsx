@@ -1,8 +1,8 @@
 import React from 'react'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
-import ToggleButton from '@mui/material/ToggleButton'
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
 
 export type SortField = 'date' | 'repo' | 'state' | 'author'
 export type SortDir = 'asc' | 'desc'
@@ -29,35 +29,46 @@ export default function SortControl({
   dir,
   onChange,
 }: SortControlProps) {
-  const handleChange = (_: React.MouseEvent, newField: SortField | null) => {
-    if (newField === null) {
-      const meta = FIELDS.find(f => f.key === field)!
-      if (meta.hasDir) onChange(field, dir === 'asc' ? 'desc' : 'asc')
+  const handleClick = (clicked: SortField) => {
+    const meta = FIELDS.find(f => f.key === clicked)!
+    if (clicked === field && meta.hasDir) {
+      onChange(field, dir === 'asc' ? 'desc' : 'asc')
     } else {
-      const meta = FIELDS.find(f => f.key === newField)!
-      onChange(newField, meta.defaultDir)
+      onChange(clicked, meta.defaultDir)
     }
   }
 
   const Arrow = dir === 'asc' ? ArrowUpwardIcon : ArrowDownwardIcon
 
   return (
-    <ToggleButtonGroup
-      value={field}
-      exclusive
-      size="small"
-      onChange={handleChange}
-    >
-      {FIELDS.map(({ key, label, hasDir }) => (
-        <ToggleButton
-          key={key}
-          value={key}
-          sx={{ textTransform: 'none', px: 1.5, py: 0.5, gap: 0.5 }}
-        >
-          {label}
-          {key === field && <Arrow sx={{ fontSize: 14 }} />}
-        </ToggleButton>
-      ))}
-    </ToggleButtonGroup>
+    <Stack direction="row" alignItems="center" gap={0.5}>
+      {FIELDS.map(({ key, label }) => {
+        const isActive = key === field
+        return (
+          <Stack
+            key={key}
+            direction="row"
+            alignItems="center"
+            onClick={() => handleClick(key)}
+            sx={{
+              cursor: 'pointer',
+              px: 1,
+              py: 0.5,
+              borderRadius: 1,
+              color: isActive ? 'primary.main' : 'text.secondary',
+              '&:hover': {
+                color: isActive ? 'primary.main' : 'text.primary',
+                bgcolor: 'action.hover',
+              },
+            }}
+          >
+            <Typography variant="body2" fontWeight={isActive ? 600 : 400}>
+              {label}
+            </Typography>
+            {isActive && <Arrow sx={{ fontSize: 14, ml: 0.25 }} />}
+          </Stack>
+        )
+      })}
+    </Stack>
   )
 }

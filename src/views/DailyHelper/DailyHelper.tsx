@@ -33,7 +33,7 @@ import { getDisplayName } from '../../helpers/getDisplayName'
 import { dataFetcher } from '../../helpers/dataFetcher'
 import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
-import ReviewFilterBar from '../../components/ReviewFilterBar'
+import PullRequestFilterBar from '../../components/PullRequestFilterBar'
 import SortControl, { SortDir, SortField } from '../../components/SortControl'
 
 const teamNames = settingsHandler.loadTeamNames()
@@ -69,9 +69,12 @@ export default function DailyHelper() {
   const [isPullRequestInViewport, setIsPullRequestInViewport] = useState<
     Map<string, boolean>
   >(new Map())
-  const [isReviewFilterActive, setIsReviewFilterActive] = useState(false)
-  const [isMyPrsFilterActive, setIsMyPrsFilterActive] = useState(false)
-  const [isMyWorkFilterActive, setIsMyWorkFilterActive] = useState(false)
+  const [activeFilter, setActiveFilter] = useState<
+    'mustReview' | 'myPrs' | 'myWork' | null
+  >(null)
+  const isReviewFilterActive = activeFilter === 'mustReview'
+  const isMyPrsFilterActive = activeFilter === 'myPrs'
+  const isMyWorkFilterActive = activeFilter === 'myWork'
   const [viewerLogin, setViewerLogin] = useState<string | null>(null)
   const savedSort = settingsHandler.loadSort()
   const [sortField, setSortField] = useState<SortField>(
@@ -355,13 +358,21 @@ export default function DailyHelper() {
                   borderColor: 'divider',
                 }}
               >
-                <ReviewFilterBar
+                <PullRequestFilterBar
                   isMustReviewActive={isReviewFilterActive}
-                  onMustReviewToggle={() => setIsReviewFilterActive(v => !v)}
+                  onMustReviewToggle={() =>
+                    setActiveFilter(f =>
+                      f === 'mustReview' ? null : 'mustReview',
+                    )
+                  }
                   isMyPrsActive={isMyPrsFilterActive}
-                  onMyPrsToggle={() => setIsMyPrsFilterActive(v => !v)}
+                  onMyPrsToggle={() =>
+                    setActiveFilter(f => (f === 'myPrs' ? null : 'myPrs'))
+                  }
                   isMyWorkActive={isMyWorkFilterActive}
-                  onMyWorkToggle={() => setIsMyWorkFilterActive(v => !v)}
+                  onMyWorkToggle={() =>
+                    setActiveFilter(f => (f === 'myWork' ? null : 'myWork'))
+                  }
                 />
                 <Stack direction="row" alignItems="center" gap={3}>
                   {!isLoadingAnimationPlaying && (
