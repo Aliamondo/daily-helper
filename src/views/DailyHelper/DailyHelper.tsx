@@ -29,6 +29,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import VisibleIcon from '@mui/icons-material/Visibility'
 import { applyReviewRequiredFilter } from '../../helpers/prFilters'
+import { getDisplayName } from '../../helpers/getDisplayName'
 import { dataFetcher } from '../../helpers/dataFetcher'
 import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
@@ -72,8 +73,19 @@ export default function DailyHelper() {
   const [isMyPrsFilterActive, setIsMyPrsFilterActive] = useState(false)
   const [isMyWorkFilterActive, setIsMyWorkFilterActive] = useState(false)
   const [viewerLogin, setViewerLogin] = useState<string | null>(null)
-  const [sortField, setSortField] = useState<SortField>('date')
-  const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const savedSort = settingsHandler.loadSort()
+  const [sortField, setSortField] = useState<SortField>(
+    savedSort?.field ?? 'date',
+  )
+  const [sortDirs, setSortDirs] = useState<Record<SortField, SortDir>>(
+    savedSort?.dirs ?? {
+      date: 'desc',
+      repo: 'asc',
+      author: 'asc',
+      state: 'asc',
+    },
+  )
+  const sortDir = sortDirs[sortField]
 
   const main = useRef(null)
 
@@ -205,6 +217,11 @@ export default function DailyHelper() {
           )
         case 'repo':
           return mul * a.repositoryName.localeCompare(b.repositoryName)
+        case 'author':
+          return (
+            mul *
+            getDisplayName(a.author).localeCompare(getDisplayName(b.author))
+          )
         case 'state':
           return getStateRank(a) - getStateRank(b)
       }
@@ -372,8 +389,11 @@ export default function DailyHelper() {
                     field={sortField}
                     dir={sortDir}
                     onChange={(f, d) => {
+                      const newDir = f === sortField ? d : sortDirs[f]
+                      const newDirs = { ...sortDirs, [f]: newDir }
                       setSortField(f)
-                      setSortDir(d)
+                      setSortDirs(newDirs)
+                      settingsHandler.saveSort({ field: f, dirs: newDirs })
                     }}
                   />
                 </Stack>

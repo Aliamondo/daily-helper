@@ -19,4 +19,11 @@ type Settings_All = {
   loadPipelineStatus?: boolean
   aliases?: Record<string, string>
   filters?: Settings_Filters
+  sort?: {
+    field: import('../components/SortControl').SortField
+    dirs: Record<
+      import('../components/SortControl').SortField,
+      import('../components/SortControl').SortDir
+    >
+  }
 }
