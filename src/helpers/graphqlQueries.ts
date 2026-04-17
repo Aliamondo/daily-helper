@@ -387,17 +387,20 @@ function getPullRequestsByUserQuery({
 
 type GetPullRequestsByRepositoriesQueryProps = {
   repositories: string[]
+  excludeAuthors?: string[]
   includeChecks?: boolean
 }
 function getPullRequestsByRepositoriesQuery({
   repositories,
+  excludeAuthors = [],
   includeChecks = false,
 }: GetPullRequestsByRepositoriesQueryProps) {
+  const exclusions = excludeAuthors.map(login => `-author:${login}`).join(' ')
   const query = `{
     search(
       query: "is:open type:pr ${repositories
         .map(name => `repo:${name}`)
-        .join(' ')}"
+        .join(' ')} ${exclusions}"
       first: 100
       type: ISSUE
     ) {

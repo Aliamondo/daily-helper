@@ -414,33 +414,38 @@ async function fetchPullRequests({
 
   if (!orgName || !teamName) return []
 
-  const allTeamUsers: string[] = await gql<GraphQL_UserResponse>(
-    getTeamUsersQuery({ orgName, teamName }),
-  )
-    .then((res: GraphQL_UserResponse) =>
-      res.organization.teams.nodes[0].members.nodes.map(
-        (user: GraphQL_User) => user.login,
-      ),
+  let teamUsers: string[]
+
+  if (savedMembers && savedMembers.length > 0) {
+    teamUsers = savedMembers
+  } else {
+    const allTeamUsers: string[] = await gql<GraphQL_UserResponse>(
+      getTeamUsersQuery({ orgName, teamName }),
     )
-    .catch((error: { response?: { status?: number } }) => {
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        handleInvalidTokenError()
-        return []
-      } else throw error
-    })
+      .then((res: GraphQL_UserResponse) =>
+        res.organization.teams.nodes[0].members.nodes.map(
+          (user: GraphQL_User) => user.login,
+        ),
+      )
+      .catch((error: { response?: { status?: number } }) => {
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          handleInvalidTokenError()
+          return []
+        } else throw error
+      })
 
-  if (!allTeamUsers.length) {
-    setProgress(100)
-    return []
+    if (!allTeamUsers.length) {
+      setProgress(100)
+      return []
+    }
+
+    teamUsers = allTeamUsers
   }
-
-  const teamUsers =
-    savedMembers && savedMembers.length > 0 ? savedMembers : allTeamUsers
 
   setProgress(10)
 
   let progress = 10
-  const totalResources = teamUsers.length + (teamRepositories ? 1 : 0)
+  const totalResources = teamUsers.length + (teamRepositories?.length ? 1 : 0)
 
   const pullRequestPromises = teamUsers.map(user =>
     gql<GraphQL_PullRequestsResponse>(
@@ -452,11 +457,12 @@ async function fetchPullRequests({
     }),
   )
 
-  teamRepositories?.length &&
+  if (teamRepositories?.length) {
     pullRequestPromises.push(
       gql<GraphQL_PullRequestsResponse>(
         getPullRequestsByRepositoriesQuery({
           repositories: teamRepositories,
+          excludeAuthors: teamUsers,
           includeChecks,
         }),
       ).then((res: GraphQL_PullRequestsResponse) => {
@@ -465,6 +471,7 @@ async function fetchPullRequests({
         return res
       }),
     )
+  }
 
   const rawPullRequestsData = await Promise.all(pullRequestPromises)
   const rawPullRequests = rawPullRequestsData
