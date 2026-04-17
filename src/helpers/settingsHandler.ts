@@ -67,6 +67,15 @@ const settingsHandler = {
     )
   },
 
+  loadSort(): Settings_All['sort'] {
+    return this.load().sort
+  },
+
+  saveSort(sort: NonNullable<Settings_All['sort']>): void {
+    const settings = this.load()
+    this.saveAll({ ...settings, sort })
+  },
+
   saveAlias(login: string, alias: string | null): void {
     const settings = this.load()
     const aliases = { ...(settings.aliases ?? {}) }

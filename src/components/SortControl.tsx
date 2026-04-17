@@ -1,9 +1,10 @@
+import React from 'react'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
-import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
 
-export type SortField = 'date' | 'repo' | 'state'
+export type SortField = 'date' | 'repo' | 'state' | 'author'
 export type SortDir = 'asc' | 'desc'
 
 const FIELDS: {
@@ -14,6 +15,7 @@ const FIELDS: {
 }[] = [
   { key: 'date', label: 'Date', defaultDir: 'desc', hasDir: true },
   { key: 'repo', label: 'Repo', defaultDir: 'asc', hasDir: true },
+  { key: 'author', label: 'Author', defaultDir: 'asc', hasDir: true },
   { key: 'state', label: 'State', defaultDir: 'asc', hasDir: false },
 ]
 
@@ -36,41 +38,35 @@ export default function SortControl({
     }
   }
 
+  const Arrow = dir === 'asc' ? ArrowUpwardIcon : ArrowDownwardIcon
+
   return (
-    <Stack direction="row" alignItems="center" gap={0}>
+    <Stack direction="row" alignItems="center" gap={0.5}>
       {FIELDS.map(({ key, label }) => {
         const isActive = key === field
-        const Arrow = dir === 'asc' ? ArrowUpwardIcon : ArrowDownwardIcon
         return (
-          <Button
+          <Stack
             key={key}
-            size="small"
+            direction="row"
+            alignItems="center"
             onClick={() => handleClick(key)}
-            endIcon={
-              isActive ? (
-                <Arrow sx={{ fontSize: '14px !important' }} />
-              ) : undefined
-            }
             sx={{
-              textTransform: 'none',
-              fontWeight: isActive ? 600 : 400,
-              color: isActive ? 'text.primary' : 'text.secondary',
-              minWidth: 0,
+              cursor: 'pointer',
               px: 1,
-              borderBottom: isActive ? 2 : 0,
-              borderColor: isActive ? 'primary.main' : 'text.disabled',
-              borderRadius: 0,
+              py: 0.5,
+              borderRadius: 1,
+              color: isActive ? 'primary.main' : 'text.secondary',
               '&:hover': {
-                bgcolor: 'transparent',
-                color: 'text.primary',
-                borderBottom: 2,
-                borderColor: isActive ? 'primary.main' : 'text.disabled',
+                color: isActive ? 'primary.main' : 'text.primary',
+                bgcolor: 'action.hover',
               },
             }}
-            disableRipple
           >
-            {label}
-          </Button>
+            <Typography variant="body2" fontWeight={isActive ? 600 : 400}>
+              {label}
+            </Typography>
+            {isActive && <Arrow sx={{ fontSize: 14, ml: 0.25 }} />}
+          </Stack>
         )
       })}
     </Stack>

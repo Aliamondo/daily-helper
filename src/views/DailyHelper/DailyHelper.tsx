@@ -29,10 +29,11 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import VisibleIcon from '@mui/icons-material/Visibility'
 import { applyReviewRequiredFilter } from '../../helpers/prFilters'
+import { getDisplayName } from '../../helpers/getDisplayName'
 import { dataFetcher } from '../../helpers/dataFetcher'
 import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
-import ReviewFilterBar from '../../components/ReviewFilterBar'
+import PullRequestFilterBar from '../../components/PullRequestFilterBar'
 import SortControl, { SortDir, SortField } from '../../components/SortControl'
 
 const teamNames = settingsHandler.loadTeamNames()
@@ -68,12 +69,26 @@ export default function DailyHelper() {
   const [isPullRequestInViewport, setIsPullRequestInViewport] = useState<
     Map<string, boolean>
   >(new Map())
-  const [isReviewFilterActive, setIsReviewFilterActive] = useState(false)
-  const [isMyPrsFilterActive, setIsMyPrsFilterActive] = useState(false)
-  const [isMyWorkFilterActive, setIsMyWorkFilterActive] = useState(false)
+  const [activeFilter, setActiveFilter] = useState<
+    'mustReview' | 'myPrs' | 'myWork' | null
+  >(null)
+  const isReviewFilterActive = activeFilter === 'mustReview'
+  const isMyPrsFilterActive = activeFilter === 'myPrs'
+  const isMyWorkFilterActive = activeFilter === 'myWork'
   const [viewerLogin, setViewerLogin] = useState<string | null>(null)
-  const [sortField, setSortField] = useState<SortField>('date')
-  const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const savedSort = settingsHandler.loadSort()
+  const [sortField, setSortField] = useState<SortField>(
+    savedSort?.field ?? 'date',
+  )
+  const [sortDirs, setSortDirs] = useState<Record<SortField, SortDir>>(
+    savedSort?.dirs ?? {
+      date: 'desc',
+      repo: 'asc',
+      author: 'asc',
+      state: 'asc',
+    },
+  )
+  const sortDir = sortDirs[sortField]
 
   const main = useRef(null)
 
@@ -205,6 +220,11 @@ export default function DailyHelper() {
           )
         case 'repo':
           return mul * a.repositoryName.localeCompare(b.repositoryName)
+        case 'author':
+          return (
+            mul *
+            getDisplayName(a.author).localeCompare(getDisplayName(b.author))
+          )
         case 'state':
           return getStateRank(a) - getStateRank(b)
       }
@@ -338,13 +358,21 @@ export default function DailyHelper() {
                   borderColor: 'divider',
                 }}
               >
-                <ReviewFilterBar
+                <PullRequestFilterBar
                   isMustReviewActive={isReviewFilterActive}
-                  onMustReviewToggle={() => setIsReviewFilterActive(v => !v)}
+                  onMustReviewToggle={() =>
+                    setActiveFilter(f =>
+                      f === 'mustReview' ? null : 'mustReview',
+                    )
+                  }
                   isMyPrsActive={isMyPrsFilterActive}
-                  onMyPrsToggle={() => setIsMyPrsFilterActive(v => !v)}
+                  onMyPrsToggle={() =>
+                    setActiveFilter(f => (f === 'myPrs' ? null : 'myPrs'))
+                  }
                   isMyWorkActive={isMyWorkFilterActive}
-                  onMyWorkToggle={() => setIsMyWorkFilterActive(v => !v)}
+                  onMyWorkToggle={() =>
+                    setActiveFilter(f => (f === 'myWork' ? null : 'myWork'))
+                  }
                 />
                 <Stack direction="row" alignItems="center" gap={3}>
                   {!isLoadingAnimationPlaying && (
@@ -372,8 +400,11 @@ export default function DailyHelper() {
                     field={sortField}
                     dir={sortDir}
                     onChange={(f, d) => {
+                      const newDir = f === sortField ? d : sortDirs[f]
+                      const newDirs = { ...sortDirs, [f]: newDir }
                       setSortField(f)
-                      setSortDir(d)
+                      setSortDirs(newDirs)
+                      settingsHandler.saveSort({ field: f, dirs: newDirs })
                     }}
                   />
                 </Stack>
