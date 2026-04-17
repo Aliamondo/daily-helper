@@ -19,7 +19,31 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version_changed: ${{ steps.check.outputs.version_changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if version changed
+        id: check
+        run: |
+          PREV=$(git show HEAD~1:package.json | python3 -c "import sys,json; print(json.load(sys.stdin)['version'])" 2>/dev/null || echo "none")
+          CURR=$(python3 -c "import json; print(json.load(open('package.json'))['version'])")
+          echo "Previous version: $PREV, current version: $CURR"
+          if [ "$PREV" != "$CURR" ]; then
+            echo "version_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "version_changed=false" >> $GITHUB_OUTPUT
+          fi
+
   build:
+    needs: check-version
+    if: needs.check-version.outputs.version_changed == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
