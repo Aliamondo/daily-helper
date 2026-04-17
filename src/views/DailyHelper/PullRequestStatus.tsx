@@ -18,7 +18,6 @@ export default function PullRequestStatus({
   requestedReviewers,
   contributors,
   assignees,
-  isDraft,
 }: Pick<
   PullRequest,
   | 'createdAt'
@@ -27,7 +26,6 @@ export default function PullRequestStatus({
   | 'requestedReviewers'
   | 'contributors'
   | 'assignees'
-  | 'isDraft'
 > & { isLoading: boolean }) {
   const authorRef = useRef<HTMLHeadingElement>(null)
   const skeletonHeight =
@@ -87,7 +85,6 @@ export default function PullRequestStatus({
           <ReviewersColumn
             reviews={reviews}
             requestedReviewers={requestedReviewers}
-            isDraft={isDraft}
           />
         )}
       </Grid>
@@ -118,8 +115,7 @@ function AuthorColumn({ author, createdAtFromNow }: AuthorColumnProps) {
 function ReviewersColumn({
   reviews,
   requestedReviewers,
-  isDraft,
-}: Pick<PullRequest, 'reviews' | 'requestedReviewers' | 'isDraft'>) {
+}: Pick<PullRequest, 'reviews' | 'requestedReviewers'>) {
   const [isOpen, setIsOpen] = useState(false)
   const container = useRef(null)
   const main = useRef<HTMLHeadingElement>(null)

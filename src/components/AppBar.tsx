@@ -15,7 +15,7 @@ import IconButton from '@mui/material/IconButton'
 import LinearProgress from '@mui/material/LinearProgress'
 import MenuIcon from '@mui/icons-material/Menu'
 import ReloadIcon from '@mui/icons-material/Replay'
-import Settings from './settings'
+import Settings from './settings/Settings'
 import SettingsIcon from '@mui/icons-material/Settings'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
@@ -165,7 +165,6 @@ export default function AppBarElement({
           <LinearProgress variant="determinate" value={loadingProgress} />
         )}
       </AppBar>
-      <Toolbar sx={{ paddingBottom: 2 }} />
     </>
   )
 }

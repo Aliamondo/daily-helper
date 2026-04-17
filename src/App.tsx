@@ -5,7 +5,7 @@ import { ThemeProvider } from '@mui/material/styles'
 import { ColorModeContext } from './ColorModeContext'
 import { createAppTheme } from './theme'
 
-const DailyHelper = lazy(() => import('./views/DailyHelper/DalyHelper'))
+const DailyHelper = lazy(() => import('./views/DailyHelper/DailyHelper'))
 
 function App() {
   const [mode, setMode] = useState<'light' | 'dark'>(

@@ -57,6 +57,16 @@ const settingsHandler = {
     return this.load().aliases ?? {}
   },
 
+  loadFilters(): Settings_Filters {
+    return (
+      this.load().filters ?? {
+        botPatterns: ['[bot]'],
+        botLogins: ['dependabot', 'copilot-pull-request-reviewer'],
+        titleWhitelist: ['security', 'critical', 'urgent'],
+      }
+    )
+  },
+
   saveAlias(login: string, alias: string | null): void {
     const settings = this.load()
     const aliases = { ...(settings.aliases ?? {}) }

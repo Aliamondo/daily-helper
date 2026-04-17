@@ -30,6 +30,7 @@ import Stack from '@mui/material/Stack'
 import Switch from '@mui/material/Switch'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
+import FiltersSetting from './FiltersSetting'
 import TeamMembersSetting from './TeamMembersSetting'
 import TeamRepositoriesSetting from './TeamRepositoriesSetting'
 import Typography from '@mui/material/Typography'
@@ -69,6 +70,9 @@ export default function Settings({
   const [loadPipelineStatus, setLoadPipelineStatus] = useState(
     settingsHandler.loadPipelineStatus(),
   )
+  const [filters, setFilters] = useState<Settings_Filters>(() =>
+    settingsHandler.loadFilters(),
+  )
   const [saveKey, setSaveKey] = useState(0)
   const [isConfirmDiscardOpen, setIsConfirmDiscardOpen] = useState(false)
 
@@ -103,6 +107,7 @@ export default function Settings({
         },
       },
       loadPipelineStatus,
+      filters,
     })
 
     setSaveKey(k => k + 1)
@@ -126,7 +131,8 @@ export default function Settings({
     settingsHandler.loadOrgName() === orgName &&
     JSON.stringify(settingsHandler.loadTeamNames()) ===
       JSON.stringify(teamNames) &&
-    settingsHandler.loadPipelineStatus() === loadPipelineStatus
+    settingsHandler.loadPipelineStatus() === loadPipelineStatus &&
+    JSON.stringify(settingsHandler.loadFilters()) === JSON.stringify(filters)
 
   const hasUnsavedChanges = !isResetSettingsDisabled
 
@@ -151,6 +157,7 @@ export default function Settings({
     setOrgName(settingsHandler.loadOrgName())
     setTeamNames(settingsHandler.loadTeamNames())
     setLoadPipelineStatus(settingsHandler.loadPipelineStatus())
+    setFilters(settingsHandler.loadFilters())
   }
 
   return (
@@ -194,6 +201,7 @@ export default function Settings({
           <Tab label="General" />
           <Tab label="Members" />
           <Tab label="Repositories" />
+          <Tab label="Filters" />
         </Tabs>
 
         <Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
@@ -269,6 +277,11 @@ export default function Settings({
                 saveKey={saveKey}
               />
             </Grid>
+          )}
+          {mountedTabs.has(3) && (
+            <Box sx={{ display: activeTab === 3 ? undefined : 'none' }}>
+              <FiltersSetting filters={filters} setFilters={setFilters} />
+            </Box>
           )}
         </Box>
       </Box>

@@ -3,6 +3,12 @@ type Settings_Team = {
   members?: string[]
 }
 
+type Settings_Filters = {
+  botPatterns: string[]
+  botLogins: string[]
+  titleWhitelist: string[]
+}
+
 type Settings_All = {
   githubToken: string
   orgName: string | null
@@ -12,4 +18,5 @@ type Settings_All = {
   }
   loadPipelineStatus?: boolean
   aliases?: Record<string, string>
+  filters?: Settings_Filters
 }

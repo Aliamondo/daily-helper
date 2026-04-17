@@ -6,9 +6,10 @@ import {
   getPullRequestsByRepositoriesQuery,
   getPullRequestsByUserQuery,
   getTeamRepositoriesQuery,
+  getTeamsQuery,
   getTeamUsersPageableQuery,
   getTeamUsersQuery,
-  getTeamsQuery,
+  getViewerQuery,
 } from './graphqlQueries'
 
 import { graphql } from '@octokit/graphql'
@@ -33,6 +34,7 @@ let gql = makeClient(settingsHandler.loadGithubToken() || '')
 const dataFetcher = {
   fetchOrganizations,
   fetchTeams,
+  fetchViewer,
   fetchTeamUsersPageable,
   fetchPullRequests,
   refreshLastCommitChecks,
@@ -160,7 +162,7 @@ async function refreshLastCommitChecks({
   repoName,
   prNumber,
 }: RefreshLastCommitChecksProps) {
-  const commitChecks = await gql<GraphQL_CommitChecksPerPullRequestResponse>(
+  return await gql<GraphQL_CommitChecksPerPullRequestResponse>(
     getCommitChecksQuery({ orgName, repoName, prNumber }),
   ).then((res: GraphQL_CommitChecksPerPullRequestResponse) =>
     getLastCommitChecks(
@@ -169,8 +171,6 @@ async function refreshLastCommitChecks({
         ?.requiredStatusCheckContexts,
     ),
   )
-
-  return commitChecks
 }
 
 /**
@@ -353,22 +353,6 @@ type FetchPullRequestsProps = {
     (arg0: number): void
   }
   handleInvalidTokenError: VoidFunction
-}
-async function fetchTeamUsers(
-  orgName: string,
-  teamName: string,
-): Promise<User[]> {
-  return gql<GraphQL_UserResponse>(
-    getTeamUsersQuery({ orgName, teamName }),
-  ).then((res: GraphQL_UserResponse) =>
-    res.organization.teams.nodes[0].members.nodes.map(
-      (user: GraphQL_User): User => ({
-        login: user.login,
-        name: user.name,
-        avatarUrl: user.avatarUrl,
-      }),
-    ),
-  )
 }
 
 async function fetchTeamUsersPageable(
@@ -580,6 +564,11 @@ async function fetchTeamRepositories(
     startCursor: pageInfo.startCursor,
     endCursor: pageInfo.endCursor,
   }
+}
+
+async function fetchViewer(): Promise<string> {
+  const res = await gql<GraphQL_ViewerLoginResponse>(getViewerQuery())
+  return res.viewer.login
 }
 
 async function fetchOrganizations(

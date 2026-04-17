@@ -240,6 +240,12 @@ type GraphQL_TeamRepository = {
   }
 }
 
+type GraphQL_ViewerLoginResponse = {
+  viewer: {
+    login: string
+  }
+}
+
 type GraphQL_UserPageableResponse = {
   organization: {
     teams: {
