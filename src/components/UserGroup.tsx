@@ -51,30 +51,30 @@ export default function UserGroup({
       <Typography variant="overline" sx={{ userSelect: 'none' }}>
         {groupName}
       </Typography>
-      {users.length ? (
-        <>
-          <AvatarGroup
-            max={3}
-            componentsProps={{
-              additionalAvatar: {
-                ref: container,
-                onClick: handleClick,
-              },
-            }}
-          >
-            {showUsers()}
-          </AvatarGroup>
-          <AvatarGroupPopper
-            isOpen={isOpen}
-            showUsers={showUsers}
-            main={main}
-            container={container}
-            handleClose={handleClose}
-          />
-        </>
-      ) : (
-        <Box sx={{ height: 40 }} />
-      )}
+      <Box sx={{ height: 40, display: 'flex', alignItems: 'center' }}>
+        {users.length ? (
+          <>
+            <AvatarGroup
+              max={3}
+              componentsProps={{
+                additionalAvatar: {
+                  ref: container,
+                  onClick: handleClick,
+                },
+              }}
+            >
+              {showUsers()}
+            </AvatarGroup>
+            <AvatarGroupPopper
+              isOpen={isOpen}
+              showUsers={showUsers}
+              main={main}
+              container={container}
+              handleClose={handleClose}
+            />
+          </>
+        ) : null}
+      </Box>
     </Stack>
   )
 }

@@ -223,6 +223,10 @@ function getPreviousPageQuery({
   return `last:${pageSize} before:"${startCursor}"`
 }
 
+function getViewerQuery() {
+  return minify(`{ viewer { login } }`)
+}
+
 function getOrganizationsQuery() {
   const query = `{
     viewer {
@@ -430,6 +434,7 @@ function getCommitChecksQuery({
 }
 
 export {
+  getViewerQuery,
   getOrganizationsQuery,
   getTeamsQuery,
   getTeamUsersQuery,

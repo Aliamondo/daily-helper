@@ -14,7 +14,7 @@ import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
 import { usePagination } from './usePagination'
 
-const PAGE_SIZE = 36
+const PAGE_SIZE = 24
 
 type AliasEditorProps = {
   login: string

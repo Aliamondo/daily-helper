@@ -18,7 +18,6 @@ export default function PullRequestStatus({
   requestedReviewers,
   contributors,
   assignees,
-  isDraft,
 }: Pick<
   PullRequest,
   | 'createdAt'
@@ -27,7 +26,6 @@ export default function PullRequestStatus({
   | 'requestedReviewers'
   | 'contributors'
   | 'assignees'
-  | 'isDraft'
 > & { isLoading: boolean }) {
   const authorRef = useRef<HTMLHeadingElement>(null)
   const skeletonHeight =
@@ -87,7 +85,6 @@ export default function PullRequestStatus({
           <ReviewersColumn
             reviews={reviews}
             requestedReviewers={requestedReviewers}
-            isDraft={isDraft}
           />
         )}
       </Grid>
@@ -106,10 +103,10 @@ function AuthorColumn({ author, createdAtFromNow }: AuthorColumnProps) {
         Author
       </Typography>
       <Stack direction="row" spacing={1} alignItems="center">
-        <AvatarGroup max={3} sx={{ marginLeft: 1 }}>
-          <UserBadge user={author} type="AUTHOR" />
-        </AvatarGroup>
-        <Typography variant="subtitle2">{createdAtFromNow}</Typography>
+        <UserBadge user={author} type="AUTHOR" />
+        <Typography variant="subtitle2" color="text.secondary">
+          {createdAtFromNow}
+        </Typography>
       </Stack>
     </Stack>
   )
@@ -118,8 +115,7 @@ function AuthorColumn({ author, createdAtFromNow }: AuthorColumnProps) {
 function ReviewersColumn({
   reviews,
   requestedReviewers,
-  isDraft,
-}: Pick<PullRequest, 'reviews' | 'requestedReviewers' | 'isDraft'>) {
+}: Pick<PullRequest, 'reviews' | 'requestedReviewers'>) {
   const [isOpen, setIsOpen] = useState(false)
   const container = useRef(null)
   const main = useRef<HTMLHeadingElement>(null)
@@ -159,30 +155,30 @@ function ReviewersColumn({
       <Typography variant="overline" sx={{ userSelect: 'none' }}>
         Reviewers
       </Typography>
-      {reviews.length || requestedReviewers.length ? (
-        <>
-          <AvatarGroup
-            max={3}
-            componentsProps={{
-              additionalAvatar: {
-                ref: container,
-                onClick: handleClick,
-              },
-            }}
-          >
-            {showUsers()}
-          </AvatarGroup>
-          <AvatarGroupPopper
-            isOpen={isOpen}
-            showUsers={showUsers}
-            main={main}
-            container={container}
-            handleClose={handleClose}
-          />
-        </>
-      ) : (
-        <Box sx={{ height: 40 }} />
-      )}
+      <Box sx={{ height: 40, display: 'flex', alignItems: 'center' }}>
+        {reviews.length || requestedReviewers.length ? (
+          <>
+            <AvatarGroup
+              max={3}
+              componentsProps={{
+                additionalAvatar: {
+                  ref: container,
+                  onClick: handleClick,
+                },
+              }}
+            >
+              {showUsers()}
+            </AvatarGroup>
+            <AvatarGroupPopper
+              isOpen={isOpen}
+              showUsers={showUsers}
+              main={main}
+              container={container}
+              handleClose={handleClose}
+            />
+          </>
+        ) : null}
+      </Box>
     </Stack>
   )
 }

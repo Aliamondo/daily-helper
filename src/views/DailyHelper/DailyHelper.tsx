@@ -1,4 +1,11 @@
-import { RefObject, createRef, useEffect, useRef, useState } from 'react'
+import {
+  RefObject,
+  createRef,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 
 import Alert from '@mui/material/Alert'
 import AlertTitle from '@mui/material/AlertTitle'
@@ -21,8 +28,12 @@ import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import VisibleIcon from '@mui/icons-material/Visibility'
+import { applyReviewRequiredFilter } from '../../helpers/prFilters'
 import { dataFetcher } from '../../helpers/dataFetcher'
+import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
+import ReviewFilterBar from '../../components/ReviewFilterBar'
+import SortControl, { SortDir, SortField } from '../../components/SortControl'
 
 const teamNames = settingsHandler.loadTeamNames()
 export const ICON_BUTTON_SIZE = 40
@@ -43,7 +54,7 @@ export default function DailyHelper() {
     generateDummyPullRequests(5),
   )
   const [isLoadingAnimationPlaying, setIsLoadingAnimationPlaying] = useState(
-    true && !isInvalidToken && Boolean(orgName) && teamNames.length > 0,
+    !isInvalidToken && Boolean(orgName) && teamNames.length > 0,
   )
   const [isDrawbarOpen, setIsDrawbarOpen] = useState(false)
   const [
@@ -57,6 +68,12 @@ export default function DailyHelper() {
   const [isPullRequestInViewport, setIsPullRequestInViewport] = useState<
     Map<string, boolean>
   >(new Map())
+  const [isReviewFilterActive, setIsReviewFilterActive] = useState(false)
+  const [isMyPrsFilterActive, setIsMyPrsFilterActive] = useState(false)
+  const [isMyWorkFilterActive, setIsMyWorkFilterActive] = useState(false)
+  const [viewerLogin, setViewerLogin] = useState<string | null>(null)
+  const [sortField, setSortField] = useState<SortField>('date')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
 
   const main = useRef(null)
 
@@ -95,6 +112,19 @@ export default function DailyHelper() {
     isMandatoryDataPresent && setPullRequestRefs(pullRequestRefs)
   }, [shouldLoad, teamName, pullRequestRefs, isInvalidToken, orgName])
 
+  useEffect(() => {
+    if (!settingsHandler.loadGithubToken()) return
+    const cached = queryCache.get<string>('viewer:login')
+    if (cached) {
+      setViewerLogin(cached)
+      return
+    }
+    dataFetcher.fetchViewer().then(login => {
+      queryCache.set('viewer:login', login)
+      setViewerLogin(login)
+    })
+  }, [shouldLoad])
+
   const setPullRequestInViewport = (
     pullRequestId: string,
     isVisible: boolean,
@@ -106,6 +136,80 @@ export default function DailyHelper() {
     }
     setIsPullRequestInViewport(isPullRequestInViewport)
   }
+
+  const reviewRequiredFilteredIds = useMemo(() => {
+    if (!isReviewFilterActive || !viewerLogin) return null
+    const filtered = applyReviewRequiredFilter(
+      pullRequests,
+      viewerLogin,
+      settingsHandler.loadFilters(),
+    )
+    return new Set(filtered.map(pr => pr.id))
+  }, [pullRequests, isReviewFilterActive, viewerLogin])
+
+  const getVisibility = (labels: Label[]): boolean => {
+    if (!labels.length) return !isPullRequestsWithoutLabelsHidden
+    return !labels
+      .map(label => label.name.toLocaleLowerCase())
+      .every(labelName => hiddenLabels.has(labelName))
+  }
+
+  const isMyWork = (pr: (typeof pullRequests)[number]) =>
+    viewerLogin !== null &&
+    (pr.author.login === viewerLogin ||
+      pr.contributors.some(u => u.login === viewerLogin) ||
+      pr.assignees.some(u => u.login === viewerLogin) ||
+      pr.requestedReviewers.some(u => u.login === viewerLogin) ||
+      pr.reviews.some(r => r.reviewer.login === viewerLogin))
+
+  const visibleCount = useMemo(
+    () =>
+      pullRequests.filter(
+        pr =>
+          getVisibility(pr.labels) &&
+          (!reviewRequiredFilteredIds ||
+            reviewRequiredFilteredIds.has(pr.id)) &&
+          (!isMyPrsFilterActive || pr.author.login === viewerLogin) &&
+          (!isMyWorkFilterActive || isMyWork(pr)),
+      ).length,
+    [
+      pullRequests,
+      reviewRequiredFilteredIds,
+      isMyPrsFilterActive,
+      isMyWorkFilterActive,
+      viewerLogin,
+      hiddenLabels,
+      isPullRequestsWithoutLabelsHidden,
+    ],
+  )
+
+  const sortedPullRequests = useMemo(() => {
+    const filters = settingsHandler.loadFilters()
+    const getStateRank = (pr: (typeof pullRequests)[number]): number => {
+      if (pr.isDraft) return 4
+      if (pr.reviewDecision === 'APPROVED') return 0
+      if (pr.reviewDecision === 'CHANGES_REQUESTED') return 1
+      const humanReviewers = pr.requestedReviewers.filter(
+        r => !filters.botLogins.includes(r.login.toLowerCase()),
+      )
+      if (!humanReviewers.length) return 3
+      return 2 // REVIEW_REQUIRED with human reviewers
+    }
+    const mul = sortDir === 'asc' ? 1 : -1
+    return [...pullRequests].sort((a, b) => {
+      switch (sortField) {
+        case 'date':
+          return (
+            mul *
+            (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+          )
+        case 'repo':
+          return mul * a.repositoryName.localeCompare(b.repositoryName)
+        case 'state':
+          return getStateRank(a) - getStateRank(b)
+      }
+    })
+  }, [pullRequests, sortField, sortDir])
 
   const allLabels = new Map<string, LabelWithCount>()
   const pullRequestsWithLabels = pullRequests.filter(pr => pr.labels.length)
@@ -159,15 +263,8 @@ export default function DailyHelper() {
     setHiddenLabels(new Set())
   }
 
-  const getVisibility = (labels: Label[]): boolean => {
-    if (!labels.length) return !isPullRequestsWithoutLabelsHidden
-    return !labels
-      .map(label => label.name.toLocaleLowerCase())
-      .every(labelName => hiddenLabels.has(labelName))
-  }
-
   return (
-    <Box ref={main} sx={{ mx: 'auto' }} maxWidth={1150}>
+    <>
       <AppBar
         loadingProgress={loadingProgress}
         isLoadingAnimationPlaying={isLoadingAnimationPlaying}
@@ -186,64 +283,138 @@ export default function DailyHelper() {
         isDrawbarOpen={isDrawbarOpen}
         setIsDrawbarOpen={setIsDrawbarOpen}
       />
-      {isInvalidToken && (
-        <Alert severity="error">
-          <AlertTitle>Authorization error</AlertTitle>
-          <Typography display="flex" variant="h6" alignItems="center">
-            Github token is not provided or is invalid. Please edit it in the
-            <SettingsIcon fontSize="medium" sx={{ marginLeft: 0.5 }} />
-            Settings
-          </Typography>
-        </Alert>
-      )}
-      {!orgName && (
-        <Alert severity="error">
-          <AlertTitle>Error</AlertTitle>
-          <Typography display="flex" variant="h6" alignItems="center">
-            Organization name is not provided. Please edit it in the
-            <SettingsIcon fontSize="medium" sx={{ marginLeft: 0.5 }} />
-            Settings
-          </Typography>
-        </Alert>
-      )}
-      {!teamName && (
-        <Alert severity="error">
-          <AlertTitle>Error</AlertTitle>
-          <Typography display="flex" variant="h6" alignItems="center">
-            No teams are selected. Please select them in the
-            <SettingsIcon fontSize="medium" sx={{ marginLeft: 0.5 }} />
-            Settings
-          </Typography>
-        </Alert>
-      )}
-      {!isInvalidToken && Boolean(orgName) && Boolean(teamName) && (
-        <Stack spacing={0.5}>
-          {pullRequests.map((pr, index) => (
-            <Slide
-              key={pr.id}
-              direction="up"
-              in={getVisibility(pr.labels)}
-              timeout={400}
-              mountOnEnter
-              unmountOnExit
-              appear={false}
-              container={main.current}
-              enter={isPullRequestInViewport.has(pr.id)}
-              exit={false} // disable exit transitions as they lag when multiple are played at once
-            >
-              <Box ref={pullRequestRefs[index]}>
-                <PullRequest
-                  customRef={pullRequestRefs[index]}
-                  setIsInViewport={setPullRequestInViewport}
-                  isLoading={isLoadingAnimationPlaying}
-                  {...pr}
+      <Box
+        sx={{
+          height: 'calc(100vh - 64px)',
+          mt: '64px',
+          overflowY: 'auto',
+        }}
+      >
+        <Box ref={main} sx={{ mx: 'auto', px: 1 }} maxWidth={1150}>
+          {isInvalidToken && (
+            <Alert severity="error">
+              <AlertTitle>Authorization error</AlertTitle>
+              <Typography display="flex" variant="h6" alignItems="center">
+                Github token is not provided or is invalid. Please edit it in
+                the
+                <SettingsIcon fontSize="medium" sx={{ marginLeft: 0.5 }} />
+                Settings
+              </Typography>
+            </Alert>
+          )}
+          {!orgName && (
+            <Alert severity="error">
+              <AlertTitle>Error</AlertTitle>
+              <Typography display="flex" variant="h6" alignItems="center">
+                Organization name is not provided. Please edit it in the
+                <SettingsIcon fontSize="medium" sx={{ marginLeft: 0.5 }} />
+                Settings
+              </Typography>
+            </Alert>
+          )}
+          {!teamName && (
+            <Alert severity="error">
+              <AlertTitle>Error</AlertTitle>
+              <Typography display="flex" variant="h6" alignItems="center">
+                No teams are selected. Please select them in the
+                <SettingsIcon fontSize="medium" sx={{ marginLeft: 0.5 }} />
+                Settings
+              </Typography>
+            </Alert>
+          )}
+          {!isInvalidToken && Boolean(orgName) && Boolean(teamName) && (
+            <>
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+                sx={{
+                  position: 'sticky',
+                  top: 0,
+                  zIndex: 20,
+                  bgcolor: 'background.default',
+                  py: 1,
+                  borderBottom: 1,
+                  borderColor: 'divider',
+                }}
+              >
+                <ReviewFilterBar
+                  isMustReviewActive={isReviewFilterActive}
+                  onMustReviewToggle={() => setIsReviewFilterActive(v => !v)}
+                  isMyPrsActive={isMyPrsFilterActive}
+                  onMyPrsToggle={() => setIsMyPrsFilterActive(v => !v)}
+                  isMyWorkActive={isMyWorkFilterActive}
+                  onMyWorkToggle={() => setIsMyWorkFilterActive(v => !v)}
                 />
-              </Box>
-            </Slide>
-          ))}
-        </Stack>
-      )}
-    </Box>
+                <Stack direction="row" alignItems="center" gap={3}>
+                  {!isLoadingAnimationPlaying && (
+                    <Stack direction="row" alignItems="baseline" gap={0.5}>
+                      <Typography
+                        variant="h6"
+                        fontWeight={700}
+                        lineHeight={1}
+                        sx={{ fontVariantNumeric: 'tabular-nums' }}
+                      >
+                        {visibleCount === pullRequests.length
+                          ? pullRequests.length
+                          : `${visibleCount} / ${pullRequests.length}`}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        lineHeight={1}
+                      >
+                        total
+                      </Typography>
+                    </Stack>
+                  )}
+                  <SortControl
+                    field={sortField}
+                    dir={sortDir}
+                    onChange={(f, d) => {
+                      setSortField(f)
+                      setSortDir(d)
+                    }}
+                  />
+                </Stack>
+              </Stack>
+              <Stack spacing={0.5}>
+                {sortedPullRequests.map((pr, index) => (
+                  <Slide
+                    key={pr.id}
+                    direction="up"
+                    in={
+                      getVisibility(pr.labels) &&
+                      (!reviewRequiredFilteredIds ||
+                        reviewRequiredFilteredIds.has(pr.id)) &&
+                      (!isMyPrsFilterActive ||
+                        pr.author.login === viewerLogin) &&
+                      (!isMyWorkFilterActive || isMyWork(pr))
+                    }
+                    timeout={400}
+                    mountOnEnter
+                    unmountOnExit
+                    appear={false}
+                    container={main.current}
+                    enter={isPullRequestInViewport.has(pr.id)}
+                    exit={false} // disable exit transitions as they lag when multiple are played at once
+                  >
+                    <Box ref={pullRequestRefs[index]}>
+                      <PullRequest
+                        customRef={pullRequestRefs[index]}
+                        setIsInViewport={setPullRequestInViewport}
+                        isLoading={isLoadingAnimationPlaying}
+                        {...pr}
+                      />
+                    </Box>
+                  </Slide>
+                ))}
+              </Stack>
+            </>
+          )}
+        </Box>
+      </Box>
+    </>
   )
 }
 
