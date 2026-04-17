@@ -39,15 +39,6 @@ export default function ReviewFilterBar({
           setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top })
         }}
         onMouseLeave={() => setMousePos(null)}
-        sx={{
-          ...(!isMustReviewActive &&
-            mousePos && {
-              background: `radial-gradient(circle at ${mousePos.x}px ${mousePos.y}px, rgba(192,21,42,0.35) 50%, transparent 80%)`,
-              borderColor: '#c0152a',
-              color: '#c0152a',
-              '& .MuiChip-icon': { color: '#c0152a !important' },
-            }),
-        }}
       />
       <Chip
         icon={<PersonIcon />}
