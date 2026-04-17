@@ -84,6 +84,10 @@ type TeamRepositoryPageable = {
   teamRepositories: TeamRepository[]
 } & Pageable
 
+type TeamMemberPageable = {
+  members: User[]
+} & Pageable
+
 type Organization = User & {
   name: string
 }

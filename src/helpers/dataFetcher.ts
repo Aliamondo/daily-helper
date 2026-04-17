@@ -6,6 +6,7 @@ import {
   getPullRequestsByRepositoriesQuery,
   getPullRequestsByUserQuery,
   getTeamRepositoriesQuery,
+  getTeamUsersPageableQuery,
   getTeamUsersQuery,
   getTeamsQuery,
 } from './graphqlQueries'
@@ -32,7 +33,7 @@ let gql = makeClient(settingsHandler.loadGithubToken() || '')
 const dataFetcher = {
   fetchOrganizations,
   fetchTeams,
-  fetchTeamUsers,
+  fetchTeamUsersPageable,
   fetchPullRequests,
   refreshLastCommitChecks,
   fetchTeamRepositories,
@@ -159,17 +160,15 @@ async function refreshLastCommitChecks({
   repoName,
   prNumber,
 }: RefreshLastCommitChecksProps) {
-  const commitChecks = await gql
-    .graphql<GraphQL_CommitChecksPerPullRequestResponse>(
-      getCommitChecksQuery({ orgName, repoName, prNumber }),
-    )
-    .then((res: GraphQL_CommitChecksPerPullRequestResponse) =>
-      getLastCommitChecks(
-        res.organization.repository.pullRequest.lastCommit.nodes[0].commit,
-        res.organization.repository.pullRequest.baseRef.branchProtectionRule
-          ?.requiredStatusCheckContexts,
-      ),
-    )
+  const commitChecks = await gql<GraphQL_CommitChecksPerPullRequestResponse>(
+    getCommitChecksQuery({ orgName, repoName, prNumber }),
+  ).then((res: GraphQL_CommitChecksPerPullRequestResponse) =>
+    getLastCommitChecks(
+      res.organization.repository.pullRequest.lastCommit.nodes[0].commit,
+      res.organization.repository.pullRequest.baseRef.branchProtectionRule
+        ?.requiredStatusCheckContexts,
+    ),
+  )
 
   return commitChecks
 }
@@ -359,17 +358,63 @@ async function fetchTeamUsers(
   orgName: string,
   teamName: string,
 ): Promise<User[]> {
-  return gql
-    .graphql<GraphQL_UserResponse>(getTeamUsersQuery({ orgName, teamName }))
-    .then((res: GraphQL_UserResponse) =>
-      res.organization.teams.nodes[0].members.nodes.map(
-        (user: GraphQL_User): User => ({
-          login: user.login,
-          name: user.name,
-          avatarUrl: user.avatarUrl,
-        }),
+  return gql<GraphQL_UserResponse>(
+    getTeamUsersQuery({ orgName, teamName }),
+  ).then((res: GraphQL_UserResponse) =>
+    res.organization.teams.nodes[0].members.nodes.map(
+      (user: GraphQL_User): User => ({
+        login: user.login,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+      }),
+    ),
+  )
+}
+
+async function fetchTeamUsersPageable(
+  orgName: string,
+  teamName: string,
+  page: PageNavigation,
+  pageSize: number = 36,
+  startCursor?: string,
+  endCursor?: string,
+  total?: number,
+): Promise<TeamMemberPageable> {
+  const {
+    nodes: membersRaw,
+    totalCount,
+    pageInfo,
+  } = await gql<GraphQL_UserPageableResponse>(
+    getTeamUsersPageableQuery({
+      orgName,
+      teamName,
+      pagination: handlePageNavigation(
+        pageSize,
+        page,
+        startCursor,
+        endCursor,
+        total,
       ),
-    )
+    }),
+  ).then(
+    (res: GraphQL_UserPageableResponse) =>
+      res.organization.teams.nodes[0].members,
+  )
+
+  return {
+    members: membersRaw.map(
+      (user: GraphQL_User): User => ({
+        login: user.login,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+      }),
+    ),
+    total: totalCount,
+    hasNextPage: pageInfo.hasNextPage,
+    hasPreviousPage: pageInfo.hasPreviousPage,
+    startCursor: pageInfo.startCursor,
+    endCursor: pageInfo.endCursor,
+  }
 }
 
 async function fetchPullRequests({
@@ -385,8 +430,9 @@ async function fetchPullRequests({
 
   if (!orgName || !teamName) return []
 
-  const allTeamUsers: string[] = await gql
-    .graphql<GraphQL_UserResponse>(getTeamUsersQuery({ orgName, teamName }))
+  const allTeamUsers: string[] = await gql<GraphQL_UserResponse>(
+    getTeamUsersQuery({ orgName, teamName }),
+  )
     .then((res: GraphQL_UserResponse) =>
       res.organization.teams.nodes[0].members.nodes.map(
         (user: GraphQL_User) => user.login,
@@ -413,31 +459,27 @@ async function fetchPullRequests({
   const totalResources = teamUsers.length + (teamRepositories ? 1 : 0)
 
   const pullRequestPromises = teamUsers.map(user =>
-    gql
-      .graphql<GraphQL_PullRequestsResponse>(
-        getPullRequestsByUserQuery({ orgName, author: user, includeChecks }),
-      )
-      .then((res: GraphQL_PullRequestsResponse) => {
-        progress += 90 / totalResources
-        setProgress(progress)
-        return res
-      }),
+    gql<GraphQL_PullRequestsResponse>(
+      getPullRequestsByUserQuery({ orgName, author: user, includeChecks }),
+    ).then((res: GraphQL_PullRequestsResponse) => {
+      progress += 90 / totalResources
+      setProgress(progress)
+      return res
+    }),
   )
 
   teamRepositories?.length &&
     pullRequestPromises.push(
-      gql
-        .graphql<GraphQL_PullRequestsResponse>(
-          getPullRequestsByRepositoriesQuery({
-            repositories: teamRepositories,
-            includeChecks,
-          }),
-        )
-        .then((res: GraphQL_PullRequestsResponse) => {
-          progress += 90 / totalResources
-          setProgress(progress)
-          return res
+      gql<GraphQL_PullRequestsResponse>(
+        getPullRequestsByRepositoriesQuery({
+          repositories: teamRepositories,
+          includeChecks,
         }),
+      ).then((res: GraphQL_PullRequestsResponse) => {
+        progress += 90 / totalResources
+        setProgress(progress)
+        return res
+      }),
     )
 
   const rawPullRequestsData = await Promise.all(pullRequestPromises)
@@ -507,24 +549,22 @@ async function fetchTeamRepositories(
     edges: repositoriesRaw,
     totalCount,
     pageInfo,
-  } = await gql
-    .graphql<GraphQL_TeamRepositoryResponse>(
-      getTeamRepositoriesQuery({
-        orgName,
-        teamName,
-        pagination: handlePageNavigation(
-          pageSize,
-          page,
-          startCursor,
-          endCursor,
-          total,
-        ),
-      }),
-    )
-    .then(
-      (res: GraphQL_TeamRepositoryResponse) =>
-        res.organization.teams.nodes[0].repositories,
-    )
+  } = await gql<GraphQL_TeamRepositoryResponse>(
+    getTeamRepositoriesQuery({
+      orgName,
+      teamName,
+      pagination: handlePageNavigation(
+        pageSize,
+        page,
+        startCursor,
+        endCursor,
+        total,
+      ),
+    }),
+  ).then(
+    (res: GraphQL_TeamRepositoryResponse) =>
+      res.organization.teams.nodes[0].repositories,
+  )
 
   return {
     teamRepositories: repositoriesRaw.map(
@@ -545,18 +585,17 @@ async function fetchTeamRepositories(
 async function fetchOrganizations(
   githubToken?: string,
 ): Promise<Organization[]> {
-  const organizations = await gql
-    .graphql<GraphQL_OrganizationsResponse>(getOrganizationsQuery(), {
+  const organizations = await gql<GraphQL_OrganizationsResponse>(
+    getOrganizationsQuery(),
+    {
       headers:
         githubToken && !settingsHandler.loadGithubToken()
           ? {
               authorization: `token ${githubToken}`,
             }
           : undefined,
-    })
-    .then(
-      (res: GraphQL_OrganizationsResponse) => res.viewer.organizations.nodes,
-    )
+    },
+  ).then((res: GraphQL_OrganizationsResponse) => res.viewer.organizations.nodes)
 
   return organizations.map((org: GraphQL_Organization) => ({
     name: org.name,
@@ -569,16 +608,14 @@ async function fetchTeams(
   orgName: string,
   githubToken?: string,
 ): Promise<Team[]> {
-  const teams = await gql
-    .graphql<GraphQL_TeamsResponse>(getTeamsQuery({ orgName }), {
-      headers:
-        githubToken && !settingsHandler.loadGithubToken()
-          ? {
-              authorization: `token ${githubToken}`,
-            }
-          : undefined,
-    })
-    .then((res: GraphQL_TeamsResponse) => res.viewer.organization.teams.nodes)
+  const teams = await gql<GraphQL_TeamsResponse>(getTeamsQuery({ orgName }), {
+    headers:
+      githubToken && !settingsHandler.loadGithubToken()
+        ? {
+            authorization: `token ${githubToken}`,
+          }
+        : undefined,
+  }).then((res: GraphQL_TeamsResponse) => res.viewer.organization.teams.nodes)
 
   return teams.map((team: GraphQL_Team & { description: string | null }) => ({
     name: team.name,

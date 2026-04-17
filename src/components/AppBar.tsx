@@ -4,7 +4,6 @@ import {
   KeyboardEvent,
   ReactElement,
   SyntheticEvent,
-  useContext,
   useRef,
   useState,
 } from 'react'
@@ -12,23 +11,19 @@ import {
 import AppBar from '@mui/material/AppBar'
 import Box from '@mui/material/Box'
 import ClickAwayListener from '@mui/material/ClickAwayListener'
-import DarkModeIcon from '@mui/icons-material/DarkMode'
 import IconButton from '@mui/material/IconButton'
-import LightModeIcon from '@mui/icons-material/LightMode'
 import LinearProgress from '@mui/material/LinearProgress'
 import MenuIcon from '@mui/icons-material/Menu'
 import ReloadIcon from '@mui/icons-material/Replay'
-import Settings from './Settings'
+import Settings from './settings'
 import SettingsIcon from '@mui/icons-material/Settings'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 import Toolbar from '@mui/material/Toolbar'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
-import { ColorModeContext } from '../ColorModeContext'
 import packageData from '../../package.json'
 import { settingsHandler } from '../helpers/settingsHandler'
-import { useTheme } from '@mui/material/styles'
 
 type AppBarElementProps = {
   handleReload: (teamName: string, isValidToken: boolean) => void
@@ -48,8 +43,6 @@ export default function AppBarElement({
   isDrawbarOpen,
   setIsDrawbarOpen,
 }: AppBarElementProps) {
-  const theme = useTheme()
-  const colorMode = useContext(ColorModeContext)
   const [teamTabValue, setTeamTabValue] = useState(0)
   const [teamNames, setTeamNames] = useState(settingsHandler.loadTeamNames())
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -138,20 +131,6 @@ export default function AppBarElement({
               </Box>
             </ClickAwayListener>
           )}
-
-          <Tooltip title="Toggle theme">
-            <IconButton
-              size="large"
-              color="inherit"
-              onClick={colorMode.toggleColorMode}
-            >
-              {theme.palette.mode === 'dark' ? (
-                <LightModeIcon />
-              ) : (
-                <DarkModeIcon />
-              )}
-            </IconButton>
-          </Tooltip>
 
           <Tooltip title="Settings">
             <IconButton

@@ -7,19 +7,11 @@ const settingsHandler = {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
   },
 
-  partialSaveTeam(teamName: string, teamRepositories: string[]) {
-    const settings = this.load()
-    const teams = settings.teams
-    teams[teamName] = { repositories: teamRepositories }
-    this.saveAll({ ...settings, teams })
-  },
-
   partialSave(partialSettings: Partial<Settings_All>) {
     const settings = this.load()
 
     if (!!partialSettings.teams) {
-      const teams = { ...settings.teams, ...partialSettings.teams }
-      partialSettings.teams = teams
+      partialSettings.teams = { ...settings.teams, ...partialSettings.teams }
     }
 
     if (partialSettings.githubToken !== settings.githubToken) {
@@ -58,7 +50,22 @@ const settingsHandler = {
   },
 
   loadPipelineStatus(): boolean {
-    return this.load().loadPipelineStatus ?? true
+    return this.load().loadPipelineStatus ?? false
+  },
+
+  loadAliases(): Record<string, string> {
+    return this.load().aliases ?? {}
+  },
+
+  saveAlias(login: string, alias: string | null): void {
+    const settings = this.load()
+    const aliases = { ...(settings.aliases ?? {}) }
+    if (alias) {
+      aliases[login] = alias
+    } else {
+      delete aliases[login]
+    }
+    this.saveAll({ ...settings, aliases })
   },
 }
 

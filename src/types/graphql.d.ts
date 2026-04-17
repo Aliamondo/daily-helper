@@ -239,3 +239,22 @@ type GraphQL_TeamRepository = {
     nameWithOwner: string
   }
 }
+
+type GraphQL_UserPageableResponse = {
+  organization: {
+    teams: {
+      nodes: {
+        members: {
+          nodes: GraphQL_User[]
+          totalCount: number
+          pageInfo: {
+            startCursor: string
+            endCursor: string
+            hasNextPage: boolean
+            hasPreviousPage: boolean
+          }
+        }
+      }[]
+    }
+  }
+}

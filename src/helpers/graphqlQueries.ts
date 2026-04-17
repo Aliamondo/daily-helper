@@ -285,6 +285,38 @@ function getTeamUsersQuery({ orgName, teamName }: GetTeamUsersProps) {
   return minify(query)
 }
 
+type GetTeamUsersPageableProps = GetTeamUsersProps & {
+  pagination: string
+}
+function getTeamUsersPageableQuery({
+  orgName,
+  teamName,
+  pagination,
+}: GetTeamUsersPageableProps) {
+  const query = `{
+    organization(login: "${orgName}"){
+      teams(query: "${teamName}", first: 1){
+        nodes{
+          members(${pagination}, orderBy: {field: LOGIN, direction: ASC}){
+            nodes{
+              ${UserNode}
+            }
+            totalCount
+            pageInfo {
+              startCursor
+              endCursor
+              hasNextPage
+              hasPreviousPage
+            }
+          }
+        }
+      }
+    }
+  }`
+
+  return minify(query)
+}
+
 type GetTeamRepositoriesProps = GetTeamUsersProps & {
   pagination: string
 }
@@ -401,6 +433,7 @@ export {
   getOrganizationsQuery,
   getTeamsQuery,
   getTeamUsersQuery,
+  getTeamUsersPageableQuery,
   getTeamRepositoriesQuery,
   getPullRequestsByUserQuery,
   getPullRequestsByRepositoriesQuery,
