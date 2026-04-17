@@ -9,6 +9,7 @@ import ReviewPendingIcon from '@mui/icons-material/Pending'
 import ReviewRequestedIcon from '@mui/icons-material/Circle'
 import Tooltip from '@mui/material/Tooltip'
 import { enumerationToSentenceCase } from '../helpers/strings'
+import { getDisplayName } from '../helpers/getDisplayName'
 
 function getReviewIcon(state: ReviewState): ReactElement | null {
   switch (state) {
@@ -25,10 +26,6 @@ function getReviewIcon(state: ReviewState): ReactElement | null {
   }
 }
 
-function displayName(user: User): string {
-  return user.name || user.login
-}
-
 function getReviewStatusTooltip({
   reviewState,
   user,
@@ -37,11 +34,11 @@ function getReviewStatusTooltip({
   user: User
 }): string {
   if (reviewState === 'PENDING')
-    return `Currently being reviewed by ${displayName(user)}`
+    return `Currently being reviewed by ${getDisplayName(user)}`
 
   const state = enumerationToSentenceCase(reviewState)
 
-  return `${state} by ${displayName(user)}`
+  return `${state} by ${getDisplayName(user)}`
 }
 
 function getTooltip({
@@ -49,17 +46,18 @@ function getTooltip({
   reviewState,
   type,
 }: Pick<UserBadgeProps, 'user' | 'reviewState' | 'type'>) {
-  if (type === 'AUTHOR') return `Opened by ${displayName(user)}`
-  if (type === 'CONTRIBUTOR') return `Contributed by ${displayName(user)}`
-  if (type === 'ASSIGNEE') return `Assigned to ${displayName(user)}`
+  if (type === 'AUTHOR') return `Opened by ${getDisplayName(user)}`
+  if (type === 'CONTRIBUTOR') return `Contributed by ${getDisplayName(user)}`
+  if (type === 'ASSIGNEE') return `Assigned to ${getDisplayName(user)}`
   if (type === 'REQUESTED_REVIEWER')
-    return `Review requested from ${displayName(user)}`
+    return `Review requested from ${getDisplayName(user)}`
   if (type === 'REVIEWER' && reviewState) {
     return getReviewStatusTooltip({ reviewState, user })
   }
-  if (type === 'COMMIT_CHECK_RUNNER') return `Started by ${displayName(user)}`
+  if (type === 'COMMIT_CHECK_RUNNER')
+    return `Started by ${getDisplayName(user)}`
 
-  return displayName(user)
+  return getDisplayName(user)
 }
 
 function getBadgeContent({

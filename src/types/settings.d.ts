@@ -11,4 +11,5 @@ type Settings_All = {
     [teamName: string]: Settings_Team
   }
   loadPipelineStatus?: boolean
+  aliases?: Record<string, string>
 }
