@@ -2,7 +2,6 @@ import Chip from '@mui/material/Chip'
 import PersonIcon from '@mui/icons-material/Person'
 import Stack from '@mui/material/Stack'
 import StarRate from '@mui/icons-material/StarRate'
-import { useState } from 'react'
 import GroupIcon from '@mui/icons-material/Group'
 
 type ReviewFilterBarProps = {
@@ -21,10 +20,6 @@ export default function ReviewFilterBar({
   isMyWorkActive,
   onMyWorkToggle,
 }: ReviewFilterBarProps) {
-  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(
-    null,
-  )
-
   return (
     <Stack direction="row" gap={1} alignItems="center">
       <Chip
@@ -33,12 +28,6 @@ export default function ReviewFilterBar({
         onClick={onMustReviewToggle}
         color={isMustReviewActive ? 'error' : 'default'}
         variant={isMustReviewActive ? 'filled' : 'outlined'}
-        onMouseMove={e => {
-          if (isMustReviewActive) return
-          const rect = e.currentTarget.getBoundingClientRect()
-          setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top })
-        }}
-        onMouseLeave={() => setMousePos(null)}
       />
       <Chip
         icon={<PersonIcon />}
