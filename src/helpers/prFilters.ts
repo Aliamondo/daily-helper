@@ -3,10 +3,10 @@ import { getDisplayName } from './getDisplayName'
 function isBotUser(user: User, filters: Settings_Filters): boolean {
   const displayName = getDisplayName(user)
   const matchesPattern = filters.botPatterns.some(p =>
-    displayName.toLowerCase().includes(p.toLowerCase()),
+    displayName?.toLowerCase().includes(p.toLowerCase()),
   )
   const matchesLogin = filters.botLogins.some(
-    l => user.login.toLowerCase() === l.toLowerCase(),
+    l => user.login?.toLowerCase() === l.toLowerCase(),
   )
   return matchesPattern || matchesLogin
 }

@@ -205,7 +205,7 @@ export default function DailyHelper() {
       if (pr.reviewDecision === 'APPROVED') return 0
       if (pr.reviewDecision === 'CHANGES_REQUESTED') return 1
       const humanReviewers = pr.requestedReviewers.filter(
-        r => !filters.botLogins.includes(r.login.toLowerCase()),
+        r => !filters.botLogins.includes(r.login?.toLowerCase()),
       )
       if (!humanReviewers.length) return 3
       return 2 // REVIEW_REQUIRED with human reviewers
@@ -415,12 +415,13 @@ export default function DailyHelper() {
                     key={pr.id}
                     direction="up"
                     in={
-                      getVisibility(pr.labels) &&
-                      (!reviewRequiredFilteredIds ||
-                        reviewRequiredFilteredIds.has(pr.id)) &&
-                      (!isMyPrsFilterActive ||
-                        pr.author.login === viewerLogin) &&
-                      (!isMyWorkFilterActive || isMyWork(pr))
+                      isLoadingAnimationPlaying ||
+                      (getVisibility(pr.labels) &&
+                        (!reviewRequiredFilteredIds ||
+                          reviewRequiredFilteredIds.has(pr.id)) &&
+                        (!isMyPrsFilterActive ||
+                          pr.author.login === viewerLogin) &&
+                        (!isMyWorkFilterActive || isMyWork(pr)))
                     }
                     timeout={400}
                     mountOnEnter
