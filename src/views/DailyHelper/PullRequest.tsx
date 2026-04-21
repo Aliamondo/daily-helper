@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTheme } from '@mui/material/styles'
 
 import Card from '@mui/material/Card'
@@ -19,17 +19,11 @@ import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import { dataFetcher } from '../../helpers/dataFetcher'
 import { settingsHandler } from '../../helpers/settingsHandler'
-import useOnScreen from '../../helpers/useOnScreen'
-
 type PullRequestProps = {
-  customRef: RefObject<HTMLElement>
-  setIsInViewport: (id: string, visible: boolean) => void
   isLoading: boolean
 } & PullRequest
 
 export default function PullRequest({
-  customRef,
-  setIsInViewport,
   isLoading,
   id,
   title,
@@ -58,11 +52,6 @@ export default function PullRequest({
   )
   const [isLastCommitChecksLoading, setIsLastCommitChecksLoading] =
     useState(false)
-
-  const isInViewport = useOnScreen(customRef)
-  useEffect(() => {
-    setIsInViewport(id, isInViewport)
-  }, [isInViewport, id, setIsInViewport])
 
   const handleCommitChecksReload = async () => {
     setIsLastCommitChecksLoading(true)
@@ -206,7 +195,6 @@ export default function PullRequest({
             isLoading={isLoading}
             author={author}
             createdAt={createdAt}
-            isDraft={isDraft}
             reviews={reviews}
             requestedReviewers={requestedReviewers}
             contributors={contributors}

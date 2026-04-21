@@ -1,11 +1,4 @@
-import {
-  RefObject,
-  createRef,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import Alert from '@mui/material/Alert'
 import AlertTitle from '@mui/material/AlertTitle'
@@ -21,9 +14,9 @@ import ListItem from '@mui/material/ListItem'
 import ListItemButton from '@mui/material/ListItemButton'
 import ListItemText from '@mui/material/ListItemText'
 import ListSubheader from '@mui/material/ListSubheader'
+import { AnimatePresence, motion } from 'motion/react'
 import PullRequest from './PullRequest'
 import SettingsIcon from '@mui/icons-material/Settings'
-import Slide from '@mui/material/Slide'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
@@ -63,12 +56,6 @@ export default function DailyHelper() {
     setIsPullRequestsWithoutLabelsHidden,
   ] = useState(false)
   const [hiddenLabels, setHiddenLabels] = useState(new Set<string>()) // always keep them lowercase
-  const [pullRequestRefs, setPullRequestRefs] = useState<
-    RefObject<HTMLElement>[]
-  >([])
-  const [isPullRequestInViewport, setIsPullRequestInViewport] = useState<
-    Map<string, boolean>
-  >(new Map())
   const [activeFilter, setActiveFilter] = useState<
     'mustReview' | 'myPrs' | 'myWork' | null
   >(null)
@@ -89,8 +76,6 @@ export default function DailyHelper() {
     },
   )
   const sortDir = sortDirs[sortField]
-
-  const main = useRef(null)
 
   const handleInvalidTokenError = () => {
     setIsInvalidToken(true)
@@ -115,17 +100,10 @@ export default function DailyHelper() {
         .then(pullRequests => {
           setPullRequests(pullRequests)
           setIsLoadingAnimationPlaying(false)
-          setPullRequestRefs(
-            Array(pullRequests.length)
-              .fill(null)
-              .map((_, index) => pullRequestRefs[index] || createRef()),
-          )
         })
       setShouldLoad(false)
     }
-
-    isMandatoryDataPresent && setPullRequestRefs(pullRequestRefs)
-  }, [shouldLoad, teamName, pullRequestRefs, isInvalidToken, orgName])
+  }, [shouldLoad, teamName, isInvalidToken, orgName])
 
   useEffect(() => {
     if (!settingsHandler.loadGithubToken()) return
@@ -139,18 +117,6 @@ export default function DailyHelper() {
       setViewerLogin(login)
     })
   }, [shouldLoad])
-
-  const setPullRequestInViewport = (
-    pullRequestId: string,
-    isVisible: boolean,
-  ) => {
-    if (isVisible) {
-      isPullRequestInViewport.set(pullRequestId, true)
-    } else {
-      isPullRequestInViewport.delete(pullRequestId)
-    }
-    setIsPullRequestInViewport(isPullRequestInViewport)
-  }
 
   const reviewRequiredFilteredIds = useMemo(() => {
     if (!isReviewFilterActive || !viewerLogin) return null
@@ -176,27 +142,6 @@ export default function DailyHelper() {
       pr.assignees.some(u => u.login === viewerLogin) ||
       pr.requestedReviewers.some(u => u.login === viewerLogin) ||
       pr.reviews.some(r => r.reviewer.login === viewerLogin))
-
-  const visibleCount = useMemo(
-    () =>
-      pullRequests.filter(
-        pr =>
-          getVisibility(pr.labels) &&
-          (!reviewRequiredFilteredIds ||
-            reviewRequiredFilteredIds.has(pr.id)) &&
-          (!isMyPrsFilterActive || pr.author.login === viewerLogin) &&
-          (!isMyWorkFilterActive || isMyWork(pr)),
-      ).length,
-    [
-      pullRequests,
-      reviewRequiredFilteredIds,
-      isMyPrsFilterActive,
-      isMyWorkFilterActive,
-      viewerLogin,
-      hiddenLabels,
-      isPullRequestsWithoutLabelsHidden,
-    ],
-  )
 
   const sortedPullRequests = useMemo(() => {
     const filters = settingsHandler.loadFilters()
@@ -231,6 +176,30 @@ export default function DailyHelper() {
     })
   }, [pullRequests, sortField, sortDir])
 
+  const visiblePullRequests = useMemo(
+    () =>
+      isLoadingAnimationPlaying
+        ? sortedPullRequests
+        : sortedPullRequests.filter(
+            pr =>
+              getVisibility(pr.labels) &&
+              (!reviewRequiredFilteredIds ||
+                reviewRequiredFilteredIds.has(pr.id)) &&
+              (!isMyPrsFilterActive || pr.author.login === viewerLogin) &&
+              (!isMyWorkFilterActive || isMyWork(pr)),
+          ),
+    [
+      sortedPullRequests,
+      isLoadingAnimationPlaying,
+      reviewRequiredFilteredIds,
+      isMyPrsFilterActive,
+      isMyWorkFilterActive,
+      viewerLogin,
+      hiddenLabels,
+      isPullRequestsWithoutLabelsHidden,
+    ],
+  )
+
   const allLabels = new Map<string, LabelWithCount>()
   const pullRequestsWithLabels = pullRequests.filter(pr => pr.labels.length)
   const pullRequestsWithoutLabelsCount =
@@ -258,9 +227,7 @@ export default function DailyHelper() {
     setTeamName(newTeamName)
     setLoadingProgress(0)
     isValidToken && setIsLoadingAnimationPlaying(true)
-    setPullRequests(generateDummyPullRequests(isPullRequestInViewport.size))
-    setPullRequestRefs([])
-    setIsPullRequestInViewport(new Map())
+    setPullRequests(generateDummyPullRequests(pullRequests.length))
     setShouldLoad(true)
   }
 
@@ -308,9 +275,10 @@ export default function DailyHelper() {
           height: 'calc(100vh - 64px)',
           mt: '64px',
           overflowY: 'auto',
+          overflowX: 'hidden',
         }}
       >
-        <Box ref={main} sx={{ mx: 'auto', px: 1 }} maxWidth={1150}>
+        <Box sx={{ mx: 'auto', px: 1 }} maxWidth={1150}>
           {isInvalidToken && (
             <Alert severity="error">
               <AlertTitle>Authorization error</AlertTitle>
@@ -383,9 +351,9 @@ export default function DailyHelper() {
                         lineHeight={1}
                         sx={{ fontVariantNumeric: 'tabular-nums' }}
                       >
-                        {visibleCount === pullRequests.length
+                        {visiblePullRequests.length === pullRequests.length
                           ? pullRequests.length
-                          : `${visibleCount} / ${pullRequests.length}`}
+                          : `${visiblePullRequests.length} / ${pullRequests.length}`}
                       </Typography>
                       <Typography
                         variant="caption"
@@ -409,38 +377,32 @@ export default function DailyHelper() {
                   />
                 </Stack>
               </Stack>
-              <Stack spacing={0.5}>
-                {sortedPullRequests.map((pr, index) => (
-                  <Slide
-                    key={pr.id}
-                    direction="up"
-                    in={
-                      isLoadingAnimationPlaying ||
-                      (getVisibility(pr.labels) &&
-                        (!reviewRequiredFilteredIds ||
-                          reviewRequiredFilteredIds.has(pr.id)) &&
-                        (!isMyPrsFilterActive ||
-                          pr.author.login === viewerLogin) &&
-                        (!isMyWorkFilterActive || isMyWork(pr)))
-                    }
-                    timeout={400}
-                    mountOnEnter
-                    unmountOnExit
-                    appear={false}
-                    container={main.current}
-                    enter={isPullRequestInViewport.has(pr.id)}
-                    exit={false} // disable exit transitions as they lag when multiple are played at once
-                  >
-                    <Box ref={pullRequestRefs[index]}>
+              <Stack spacing={0.5} useFlexGap>
+                <AnimatePresence mode="popLayout">
+                  {visiblePullRequests.map((pr, index) => (
+                    <motion.div
+                      key={pr.id}
+                      initial={
+                        isLoadingAnimationPlaying ? false : { opacity: 0 }
+                      }
+                      animate={{ opacity: 1 }}
+                      exit={{
+                        opacity: 0,
+                        x: '100%',
+                        transition: { duration: 0.5, ease: 'easeIn' },
+                      }}
+                      transition={{
+                        duration: 0.2,
+                        delay: Math.min(index * 0.02, 0.1),
+                      }}
+                    >
                       <PullRequest
-                        customRef={pullRequestRefs[index]}
-                        setIsInViewport={setPullRequestInViewport}
                         isLoading={isLoadingAnimationPlaying}
                         {...pr}
                       />
-                    </Box>
-                  </Slide>
-                ))}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </Stack>
             </>
           )}
