@@ -415,6 +415,16 @@ export default function DailyHelper() {
                       </motion.div>
                     ))}
                   </AnimatePresence>
+                  {!isLoadingAnimationPlaying &&
+                    visiblePullRequests.length === 0 && (
+                      <Typography
+                        variant="body2"
+                        color="text.disabled"
+                        sx={{ py: 2, textAlign: 'center' }}
+                      >
+                        No pull requests
+                      </Typography>
+                    )}
                 </Stack>
               ) : (
                 <KanbanBoard
