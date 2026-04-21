@@ -4,6 +4,7 @@ import {
   getOrganizationsQuery,
   getPreviousPageQuery,
   getPullRequestsByRepositoriesQuery,
+  getPullRequestsByTeamReviewRequestedQuery,
   getPullRequestsByUserQuery,
   getTeamRepositoriesQuery,
   getTeamsQuery,
@@ -445,7 +446,8 @@ async function fetchPullRequests({
   setProgress(10)
 
   let progress = 10
-  const totalResources = teamUsers.length + (teamRepositories?.length ?? 0)
+  // +1 for the team-review-requested query
+  const totalResources = teamUsers.length + (teamRepositories?.length ?? 0) + 1
 
   const pullRequestPromises = teamUsers.map(user =>
     gql<GraphQL_PullRequestsResponse>(
@@ -471,6 +473,21 @@ async function fetchPullRequests({
         return res
       }),
     ),
+  )
+
+  pullRequestPromises.push(
+    gql<GraphQL_PullRequestsResponse>(
+      getPullRequestsByTeamReviewRequestedQuery({
+        orgName,
+        teamName,
+        excludeRepositories: teamRepositories,
+        includeChecks,
+      }),
+    ).then((res: GraphQL_PullRequestsResponse) => {
+      progress += 90 / totalResources
+      setProgress(progress)
+      return res
+    }),
   )
 
   const rawPullRequestsData = await Promise.all(pullRequestPromises)
@@ -521,9 +538,8 @@ async function fetchPullRequests({
   pullRequests.sort((a, b) => b.createdAt.valueOf() - a.createdAt.valueOf())
 
   // allow loading bar to hit 100% for 0.5 seconds
-  await new Promise(res => setTimeout(res, 500))
+  await new Promise(res => setTimeout(res, 100))
 
-  // team-review-requested:${teamName}
   return pullRequests
 }
 

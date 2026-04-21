@@ -411,6 +411,34 @@ function getPullRequestsByRepositoriesQuery({
   return minify(query)
 }
 
+type GetPullRequestsByTeamReviewRequestedProps = {
+  orgName: string
+  teamName: string
+  excludeRepositories?: string[]
+  includeChecks?: boolean
+}
+function getPullRequestsByTeamReviewRequestedQuery({
+  orgName,
+  teamName,
+  excludeRepositories = [],
+  includeChecks = false,
+}: GetPullRequestsByTeamReviewRequestedProps) {
+  const exclusions = excludeRepositories.map(repo => `-repo:${repo}`).join(' ')
+  const query = `{
+    search(
+      query: "is:open type:pr team-review-requested:${orgName}/${teamName} ${exclusions}"
+      first: 100
+      type: ISSUE
+    ) {
+        nodes {
+          ${getPullRequestNode(includeChecks)}
+        }
+      }
+    }`
+
+  return minify(query)
+}
+
 type GetCommitChecksProps = {
   orgName: string
   repoName: string
@@ -443,6 +471,7 @@ export {
   getTeamRepositoriesQuery,
   getPullRequestsByUserQuery,
   getPullRequestsByRepositoriesQuery,
+  getPullRequestsByTeamReviewRequestedQuery,
   getCommitChecksQuery,
 }
 export { getNextPageQuery, getPreviousPageQuery }
