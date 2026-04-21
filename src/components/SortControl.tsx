@@ -23,11 +23,13 @@ type SortControlProps = {
   field: SortField
   dir: SortDir
   onChange: (field: SortField, dir: SortDir) => void
+  excludeFields?: SortField[]
 }
 export default function SortControl({
   field,
   dir,
   onChange,
+  excludeFields = [],
 }: SortControlProps) {
   const handleClick = (clicked: SortField) => {
     const meta = FIELDS.find(f => f.key === clicked)!
@@ -42,33 +44,35 @@ export default function SortControl({
 
   return (
     <Stack direction="row" alignItems="center" gap={0.5}>
-      {FIELDS.map(({ key, label }) => {
-        const isActive = key === field
-        return (
-          <Stack
-            key={key}
-            direction="row"
-            alignItems="center"
-            onClick={() => handleClick(key)}
-            sx={{
-              cursor: 'pointer',
-              px: 1,
-              py: 0.5,
-              borderRadius: 1,
-              color: isActive ? 'primary.main' : 'text.secondary',
-              '&:hover': {
-                color: isActive ? 'primary.main' : 'text.primary',
-                bgcolor: 'action.hover',
-              },
-            }}
-          >
-            <Typography variant="body2" fontWeight={isActive ? 600 : 400}>
-              {label}
-            </Typography>
-            {isActive && <Arrow sx={{ fontSize: 14, ml: 0.25 }} />}
-          </Stack>
-        )
-      })}
+      {FIELDS.filter(f => !excludeFields.includes(f.key)).map(
+        ({ key, label }) => {
+          const isActive = key === field
+          return (
+            <Stack
+              key={key}
+              direction="row"
+              alignItems="center"
+              onClick={() => handleClick(key)}
+              sx={{
+                cursor: 'pointer',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                color: isActive ? 'primary.main' : 'text.secondary',
+                '&:hover': {
+                  color: isActive ? 'primary.main' : 'text.primary',
+                  bgcolor: 'action.hover',
+                },
+              }}
+            >
+              <Typography variant="body2" fontWeight={isActive ? 600 : 400}>
+                {label}
+              </Typography>
+              {isActive && <Arrow sx={{ fontSize: 14, ml: 0.25 }} />}
+            </Stack>
+          )
+        },
+      )}
     </Stack>
   )
 }

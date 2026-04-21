@@ -348,42 +348,45 @@ export default function DailyHelper() {
                   activeView={activeView}
                   onViewToggle={handleViewToggle}
                 />
-                {activeView === 'list' && (
-                  <Stack direction="row" alignItems="center" gap={3}>
-                    {!isLoadingAnimationPlaying && (
-                      <Stack direction="row" alignItems="baseline" gap={0.5}>
-                        <Typography
-                          variant="h6"
-                          fontWeight={700}
-                          lineHeight={1}
-                          sx={{ fontVariantNumeric: 'tabular-nums' }}
-                        >
-                          {visiblePullRequests.length === pullRequests.length
-                            ? pullRequests.length
-                            : `${visiblePullRequests.length} / ${pullRequests.length}`}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          lineHeight={1}
-                        >
-                          total
-                        </Typography>
-                      </Stack>
-                    )}
-                    <SortControl
-                      field={sortField}
-                      dir={sortDir}
-                      onChange={(f, d) => {
-                        const newDir = f === sortField ? d : sortDirs[f]
-                        const newDirs = { ...sortDirs, [f]: newDir }
-                        setSortField(f)
-                        setSortDirs(newDirs)
-                        settingsHandler.saveSort({ field: f, dirs: newDirs })
-                      }}
-                    />
-                  </Stack>
-                )}
+                <Stack direction="row" alignItems="center" gap={3}>
+                  {activeView === 'list' && !isLoadingAnimationPlaying && (
+                    <Stack direction="row" alignItems="baseline" gap={0.5}>
+                      <Typography
+                        variant="h6"
+                        fontWeight={700}
+                        lineHeight={1}
+                        sx={{ fontVariantNumeric: 'tabular-nums' }}
+                      >
+                        {visiblePullRequests.length === pullRequests.length
+                          ? pullRequests.length
+                          : `${visiblePullRequests.length} / ${pullRequests.length}`}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        lineHeight={1}
+                      >
+                        total
+                      </Typography>
+                    </Stack>
+                  )}
+                  <SortControl
+                    field={
+                      activeView === 'kanban' && sortField === 'state'
+                        ? 'date'
+                        : sortField
+                    }
+                    dir={sortDir}
+                    excludeFields={activeView === 'kanban' ? ['state'] : []}
+                    onChange={(f, d) => {
+                      const newDir = f === sortField ? d : sortDirs[f]
+                      const newDirs = { ...sortDirs, [f]: newDir }
+                      setSortField(f)
+                      setSortDirs(newDirs)
+                      settingsHandler.saveSort({ field: f, dirs: newDirs })
+                    }}
+                  />
+                </Stack>
               </Stack>
               {activeView === 'list' ? (
                 <Stack spacing={0.5} useFlexGap>
@@ -417,6 +420,8 @@ export default function DailyHelper() {
                 <KanbanBoard
                   pullRequests={visiblePullRequests}
                   isLoading={isLoadingAnimationPlaying}
+                  sortField={sortField === 'state' ? 'date' : sortField}
+                  sortDir={sortDir}
                 />
               )}
             </>

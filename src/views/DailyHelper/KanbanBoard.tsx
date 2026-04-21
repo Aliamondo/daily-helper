@@ -2,6 +2,8 @@ import Box from '@mui/material/Box'
 import KanbanColumn from './KanbanColumn'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
+import { SortDir, SortField } from '../../components/SortControl'
+import { getDisplayName } from '../../helpers/getDisplayName'
 import { getStateRank } from '../../helpers/getStateRank'
 import { settingsHandler } from '../../helpers/settingsHandler'
 import { useMemo } from 'react'
@@ -97,11 +99,15 @@ function KanbanBoardSkeleton() {
 type KanbanBoardProps = {
   pullRequests: PullRequest[]
   isLoading: boolean
+  sortField: Exclude<SortField, 'state'>
+  sortDir: SortDir
 }
 
 export default function KanbanBoard({
   pullRequests,
   isLoading,
+  sortField,
+  sortDir,
 }: KanbanBoardProps) {
   const grouped = useMemo(() => {
     const filters = settingsHandler.loadFilters()
@@ -113,15 +119,29 @@ export default function KanbanBoard({
       const col = COLUMN_CONFIGS.find(c => c.ranks.includes(rank))
       if (col) result.get(col.title)!.push(pr)
     }
-    // Sort each column by createdAt descending
+    const mul = sortDir === 'asc' ? 1 : -1
     for (const prs of result.values()) {
-      prs.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      )
+      prs.sort((a, b) => {
+        switch (sortField) {
+          case 'repo':
+            return mul * a.repositoryName.localeCompare(b.repositoryName)
+          case 'author':
+            return (
+              mul *
+              getDisplayName(a.author).localeCompare(getDisplayName(b.author))
+            )
+          case 'date':
+          default:
+            return (
+              mul *
+              (new Date(a.createdAt).getTime() -
+                new Date(b.createdAt).getTime())
+            )
+        }
+      })
     }
     return result
-  }, [pullRequests])
+  }, [pullRequests, sortField, sortDir])
 
   if (isLoading) return <KanbanBoardSkeleton />
 
