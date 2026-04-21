@@ -1,5 +1,7 @@
 import Box from '@mui/material/Box'
 import KanbanColumn from './KanbanColumn'
+import Skeleton from '@mui/material/Skeleton'
+import Stack from '@mui/material/Stack'
 import { getStateRank } from '../../helpers/getStateRank'
 import { settingsHandler } from '../../helpers/settingsHandler'
 import { useMemo } from 'react'
@@ -33,6 +35,65 @@ const COLUMN_CONFIGS: ColumnConfig[] = [
   },
 ]
 
+// Card heights vary so the skeleton looks like real content, not a grid
+const SKELETON_CARD_HEIGHTS = [72, 88, 72, 96, 80]
+
+function KanbanBoardSkeleton() {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'row',
+        gap: 1.5,
+        pb: 2,
+        pt: 0.5,
+        minHeight: 'calc(100vh - 130px)',
+        alignItems: 'flex-start',
+      }}
+    >
+      {COLUMN_CONFIGS.map(col => (
+        <Box
+          key={col.title}
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+          }}
+        >
+          {/* Column header */}
+          <Stack
+            direction="row"
+            alignItems="center"
+            gap={1}
+            sx={{
+              py: 0.75,
+              borderBottom: 2,
+              borderColor: col.accentColor,
+            }}
+          >
+            <Skeleton variant="text" width={100} height={22} />
+            <Skeleton variant="rounded" width={24} height={20} />
+          </Stack>
+          {/* Skeleton cards */}
+          <Stack spacing={0.5}>
+            {SKELETON_CARD_HEIGHTS.map((h, i) => (
+              <Skeleton
+                key={i}
+                variant="rounded"
+                animation="wave"
+                height={h}
+                sx={{ borderRadius: 1 }}
+              />
+            ))}
+          </Stack>
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
 type KanbanBoardProps = {
   pullRequests: PullRequest[]
   isLoading: boolean
@@ -62,6 +123,8 @@ export default function KanbanBoard({
     return result
   }, [pullRequests])
 
+  if (isLoading) return <KanbanBoardSkeleton />
+
   return (
     <Box
       sx={{
@@ -80,7 +143,7 @@ export default function KanbanBoard({
           key={col.title}
           title={col.title}
           pullRequests={grouped.get(col.title) ?? []}
-          isLoading={isLoading}
+          isLoading={false}
           accentColor={col.accentColor}
         />
       ))}
