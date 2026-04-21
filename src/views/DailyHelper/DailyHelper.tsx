@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import Alert from '@mui/material/Alert'
 import AlertTitle from '@mui/material/AlertTitle'
@@ -23,9 +23,11 @@ import Typography from '@mui/material/Typography'
 import VisibleIcon from '@mui/icons-material/Visibility'
 import { applyReviewRequiredFilter } from '../../helpers/prFilters'
 import { getDisplayName } from '../../helpers/getDisplayName'
+import { getStateRank } from '../../helpers/getStateRank'
 import { dataFetcher } from '../../helpers/dataFetcher'
 import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
+import KanbanBoard from './KanbanBoard'
 import PullRequestFilterBar from '../../components/PullRequestFilterBar'
 import SortControl, { SortDir, SortField } from '../../components/SortControl'
 
@@ -63,6 +65,15 @@ export default function DailyHelper() {
   const isMyPrsFilterActive = activeFilter === 'myPrs'
   const isMyWorkFilterActive = activeFilter === 'myWork'
   const [viewerLogin, setViewerLogin] = useState<string | null>(null)
+  const [activeView, setActiveView] = useState<'list' | 'kanban'>(
+    settingsHandler.loadView(),
+  )
+
+  const handleViewToggle = (view: 'list' | 'kanban') => {
+    setActiveView(view)
+    settingsHandler.saveView(view)
+  }
+
   const savedSort = settingsHandler.loadSort()
   const [sortField, setSortField] = useState<SortField>(
     savedSort?.field ?? 'date',
@@ -145,16 +156,6 @@ export default function DailyHelper() {
 
   const sortedPullRequests = useMemo(() => {
     const filters = settingsHandler.loadFilters()
-    const getStateRank = (pr: (typeof pullRequests)[number]): number => {
-      if (pr.isDraft) return 4
-      if (pr.reviewDecision === 'APPROVED') return 0
-      if (pr.reviewDecision === 'CHANGES_REQUESTED') return 1
-      const humanReviewers = pr.requestedReviewers.filter(
-        r => !filters.botLogins.includes(r.login?.toLowerCase()),
-      )
-      if (!humanReviewers.length) return 3
-      return 2 // REVIEW_REQUIRED with human reviewers
-    }
     const mul = sortDir === 'asc' ? 1 : -1
     return [...pullRequests].sort((a, b) => {
       switch (sortField) {
@@ -171,7 +172,7 @@ export default function DailyHelper() {
             getDisplayName(a.author).localeCompare(getDisplayName(b.author))
           )
         case 'state':
-          return getStateRank(a) - getStateRank(b)
+          return getStateRank(a, filters) - getStateRank(b, filters)
       }
     })
   }, [pullRequests, sortField, sortDir])
@@ -275,10 +276,13 @@ export default function DailyHelper() {
           height: 'calc(100vh - 64px)',
           mt: '64px',
           overflowY: 'auto',
-          overflowX: 'hidden',
+          overflowX: activeView === 'kanban' ? 'auto' : 'hidden',
         }}
       >
-        <Box sx={{ mx: 'auto', px: 1 }} maxWidth={1150}>
+        <Box
+          sx={{ mx: 'auto', px: 1 }}
+          maxWidth={activeView === 'kanban' ? undefined : 1150}
+        >
           {isInvalidToken && (
             <Alert severity="error">
               <AlertTitle>Authorization error</AlertTitle>
@@ -341,9 +345,11 @@ export default function DailyHelper() {
                   onMyWorkToggle={() =>
                     setActiveFilter(f => (f === 'myWork' ? null : 'myWork'))
                   }
+                  activeView={activeView}
+                  onViewToggle={handleViewToggle}
                 />
                 <Stack direction="row" alignItems="center" gap={3}>
-                  {!isLoadingAnimationPlaying && (
+                  {activeView === 'list' && !isLoadingAnimationPlaying && (
                     <Stack direction="row" alignItems="baseline" gap={0.5}>
                       <Typography
                         variant="h6"
@@ -365,8 +371,13 @@ export default function DailyHelper() {
                     </Stack>
                   )}
                   <SortControl
-                    field={sortField}
+                    field={
+                      activeView === 'kanban' && sortField === 'state'
+                        ? 'date'
+                        : sortField
+                    }
                     dir={sortDir}
+                    excludeFields={activeView === 'kanban' ? ['state'] : []}
                     onChange={(f, d) => {
                       const newDir = f === sortField ? d : sortDirs[f]
                       const newDirs = { ...sortDirs, [f]: newDir }
@@ -377,33 +388,42 @@ export default function DailyHelper() {
                   />
                 </Stack>
               </Stack>
-              <Stack spacing={0.5} useFlexGap>
-                <AnimatePresence mode="popLayout">
-                  {visiblePullRequests.map((pr, index) => (
-                    <motion.div
-                      key={pr.id}
-                      initial={
-                        isLoadingAnimationPlaying ? false : { opacity: 0 }
-                      }
-                      animate={{ opacity: 1 }}
-                      exit={{
-                        opacity: 0,
-                        x: '100%',
-                        transition: { duration: 0.5, ease: 'easeIn' },
-                      }}
-                      transition={{
-                        duration: 0.2,
-                        delay: Math.min(index * 0.02, 0.1),
-                      }}
-                    >
-                      <PullRequest
-                        isLoading={isLoadingAnimationPlaying}
-                        {...pr}
-                      />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </Stack>
+              {activeView === 'list' ? (
+                <Stack spacing={0.5} useFlexGap>
+                  <AnimatePresence mode="popLayout">
+                    {visiblePullRequests.map((pr, index) => (
+                      <motion.div
+                        key={pr.id}
+                        initial={
+                          isLoadingAnimationPlaying ? false : { opacity: 0 }
+                        }
+                        animate={{ opacity: 1 }}
+                        exit={{
+                          opacity: 0,
+                          x: '100%',
+                          transition: { duration: 0.5, ease: 'easeIn' },
+                        }}
+                        transition={{
+                          duration: 0.2,
+                          delay: Math.min(index * 0.02, 0.1),
+                        }}
+                      >
+                        <PullRequest
+                          isLoading={isLoadingAnimationPlaying}
+                          {...pr}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </Stack>
+              ) : (
+                <KanbanBoard
+                  pullRequests={visiblePullRequests}
+                  isLoading={isLoadingAnimationPlaying}
+                  sortField={sortField === 'state' ? 'date' : sortField}
+                  sortDir={sortDir}
+                />
+              )}
             </>
           )}
         </Box>
