@@ -11,6 +11,7 @@
 - [ ] (Low priority) Rework `UserGroup`s empty states (reconsider what's shown on `DRAFT` PRs)
 - [x] List appropriate pull requests where a review from the team was requested
 - [x] Research how to make an application start faster
+- [ ] Add Orchestrator view. One section per repo (hideable) plus custom ones for things like syncs. Pull in notes added to PRs in List or Kanban views.
 
 ## General info
 
