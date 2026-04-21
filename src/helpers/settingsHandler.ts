@@ -67,6 +67,15 @@ const settingsHandler = {
     )
   },
 
+  loadView(): 'list' | 'kanban' {
+    return this.load().view ?? 'list'
+  },
+
+  saveView(view: 'list' | 'kanban'): void {
+    const settings = this.load()
+    this.saveAll({ ...settings, view })
+  },
+
   loadSort(): Settings_All['sort'] {
     return this.load().sort
   },

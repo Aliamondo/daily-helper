@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTheme } from '@mui/material/styles'
 
 import Card from '@mui/material/Card'
@@ -17,14 +17,19 @@ import PullRequestStatus from './PullRequestStatus'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import UserBadge from '../../components/UserBadge'
 import { dataFetcher } from '../../helpers/dataFetcher'
+import { fromNow } from '../../helpers/time'
 import { settingsHandler } from '../../helpers/settingsHandler'
+
 type PullRequestProps = {
   isLoading: boolean
+  variant?: 'full' | 'compact'
 } & PullRequest
 
 export default function PullRequest({
   isLoading,
+  variant = 'full',
   id,
   title,
   author,
@@ -63,6 +68,105 @@ export default function PullRequest({
       }),
     )
     setIsLastCommitChecksLoading(false)
+  }
+
+  if (variant === 'compact') {
+    const activeReviews = reviews.filter(({ state }) => state !== 'DISMISSED')
+    const hasReviewers =
+      activeReviews.length > 0 || requestedReviewers.length > 0
+
+    return (
+      <Card variant="outlined" sx={{ bgcolor: theme.palette.prCard.default }}>
+        <CardContent sx={{ '&:last-child': { pb: 1.5 }, pt: 1.5, px: 1.5 }}>
+          {isLoading ? (
+            <Skeleton variant="rectangular" animation="wave" height={60} />
+          ) : (
+            <Stack spacing={0.75}>
+              <Stack direction="row" alignItems="center" spacing={0.75}>
+                <PullRequestStateIcon state={state} isDraft={isDraft} />
+                <Link
+                  href={repositoryUrl}
+                  target="_blank"
+                  rel="noopener"
+                  underline="hover"
+                  sx={{
+                    fontFamily: 'monospace',
+                    fontSize: '0.7rem',
+                    bgcolor: 'action.hover',
+                    color: 'text.primary',
+                    px: 0.75,
+                    py: 0.25,
+                    borderRadius: 1,
+                    flexShrink: 0,
+                  }}
+                >
+                  {repositoryName}
+                </Link>
+                <Link
+                  href={url}
+                  variant="caption"
+                  color="text.secondary"
+                  underline="hover"
+                  target="_blank"
+                  rel="noopener"
+                  sx={{ flexShrink: 0 }}
+                >
+                  #{number}
+                </Link>
+              </Stack>
+              <Link
+                href={url}
+                underline="none"
+                variant="body2"
+                target="_blank"
+                rel="noopener"
+                sx={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }}
+              >
+                {title}
+              </Link>
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+              >
+                <Stack direction="row" alignItems="center" spacing={0.75}>
+                  <UserBadge user={author} type="AUTHOR" />
+                  <Typography variant="caption" color="text.secondary">
+                    {fromNow(createdAt)}
+                  </Typography>
+                </Stack>
+                {hasReviewers && (
+                  <Stack direction="row" spacing={0.25}>
+                    {activeReviews.slice(0, 3).map(review => (
+                      <UserBadge
+                        key={review.reviewer.login}
+                        user={review.reviewer}
+                        reviewState={review.state}
+                        type="REVIEWER"
+                      />
+                    ))}
+                    {requestedReviewers
+                      .slice(0, 3 - activeReviews.length)
+                      .map(u => (
+                        <UserBadge
+                          key={u.login}
+                          user={u}
+                          type="REQUESTED_REVIEWER"
+                        />
+                      ))}
+                  </Stack>
+                )}
+              </Stack>
+            </Stack>
+          )}
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
