@@ -390,31 +390,36 @@ export default function DailyHelper() {
               </Stack>
               {activeView === 'list' ? (
                 <Stack spacing={0.5} useFlexGap>
-                  <AnimatePresence mode="popLayout">
-                    {visiblePullRequests.map((pr, index) => (
-                      <motion.div
-                        key={pr.id}
-                        initial={
-                          isLoadingAnimationPlaying ? false : { opacity: 0 }
-                        }
-                        animate={{ opacity: 1 }}
-                        exit={{
-                          opacity: 0,
-                          x: '100%',
-                          transition: { duration: 0.5, ease: 'easeIn' },
-                        }}
-                        transition={{
-                          duration: 0.2,
-                          delay: Math.min(index * 0.02, 0.1),
-                        }}
-                      >
-                        <PullRequest
-                          isLoading={isLoadingAnimationPlaying}
-                          {...pr}
-                        />
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
+                  {isLoadingAnimationPlaying ? (
+                    visiblePullRequests
+                      .slice(0, Math.floor(window.innerHeight / 154) + 1)
+                      .map((pr, i) => (
+                        <div key={i}>
+                          <PullRequest isLoading={true} {...pr} />
+                        </div>
+                      ))
+                  ) : (
+                    <AnimatePresence mode="popLayout">
+                      {visiblePullRequests.map((pr, index) => (
+                        <motion.div
+                          key={pr.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{
+                            opacity: 0,
+                            x: '100%',
+                            transition: { duration: 0.5, ease: 'easeIn' },
+                          }}
+                          transition={{
+                            duration: 0.2,
+                            delay: Math.min(index * 0.02, 0.1),
+                          }}
+                        >
+                          <PullRequest isLoading={false} {...pr} />
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  )}
                   {!isLoadingAnimationPlaying &&
                     visiblePullRequests.length === 0 && (
                       <Typography
