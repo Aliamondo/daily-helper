@@ -24,11 +24,13 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import packageData from '../../package.json'
 import { settingsHandler } from '../helpers/settingsHandler'
+import { useRelativeTime } from '../hooks/useRelativeTime'
 
 type AppBarElementProps = {
   handleReload: (teamName: string, isValidToken: boolean) => void
   loadingProgress: number
   isLoadingAnimationPlaying: boolean
+  lastUpdated?: Date | null
   showDrawbar?: (marginTop?: number) => ReactElement | null
   drawbarName: string
   isDrawbarOpen: boolean
@@ -38,11 +40,13 @@ export default function AppBarElement({
   handleReload: initialHandleReload,
   loadingProgress,
   isLoadingAnimationPlaying,
+  lastUpdated = null,
   showDrawbar,
   drawbarName,
   isDrawbarOpen,
   setIsDrawbarOpen,
 }: AppBarElementProps) {
+  const relativeTime = useRelativeTime(lastUpdated)
   const [teamTabValue, setTeamTabValue] = useState(0)
   const [teamNames, setTeamNames] = useState(settingsHandler.loadTeamNames())
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -88,10 +92,10 @@ export default function AppBarElement({
 
   return (
     <>
-      <AppBar>
+      <AppBar sx={{ overflow: 'visible' }}>
         <Toolbar
           ref={toolbarRef}
-          sx={{ paddingBottom: isLoadingAnimationPlaying ? 0 : 0.5 }}
+          sx={{ paddingBottom: 0.5 }}
           onKeyUp={({ code }: KeyboardEvent) => {
             code === 'Escape' && handleHideDrawbar()
           }}
@@ -149,7 +153,13 @@ export default function AppBarElement({
             isLoading={isLoadingAnimationPlaying}
           />
 
-          <Tooltip title="Refresh pull requests">
+          <Tooltip
+            title={
+              relativeTime
+                ? `Refresh pull requests · Updated ${relativeTime}`
+                : 'Refresh pull requests'
+            }
+          >
             <IconButton
               edge="end"
               size="large"
@@ -162,7 +172,11 @@ export default function AppBarElement({
         </Toolbar>
 
         {isLoadingAnimationPlaying && (
-          <LinearProgress variant="determinate" value={loadingProgress} />
+          <LinearProgress
+            variant="determinate"
+            value={loadingProgress}
+            sx={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
+          />
         )}
       </AppBar>
     </>
