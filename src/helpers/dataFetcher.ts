@@ -501,38 +501,8 @@ async function fetchPullRequests({
     uniquePullRequests.set(pr.id, pr),
   )
 
-  const pullRequests = Array.from(uniquePullRequests.values()).map(
-    (pr): PullRequest => ({
-      id: pr.id,
-      author: pr.author,
-      title: pr.title,
-      number: pr.number,
-      url: pr.permalink,
-      repositoryUrl: pr.repository.url,
-      repositoryName: pr.repository.name,
-      repositoryBaseRef: pr.repository.defaultBranchRef.name,
-      baseRef: pr.baseRef.name,
-      state: pr.state,
-      isDraft: pr.isDraft,
-      reviewDecision: pr.reviewDecision,
-      createdAt: new Date(pr.createdAt),
-      labels: pr.labels.nodes,
-      reviews: formatReviews(pr.reviews.nodes),
-      comments: calculateNumberOfComments(
-        pr.comments.totalCount,
-        pr.reviews.nodes,
-      ),
-      requestedReviewers: getReviewers(pr.reviewRequests.nodes),
-      contributors: getContributors(pr.commits.nodes, pr.author),
-      assignees: pr.assignees.nodes,
-      lastCommitChecks:
-        includeChecks && pr.lastCommit?.nodes[0]
-          ? getLastCommitChecks(
-              pr.lastCommit.nodes[0].commit,
-              pr.baseRef.branchProtectionRule?.requiredStatusCheckContexts,
-            )
-          : null,
-    }),
+  const pullRequests = Array.from(uniquePullRequests.values()).map(pr =>
+    normalizePR(pr, includeChecks),
   )
 
   pullRequests.sort((a, b) => b.createdAt.valueOf() - a.createdAt.valueOf())
@@ -541,6 +511,43 @@ async function fetchPullRequests({
   await new Promise(res => setTimeout(res, 100))
 
   return pullRequests
+}
+
+function normalizePR(
+  pr: GraphQL_PullRequest,
+  includeChecks: boolean,
+): PullRequest {
+  return {
+    id: pr.id,
+    author: pr.author,
+    title: pr.title,
+    number: pr.number,
+    url: pr.permalink,
+    repositoryUrl: pr.repository.url,
+    repositoryName: pr.repository.name,
+    repositoryBaseRef: pr.repository.defaultBranchRef.name,
+    baseRef: pr.baseRef.name,
+    state: pr.state,
+    isDraft: pr.isDraft,
+    reviewDecision: pr.reviewDecision,
+    createdAt: new Date(pr.createdAt),
+    labels: pr.labels.nodes,
+    reviews: formatReviews(pr.reviews.nodes),
+    comments: calculateNumberOfComments(
+      pr.comments.totalCount,
+      pr.reviews.nodes,
+    ),
+    requestedReviewers: getReviewers(pr.reviewRequests.nodes),
+    contributors: getContributors(pr.commits.nodes, pr.author),
+    assignees: pr.assignees.nodes,
+    lastCommitChecks:
+      includeChecks && pr.lastCommit?.nodes[0]
+        ? getLastCommitChecks(
+            pr.lastCommit.nodes[0].commit,
+            pr.baseRef.branchProtectionRule?.requiredStatusCheckContexts,
+          )
+        : null,
+  }
 }
 
 async function fetchTeamRepositories(

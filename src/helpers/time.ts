@@ -1,5 +1,12 @@
 const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
 
+export function fromNowShort(date: Date): string {
+  const seconds = Math.round((Date.now() - date.getTime()) / 1000)
+  if (seconds < 10) return 'just now'
+  if (seconds < 60) return 'less than a minute ago'
+  return fromNow(date)
+}
+
 export function fromNow(date: Date): string {
   const seconds = Math.round((Date.now() - date.getTime()) / 1000)
   if (seconds < 60) return rtf.format(-seconds, 'second')

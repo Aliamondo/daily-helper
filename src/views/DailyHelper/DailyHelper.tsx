@@ -52,6 +52,7 @@ export default function DailyHelper() {
   const [isLoadingAnimationPlaying, setIsLoadingAnimationPlaying] = useState(
     !isInvalidToken && Boolean(orgName) && teamNames.length > 0,
   )
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [isDrawbarOpen, setIsDrawbarOpen] = useState(false)
   const [
     isPullRequestsWithoutLabelsHidden,
@@ -110,6 +111,7 @@ export default function DailyHelper() {
         })
         .then(pullRequests => {
           setPullRequests(pullRequests)
+          setLastUpdated(new Date())
           setIsLoadingAnimationPlaying(false)
         })
       setShouldLoad(false)
@@ -256,6 +258,7 @@ export default function DailyHelper() {
       <AppBar
         loadingProgress={loadingProgress}
         isLoadingAnimationPlaying={isLoadingAnimationPlaying}
+        lastUpdated={lastUpdated}
         handleReload={handleReload}
         showDrawbar={getDrawer({
           allLabels,
