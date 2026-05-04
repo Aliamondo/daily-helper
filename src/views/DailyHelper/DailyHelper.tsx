@@ -28,6 +28,7 @@ import { dataFetcher } from '../../helpers/dataFetcher'
 import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
 import KanbanBoard from './KanbanBoard'
+import NotesView from '../Notes/NotesView'
 import PullRequestFilterBar from '../../components/PullRequestFilterBar'
 import SortControl, { SortDir, SortField } from '../../components/SortControl'
 
@@ -44,6 +45,7 @@ export default function DailyHelper() {
   )
   const [orgName, setOrgName] = useState(settingsHandler.loadOrgName())
   const [teamName, setTeamName] = useState(teamNames[0])
+  const trackedRepos = settingsHandler.loadTeam(teamName)?.repositories ?? []
   const [shouldLoad, setShouldLoad] = useState(true)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [pullRequests, setPullRequests] = useState<PullRequest[]>(
@@ -66,11 +68,11 @@ export default function DailyHelper() {
   const isMyPrsFilterActive = activeFilter === 'myPrs'
   const isMyWorkFilterActive = activeFilter === 'myWork'
   const [viewerLogin, setViewerLogin] = useState<string | null>(null)
-  const [activeView, setActiveView] = useState<'list' | 'kanban'>(
+  const [activeView, setActiveView] = useState<'list' | 'kanban' | 'notes'>(
     settingsHandler.loadView(),
   )
 
-  const handleViewToggle = (view: 'list' | 'kanban') => {
+  const handleViewToggle = (view: 'list' | 'kanban' | 'notes') => {
     setActiveView(view)
     settingsHandler.saveView(view)
   }
@@ -284,7 +286,9 @@ export default function DailyHelper() {
       >
         <Box
           sx={{ mx: 'auto', px: 1 }}
-          maxWidth={activeView === 'kanban' ? undefined : 1150}
+          maxWidth={
+            activeView === 'kanban' || activeView === 'notes' ? undefined : 1150
+          }
         >
           {isInvalidToken && (
             <Alert severity="error">
@@ -351,45 +355,47 @@ export default function DailyHelper() {
                   activeView={activeView}
                   onViewToggle={handleViewToggle}
                 />
-                <Stack direction="row" alignItems="center" gap={3}>
-                  {activeView === 'list' && !isLoadingAnimationPlaying && (
-                    <Stack direction="row" alignItems="baseline" gap={0.5}>
-                      <Typography
-                        variant="h6"
-                        fontWeight={700}
-                        lineHeight={1}
-                        sx={{ fontVariantNumeric: 'tabular-nums' }}
-                      >
-                        {visiblePullRequests.length === pullRequests.length
-                          ? pullRequests.length
-                          : `${visiblePullRequests.length} / ${pullRequests.length}`}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        lineHeight={1}
-                      >
-                        total
-                      </Typography>
-                    </Stack>
-                  )}
-                  <SortControl
-                    field={
-                      activeView === 'kanban' && sortField === 'state'
-                        ? 'date'
-                        : sortField
-                    }
-                    dir={sortDir}
-                    excludeFields={activeView === 'kanban' ? ['state'] : []}
-                    onChange={(f, d) => {
-                      const newDir = f === sortField ? d : sortDirs[f]
-                      const newDirs = { ...sortDirs, [f]: newDir }
-                      setSortField(f)
-                      setSortDirs(newDirs)
-                      settingsHandler.saveSort({ field: f, dirs: newDirs })
-                    }}
-                  />
-                </Stack>
+                {activeView !== 'notes' && (
+                  <Stack direction="row" alignItems="center" gap={3}>
+                    {activeView === 'list' && !isLoadingAnimationPlaying && (
+                      <Stack direction="row" alignItems="baseline" gap={0.5}>
+                        <Typography
+                          variant="h6"
+                          fontWeight={700}
+                          lineHeight={1}
+                          sx={{ fontVariantNumeric: 'tabular-nums' }}
+                        >
+                          {visiblePullRequests.length === pullRequests.length
+                            ? pullRequests.length
+                            : `${visiblePullRequests.length} / ${pullRequests.length}`}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          lineHeight={1}
+                        >
+                          total
+                        </Typography>
+                      </Stack>
+                    )}
+                    <SortControl
+                      field={
+                        activeView === 'kanban' && sortField === 'state'
+                          ? 'date'
+                          : sortField
+                      }
+                      dir={sortDir}
+                      excludeFields={activeView === 'kanban' ? ['state'] : []}
+                      onChange={(f, d) => {
+                        const newDir = f === sortField ? d : sortDirs[f]
+                        const newDirs = { ...sortDirs, [f]: newDir }
+                        setSortField(f)
+                        setSortDirs(newDirs)
+                        settingsHandler.saveSort({ field: f, dirs: newDirs })
+                      }}
+                    />
+                  </Stack>
+                )}
               </Stack>
               {activeView === 'list' ? (
                 <Stack spacing={0.5} useFlexGap>
@@ -434,13 +440,15 @@ export default function DailyHelper() {
                       </Typography>
                     )}
                 </Stack>
-              ) : (
+              ) : activeView === 'kanban' ? (
                 <KanbanBoard
                   pullRequests={visiblePullRequests}
                   isLoading={isLoadingAnimationPlaying}
                   sortField={sortField === 'state' ? 'date' : sortField}
                   sortDir={sortDir}
                 />
+              ) : (
+                <NotesView trackedRepos={trackedRepos} />
               )}
             </>
           )}

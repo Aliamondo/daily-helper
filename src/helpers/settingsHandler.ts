@@ -67,11 +67,11 @@ const settingsHandler = {
     )
   },
 
-  loadView(): 'list' | 'kanban' {
+  loadView(): 'list' | 'kanban' | 'notes' {
     return this.load().view ?? 'list'
   },
 
-  saveView(view: 'list' | 'kanban'): void {
+  saveView(view: 'list' | 'kanban' | 'notes'): void {
     const settings = this.load()
     this.saveAll({ ...settings, view })
   },

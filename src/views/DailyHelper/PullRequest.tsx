@@ -12,6 +12,7 @@ import { ICON_BUTTON_SIZE } from './DailyHelper'
 import Label from '../../components/Label'
 import Link from '@mui/material/Link'
 import NoCommentsIcon from '@mui/icons-material/ChatBubbleOutline'
+import PrNoteButton from '../../components/PrNoteButton'
 import PullRequestStateIcon from '../../components/PullRequestStateIcon'
 import PullRequestStatus from './PullRequestStatus'
 import Skeleton from '@mui/material/Skeleton'
@@ -140,27 +141,37 @@ export default function PullRequest({
                     {fromNow(createdAt)}
                   </Typography>
                 </Stack>
-                {hasReviewers && (
-                  <Stack direction="row" spacing={0.25}>
-                    {activeReviews.slice(0, 3).map(review => (
-                      <UserBadge
-                        key={review.reviewer.login}
-                        user={review.reviewer}
-                        reviewState={review.state}
-                        type="REVIEWER"
-                      />
-                    ))}
-                    {requestedReviewers
-                      .slice(0, 3 - activeReviews.length)
-                      .map(u => (
+                <Stack direction="row" alignItems="center" spacing={0.25}>
+                  <PrNoteButton
+                    prId={id}
+                    prNumber={number}
+                    prTitle={title}
+                    prUrl={url}
+                    repositoryName={repositoryName}
+                    size="small"
+                  />
+                  {hasReviewers && (
+                    <Stack direction="row" spacing={0.25}>
+                      {activeReviews.slice(0, 3).map(review => (
                         <UserBadge
-                          key={u.login}
-                          user={u}
-                          type="REQUESTED_REVIEWER"
+                          key={review.reviewer.login}
+                          user={review.reviewer}
+                          reviewState={review.state}
+                          type="REVIEWER"
                         />
                       ))}
-                  </Stack>
-                )}
+                      {requestedReviewers
+                        .slice(0, 3 - activeReviews.length)
+                        .map(u => (
+                          <UserBadge
+                            key={u.login}
+                            user={u}
+                            type="REQUESTED_REVIEWER"
+                          />
+                        ))}
+                    </Stack>
+                  )}
+                </Stack>
               </Stack>
             </Stack>
           )}
@@ -282,17 +293,32 @@ export default function PullRequest({
                 height={ICON_BUTTON_SIZE}
               />
             ) : (
-              <Link href={url} underline="none" target="_blank" rel="noopener">
-                <Stack
-                  direction="row"
-                  spacing={0.5}
-                  color="text.secondary"
-                  marginRight={4}
+              <Stack direction="column" spacing={0.5} alignItems="flex-start">
+                <Link
+                  href={url}
+                  underline="none"
+                  target="_blank"
+                  rel="noopener"
                 >
-                  {comments ? <CommentsIcon /> : <NoCommentsIcon />}
-                  <Typography>{comments}</Typography>
-                </Stack>
-              </Link>
+                  <Stack
+                    direction="row"
+                    spacing={0.5}
+                    color="text.secondary"
+                    marginRight={4}
+                  >
+                    {comments ? <CommentsIcon /> : <NoCommentsIcon />}
+                    <Typography>{comments}</Typography>
+                  </Stack>
+                </Link>
+                <PrNoteButton
+                  prId={id}
+                  prNumber={number}
+                  prTitle={title}
+                  prUrl={url}
+                  repositoryName={repositoryName}
+                  size="medium"
+                />
+              </Stack>
             )}
           </Grid>
           <PullRequestStatus

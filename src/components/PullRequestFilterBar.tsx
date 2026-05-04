@@ -1,4 +1,5 @@
 import GroupIcon from '@mui/icons-material/Group'
+import NoteAltOutlinedIcon from '@mui/icons-material/NoteAltOutlined'
 import PersonIcon from '@mui/icons-material/Person'
 import Stack from '@mui/material/Stack'
 import StarRate from '@mui/icons-material/StarRate'
@@ -49,8 +50,8 @@ function FilterButton({
 }
 
 type ViewToggleProps = {
-  activeView: 'list' | 'kanban'
-  onViewToggle: (view: 'list' | 'kanban') => void
+  activeView: 'list' | 'kanban' | 'notes'
+  onViewToggle: (view: 'list' | 'kanban' | 'notes') => void
 }
 function ViewToggle({ activeView, onViewToggle }: ViewToggleProps) {
   return (
@@ -99,6 +100,23 @@ function ViewToggle({ activeView, onViewToggle }: ViewToggleProps) {
           <ViewKanbanOutlinedIcon sx={{ fontSize: 18 }} />
         </Stack>
       </Tooltip>
+      <Tooltip title="Notes view">
+        <Stack
+          alignItems="center"
+          justifyContent="center"
+          onClick={() => onViewToggle('notes')}
+          sx={{
+            px: 0.75,
+            py: 0.5,
+            cursor: 'pointer',
+            color: activeView === 'notes' ? 'primary.main' : 'text.secondary',
+            bgcolor: activeView === 'notes' ? 'action.selected' : 'transparent',
+            '&:hover': { bgcolor: 'action.hover' },
+          }}
+        >
+          <NoteAltOutlinedIcon sx={{ fontSize: 18 }} />
+        </Stack>
+      </Tooltip>
     </Stack>
   )
 }
@@ -110,8 +128,8 @@ type ReviewFilterBarProps = {
   onMyPrsToggle: VoidFunction
   isMyWorkActive: boolean
   onMyWorkToggle: VoidFunction
-  activeView: 'list' | 'kanban'
-  onViewToggle: (view: 'list' | 'kanban') => void
+  activeView: 'list' | 'kanban' | 'notes'
+  onViewToggle: (view: 'list' | 'kanban' | 'notes') => void
 }
 export default function PullRequestFilterBar({
   isMustReviewActive,
