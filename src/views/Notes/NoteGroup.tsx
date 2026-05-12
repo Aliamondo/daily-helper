@@ -321,7 +321,7 @@ function TodoItemRow({
   return (
     <Stack
       direction="row"
-      alignItems="flex-start"
+      alignItems="center"
       spacing={0.5}
       sx={{
         '& .row-action': actionSx,
@@ -335,7 +335,7 @@ function TodoItemRow({
           onTodoChange()
         }}
         size="small"
-        sx={{ p: 0, mt: 0.2, flexShrink: 0 }}
+        sx={{ p: 0, flexShrink: 0 }}
       />
 
       {editing ? (
