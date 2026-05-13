@@ -19,7 +19,7 @@ type Settings_All = {
   loadPipelineStatus?: boolean
   aliases?: Record<string, string>
   filters?: Settings_Filters
-  view?: 'list' | 'kanban'
+  view?: 'list' | 'kanban' | 'notes'
   sort?: {
     field: import('../components/SortControl').SortField
     dirs: Record<
