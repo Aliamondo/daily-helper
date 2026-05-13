@@ -23,15 +23,41 @@ function estimateGroupHeight(group: NoteGroup): number {
 function distributeIntoColumns(
   groups: NoteGroup[],
   colCount: number,
+  heightMap: Record<string, number>,
 ): NoteGroup[][] {
   const columns: NoteGroup[][] = Array.from({ length: colCount }, () => [])
   const heights: number[] = Array(colCount).fill(0)
   for (const group of groups) {
+    const h = heightMap[group.id] ?? estimateGroupHeight(group)
     const shortest = heights.indexOf(Math.min(...heights))
     columns[shortest].push(group)
-    heights[shortest] += estimateGroupHeight(group)
+    heights[shortest] += h
   }
   return columns
+}
+
+function useElementHeights(): [
+  Record<string, number>,
+  (id: string, el: HTMLDivElement | null) => void,
+] {
+  const [heights, setHeights] = useState<Record<string, number>>({})
+  const observersRef = useRef<Map<string, ResizeObserver>>(new Map())
+
+  const measureRef = useCallback((id: string, el: HTMLDivElement | null) => {
+    observersRef.current.get(id)?.disconnect()
+    observersRef.current.delete(id)
+    if (!el) return
+    const observer = new ResizeObserver(entries => {
+      const height = entries[0].contentRect.height
+      setHeights(prev =>
+        prev[id] === height ? prev : { ...prev, [id]: height },
+      )
+    })
+    observer.observe(el)
+    observersRef.current.set(id, observer)
+  }, [])
+
+  return [heights, measureRef]
 }
 
 type NotesViewProps = {
@@ -45,7 +71,7 @@ export default function NotesView({ trackedRepos }: NotesViewProps) {
   const [addingGroup, setAddingGroup] = useState(false)
   const [newGroupTitle, setNewGroupTitle] = useState('')
   const [containerWidth, setContainerWidth] = useState(0)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [heightMap, measureGroupRef] = useElementHeights()
 
   const reload = () => setNotesData(notesHandler.load())
 
@@ -57,10 +83,8 @@ export default function NotesView({ trackedRepos }: NotesViewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trackedRepos.join(',')])
 
-  const measureRef = useCallback((node: HTMLDivElement | null) => {
+  const measureContainerRef = useCallback((node: HTMLDivElement | null) => {
     if (!node) return
-    ;(containerRef as React.MutableRefObject<HTMLDivElement | null>).current =
-      node
     const observer = new ResizeObserver(entries => {
       setContainerWidth(entries[0].contentRect.width)
     })
@@ -77,7 +101,7 @@ export default function NotesView({ trackedRepos }: NotesViewProps) {
           Math.floor((containerWidth + GAP) / (COLUMN_MIN_WIDTH + GAP)),
         )
       : 1
-  const columns = distributeIntoColumns(visibleGroups, colCount)
+  const columns = distributeIntoColumns(visibleGroups, colCount, heightMap)
 
   const handleAddGroup = () => {
     const title = newGroupTitle.trim()
@@ -89,35 +113,47 @@ export default function NotesView({ trackedRepos }: NotesViewProps) {
   }
 
   const renderGroup = (group: NoteGroup) => (
-    <NoteGroup
+    <Box
       key={group.id}
-      group={group}
-      onRenameGroup={title => {
-        notesHandler.updateGroup(group.id, { title })
-        reload()
-      }}
-      onHideGroup={() => {
-        notesHandler.hideGroup(group.id)
-        reload()
-      }}
-      onAddNote={content => {
-        notesHandler.addNote(group.id, content)
-        reload()
-      }}
-      onAddTodoNote={() => {
-        notesHandler.addTodoNote(group.id)
-        reload()
-      }}
-      onUpdateNote={(noteId, content) => {
-        notesHandler.updateNote(group.id, noteId, content)
-        reload()
-      }}
-      onDeleteNote={noteId => {
-        notesHandler.deleteNote(group.id, noteId)
-        reload()
-      }}
-      onTodoChange={reload}
-    />
+      ref={(el: HTMLDivElement | null) => measureGroupRef(group.id, el)}
+    >
+      <NoteGroup
+        group={group}
+        onRenameGroup={title => {
+          notesHandler.updateGroup(group.id, { title })
+          reload()
+        }}
+        onHideGroup={() => {
+          notesHandler.hideGroup(group.id)
+          reload()
+        }}
+        onDeleteGroup={
+          group.isRepoPanel
+            ? undefined
+            : () => {
+                notesHandler.deleteGroup(group.id)
+                reload()
+              }
+        }
+        onAddNote={content => {
+          notesHandler.addNote(group.id, content)
+          reload()
+        }}
+        onAddTodoNote={() => {
+          notesHandler.addTodoNote(group.id)
+          reload()
+        }}
+        onUpdateNote={(noteId, content) => {
+          notesHandler.updateNote(group.id, noteId, content)
+          reload()
+        }}
+        onDeleteNote={noteId => {
+          notesHandler.deleteNote(group.id, noteId)
+          reload()
+        }}
+        onTodoChange={reload}
+      />
+    </Box>
   )
 
   return (
@@ -186,7 +222,7 @@ export default function NotesView({ trackedRepos }: NotesViewProps) {
 
       {/* Masonry board */}
       <Box
-        ref={measureRef}
+        ref={measureContainerRef}
         sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}
       >
         {columns.map((colGroups, ci) => (

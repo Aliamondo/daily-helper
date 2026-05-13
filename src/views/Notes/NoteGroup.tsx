@@ -537,6 +537,7 @@ type NoteGroupProps = {
   group: NoteGroup
   onRenameGroup?: (title: string) => void
   onHideGroup: () => void
+  onDeleteGroup?: () => void
   onAddNote: (content: string) => void
   onAddTodoNote: () => void
   onUpdateNote: (noteId: string, content: string) => void
@@ -548,6 +549,7 @@ export default function NoteGroup({
   group,
   onRenameGroup,
   onHideGroup,
+  onDeleteGroup,
   onAddNote,
   onAddTodoNote,
   onUpdateNote,
@@ -631,6 +633,23 @@ export default function NoteGroup({
             <VisibilityOffIcon fontSize="small" />
           </IconButton>
         </Tooltip>
+
+        {!isRepo && onDeleteGroup && (
+          <Tooltip title="Delete group">
+            <IconButton
+              className="group-action"
+              size="small"
+              onClick={onDeleteGroup}
+              sx={{
+                color: 'text.disabled',
+                p: 0.25,
+                '&:hover': { color: 'error.main' },
+              }}
+            >
+              <DeleteOutlineIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
       </Stack>
 
       {/* Notes — divider between each item */}

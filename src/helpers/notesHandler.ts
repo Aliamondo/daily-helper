@@ -11,8 +11,8 @@ function load(): NotesData {
       groups: (parsed.groups ?? []).map(g => ({
         ...g,
         notes: (g.notes ?? []).map(n => ({
-          type: 'note' as const,
           ...n,
+          type: n.type ?? ('note' as const),
           items: n.items ?? [],
         })),
       })),
@@ -51,7 +51,6 @@ function findNote(
 
 const notesHandler = {
   load,
-  saveAll,
 
   // ── Groups ──────────────────────────────────────────────────────────────
 
