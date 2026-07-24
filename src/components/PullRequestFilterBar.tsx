@@ -24,28 +24,34 @@ function FilterButton({
   onClick,
 }: FilterButtonProps) {
   return (
-    <Stack
-      direction="row"
-      alignItems="center"
-      gap={0.5}
-      onClick={onClick}
-      sx={{
-        cursor: 'pointer',
-        px: 1,
-        py: 0.5,
-        borderRadius: 1,
-        color: active ? color : 'text.secondary',
-        '&:hover': {
-          color: active ? color : 'text.primary',
-          bgcolor: 'action.hover',
-        },
-      }}
-    >
-      <Icon sx={{ fontSize: 16 }} />
-      <Typography variant="body2" fontWeight={active ? 600 : 400}>
-        {label}
-      </Typography>
-    </Stack>
+    <Tooltip title={label}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        gap={0.5}
+        onClick={onClick}
+        sx={{
+          cursor: 'pointer',
+          px: 1,
+          py: 0.5,
+          borderRadius: 1,
+          color: active ? color : 'text.secondary',
+          '&:hover': {
+            color: active ? color : 'text.primary',
+            bgcolor: 'action.hover',
+          },
+        }}
+      >
+        <Icon sx={{ fontSize: 16 }} />
+        <Typography
+          variant="body2"
+          fontWeight={active ? 600 : 400}
+          sx={{ display: { xs: 'none', md: 'block' }, whiteSpace: 'nowrap' }}
+        >
+          {label}
+        </Typography>
+      </Stack>
+    </Tooltip>
   )
 }
 
