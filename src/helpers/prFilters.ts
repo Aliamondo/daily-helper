@@ -17,6 +17,24 @@ function isTitleWhitelisted(title: string, filters: Settings_Filters): boolean {
   )
 }
 
+export function matchesSearch(pr: PullRequest, rawQuery: string): boolean {
+  const query = rawQuery.trim().toLowerCase()
+  if (!query) return true
+
+  const userMatches = (user: User) =>
+    getDisplayName(user).toLowerCase().includes(query) ||
+    user.login.toLowerCase().includes(query)
+
+  return (
+    pr.title.toLowerCase().includes(query) ||
+    `#${pr.number}`.includes(query) ||
+    pr.repositoryName.toLowerCase().includes(query) ||
+    userMatches(pr.author) ||
+    pr.assignees.some(userMatches) ||
+    pr.labels.some(label => label.name.toLowerCase().includes(query))
+  )
+}
+
 export function applyReviewRequiredFilter(
   prs: PullRequest[],
   viewerLogin: string,
