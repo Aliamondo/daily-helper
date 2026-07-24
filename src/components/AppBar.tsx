@@ -15,6 +15,7 @@ import IconButton from '@mui/material/IconButton'
 import LinearProgress from '@mui/material/LinearProgress'
 import MenuIcon from '@mui/icons-material/Menu'
 import ReloadIcon from '@mui/icons-material/Replay'
+import SearchBar from './SearchBar'
 import Settings from './settings/Settings'
 import SettingsIcon from '@mui/icons-material/Settings'
 import Tab from '@mui/material/Tab'
@@ -35,6 +36,8 @@ type AppBarElementProps = {
   drawbarName: string
   isDrawbarOpen: boolean
   setIsDrawbarOpen: (newState: boolean) => void
+  onSearch?: (query: string) => void
+  showSearch?: boolean
 }
 export default function AppBarElement({
   handleReload: initialHandleReload,
@@ -45,6 +48,8 @@ export default function AppBarElement({
   drawbarName,
   isDrawbarOpen,
   setIsDrawbarOpen,
+  onSearch,
+  showSearch = true,
 }: AppBarElementProps) {
   const relativeTime = useRelativeTime(lastUpdated)
   const [teamTabValue, setTeamTabValue] = useState(0)
@@ -118,6 +123,7 @@ export default function AppBarElement({
           </Tabs>
 
           <Box sx={{ flexGrow: 1 }} />
+          {onSearch && showSearch && <SearchBar onSearch={onSearch} />}
           {showDrawbar && (
             <ClickAwayListener onClickAway={handleHideDrawbar}>
               <Box>

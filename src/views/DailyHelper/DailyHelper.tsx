@@ -21,7 +21,10 @@ import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import VisibleIcon from '@mui/icons-material/Visibility'
-import { applyReviewRequiredFilter } from '../../helpers/prFilters'
+import {
+  applyReviewRequiredFilter,
+  matchesSearch,
+} from '../../helpers/prFilters'
 import { getDisplayName } from '../../helpers/getDisplayName'
 import { getStateRank } from '../../helpers/getStateRank'
 import { dataFetcher } from '../../helpers/dataFetcher'
@@ -68,6 +71,7 @@ export default function DailyHelper() {
   const isMyPrsFilterActive = activeFilter === 'myPrs'
   const isMyWorkFilterActive = activeFilter === 'myWork'
   const [viewerLogin, setViewerLogin] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const [activeView, setActiveView] = useState<'list' | 'kanban' | 'notes'>(
     settingsHandler.loadView(),
   )
@@ -191,7 +195,8 @@ export default function DailyHelper() {
               (!reviewRequiredFilteredIds ||
                 reviewRequiredFilteredIds.has(pr.id)) &&
               (!isMyPrsFilterActive || pr.author.login === viewerLogin) &&
-              (!isMyWorkFilterActive || isMyWork(pr)),
+              (!isMyWorkFilterActive || isMyWork(pr)) &&
+              matchesSearch(pr, searchQuery),
           ),
     [
       sortedPullRequests,
@@ -202,6 +207,7 @@ export default function DailyHelper() {
       viewerLogin,
       hiddenLabels,
       isPullRequestsWithoutLabelsHidden,
+      searchQuery,
     ],
   )
 
@@ -275,6 +281,8 @@ export default function DailyHelper() {
         drawbarName="Search filters"
         isDrawbarOpen={isDrawbarOpen}
         setIsDrawbarOpen={setIsDrawbarOpen}
+        onSearch={setSearchQuery}
+        showSearch={activeView !== 'notes'}
       />
       <Box
         sx={{
