@@ -8,6 +8,8 @@ export function getStateRank(
   const humanReviewers = pr.requestedReviewers.filter(
     r => !filters.botLogins.includes(r.login?.toLowerCase()),
   )
-  if (!humanReviewers.length) return 3
+  // Auto-merge means the author considers it done, so it belongs in
+  // "Review Required" rather than "In Progress"
+  if (!humanReviewers.length) return pr.autoMerge ? 2 : 3
   return 2
 }

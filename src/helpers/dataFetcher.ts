@@ -530,6 +530,15 @@ function normalizePR(
     state: pr.state,
     isDraft: pr.isDraft,
     reviewDecision: pr.reviewDecision,
+    additions: pr.additions,
+    deletions: pr.deletions,
+    changedFiles: pr.changedFiles,
+    autoMerge: pr.autoMergeRequest
+      ? {
+          enabledAt: new Date(pr.autoMergeRequest.enabledAt),
+          enabledBy: pr.autoMergeRequest.enabledBy,
+        }
+      : null,
     createdAt: new Date(pr.createdAt),
     labels: pr.labels.nodes,
     reviews: formatReviews(pr.reviews.nodes),
