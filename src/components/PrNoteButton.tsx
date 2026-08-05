@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react'
-import NoteAltIcon from '@mui/icons-material/NoteAlt'
 import NoteAltOutlinedIcon from '@mui/icons-material/NoteAltOutlined'
 import Box from '@mui/material/Box'
 import IconButton from '@mui/material/IconButton'
@@ -68,13 +67,9 @@ export default function PrNoteButton({
             p: size === 'small' ? 0.25 : 0.5,
           }}
         >
-          {hasNote ? (
-            <NoteAltIcon fontSize={size === 'small' ? 'small' : 'medium'} />
-          ) : (
-            <NoteAltOutlinedIcon
-              fontSize={size === 'small' ? 'small' : 'medium'}
-            />
-          )}
+          <NoteAltOutlinedIcon
+            fontSize={size === 'small' ? 'small' : 'medium'}
+          />
         </IconButton>
       </Tooltip>
 

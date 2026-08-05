@@ -25,6 +25,10 @@ type GraphQL_PullRequest = {
   state: 'OPEN' | 'MERGED' | 'CLOSED'
   id: string
   isDraft: boolean
+  additions: number
+  deletions: number
+  changedFiles: number
+  autoMergeRequest: GraphQL_AutoMergeRequest | null
   author: GraphQL_User
   repository: GraphQL_Repository
   baseRef: GraphQL_BaseRef
@@ -51,6 +55,11 @@ type GraphQL_PullRequest = {
   labels: {
     nodes: GraphQL_Label[]
   }
+}
+
+type GraphQL_AutoMergeRequest = {
+  enabledAt: string
+  enabledBy: GraphQL_User | null
 }
 
 type GraphQL_PullRequestsResponse = {

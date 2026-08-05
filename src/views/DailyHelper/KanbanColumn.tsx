@@ -35,7 +35,7 @@ export default function KanbanColumn({
           position: 'sticky',
           top: 0,
           zIndex: 10,
-          bgcolor: 'background.default',
+          backgroundColor: 'background.default',
           py: 0.75,
           borderBottom: 2,
           borderColor: accentColor,

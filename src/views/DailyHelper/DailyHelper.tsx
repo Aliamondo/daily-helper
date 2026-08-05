@@ -295,7 +295,7 @@ export default function DailyHelper() {
         <Box
           sx={{ mx: 'auto', px: 1 }}
           maxWidth={
-            activeView === 'kanban' || activeView === 'notes' ? undefined : 1150
+            activeView === 'kanban' || activeView === 'notes' ? undefined : 1000
           }
         >
           {isInvalidToken && (
@@ -339,7 +339,7 @@ export default function DailyHelper() {
                   position: 'sticky',
                   top: 0,
                   zIndex: 20,
-                  bgcolor: 'background.default',
+                  backgroundColor: 'background.default',
                   py: 1,
                   borderBottom: 1,
                   borderColor: 'divider',
@@ -486,6 +486,10 @@ function generateDummyPullRequests(total: number): PullRequest[] {
       state: 'OPEN',
       isDraft: false,
       reviewDecision: 'REVIEW_REQUIRED',
+      additions: 0,
+      deletions: 0,
+      changedFiles: 0,
+      autoMerge: null,
       createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
       labels: [],
       reviews: [],
@@ -531,7 +535,7 @@ function getDrawer({
               marginTop: `${marginTop}px`,
               minWidth: '85%',
               display: { xs: 'block', sm: 'none' }, // show only on mobile
-              bgcolor: 'background.default',
+              backgroundColor: 'background.default',
             },
           }}
         >
@@ -546,7 +550,7 @@ function getDrawer({
               marginTop: `${marginTop}px`,
               minWidth: '35%',
               display: { xs: 'none', sm: 'block' }, // show on larger screens
-              bgcolor: 'background.default',
+              backgroundColor: 'background.default',
             },
           }}
         >
@@ -573,14 +577,14 @@ function DrawerContents({
   return (
     <List
       subheader={
-        <ListSubheader color="primary" sx={{ bgcolor: 'inherit' }}>
+        <ListSubheader color="primary" sx={{ backgroundColor: 'inherit' }}>
           <Stack direction="row" justifyContent="space-between">
             Labels
             {areFiltersEnabled && (
               <Button
                 size="small"
                 onClick={resetFilters}
-                sx={{ ':hover': { bgcolor: 'inherit' } }}
+                sx={{ ':hover': { backgroundColor: 'inherit' } }}
               >
                 Reset
               </Button>
@@ -635,7 +639,7 @@ function DrawerListItem({
               width: 30,
               height: 30,
               color: 'text.primary',
-              bgcolor: 'action.selected',
+              backgroundColor: 'action.selected',
             }}
           >
             <Typography variant="button">
@@ -661,7 +665,7 @@ function DrawerListItem({
                     textTransform: 'none',
                     color: isHidden ? 'text.disabled' : 'primary',
                     ':hover': {
-                      bgcolor: 'inherit',
+                      backgroundColor: 'inherit',
                     },
                   }}
                 >

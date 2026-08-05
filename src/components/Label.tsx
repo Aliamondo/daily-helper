@@ -5,12 +5,12 @@ import Tooltip from '@mui/material/Tooltip'
 
 function hexToRgb(hex: string) {
   // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
-  var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i
+  const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i
   hex = hex.replace(shorthandRegex, function (m, r, g, b) {
     return r + r + g + g + b + b
   })
 
-  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
   return result
     ? {
         r: parseInt(result[1], 16) / 255,
@@ -48,15 +48,15 @@ const Label = forwardRef<HTMLDivElement, LabelProps>(
       <Chip
         ref={ref}
         label={label.name}
+        size="small"
         sx={{
-          bgcolor: `rgb(${rgbColorString}, ${isGreyedOut ? 0.3 : 1})`,
+          backgroundColor: `rgb(${rgbColorString}, ${isGreyedOut ? 0.3 : 1})`,
           color: getFontColor(label.color),
-          padding: 1,
           marginLeft: 1,
           ':hover': onClick && {
             border: `ButtonHighlight 0.25em solid`,
             padding: 0.75,
-            bgcolor: `rgb(${rgbColorString}, 0.7)`,
+            backgroundColor: `rgb(${rgbColorString}, 0.7)`,
             color: getFontColor(label.color),
           },
         }}

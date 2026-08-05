@@ -127,6 +127,15 @@ function getPullRequestNode(includeChecks = false) {
   id
   isDraft
   reviewDecision
+  additions
+  deletions
+  changedFiles
+  autoMergeRequest {
+    enabledAt
+    enabledBy {
+      ${UserNode}
+    }
+  }
   author {
     ${UserNode}
   }

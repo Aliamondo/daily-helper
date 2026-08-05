@@ -1,19 +1,19 @@
 import { useState } from 'react'
 import { useTheme } from '@mui/material/styles'
 
+import AutoMergeIndicator from '../../components/AutoMergeIndicator'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
 import CommentsIcon from '@mui/icons-material/ChatOutlined'
 import CommitChecksIndicator from '../../components/CommitChecksIndicator'
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows'
+import DiffSize from '../../components/DiffSize'
 import Grid from '@mui/material/Grid'
-import { ICON_BUTTON_SIZE } from './DailyHelper'
-import Label from '../../components/Label'
+import LabelGroup from '../../components/LabelGroup'
 import Link from '@mui/material/Link'
 import NoCommentsIcon from '@mui/icons-material/ChatBubbleOutline'
 import PrNoteButton from '../../components/PrNoteButton'
-import PullRequestStateIcon from '../../components/PullRequestStateIcon'
 import PullRequestStatus from './PullRequestStatus'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
@@ -22,6 +22,10 @@ import UserBadge from '../../components/UserBadge'
 import { dataFetcher } from '../../helpers/dataFetcher'
 import { fromNow } from '../../helpers/time'
 import { settingsHandler } from '../../helpers/settingsHandler'
+
+// Wide enough for the worst case the widget can produce: 10 squares plus a
+// six-digit '+123456 −123456 · 1234 files'
+const DIFF_COLUMN_WIDTH = 320
 
 type PullRequestProps = {
   isLoading: boolean
@@ -47,6 +51,10 @@ export default function PullRequest({
   state,
   isDraft,
   reviewDecision,
+  additions,
+  deletions,
+  changedFiles,
+  autoMerge,
   reviews,
   requestedReviewers,
   contributors,
@@ -77,43 +85,73 @@ export default function PullRequest({
       activeReviews.length > 0 || requestedReviewers.length > 0
 
     return (
-      <Card variant="outlined" sx={{ bgcolor: theme.palette.prCard.default }}>
+      <Card
+        variant="outlined"
+        sx={{
+          // the size badge replaced the state icon here, so the draft signal
+          // has to come from the card itself, the way it does in list view
+          backgroundColor: isDraft
+            ? theme.palette.prCard.draft
+            : theme.palette.prCard.default,
+        }}
+      >
         <CardContent sx={{ '&:last-child': { pb: 1.5 }, pt: 1.5, px: 1.5 }}>
           {isLoading ? (
             <Skeleton variant="rectangular" animation="wave" height={60} />
           ) : (
             <Stack spacing={0.75}>
-              <Stack direction="row" alignItems="center" spacing={0.75}>
-                <PullRequestStateIcon state={state} isDraft={isDraft} />
-                <Link
-                  href={repositoryUrl}
-                  target="_blank"
-                  rel="noopener"
-                  underline="hover"
-                  sx={{
-                    fontFamily: 'monospace',
-                    fontSize: '0.7rem',
-                    bgcolor: 'action.hover',
-                    color: 'text.primary',
-                    px: 0.75,
-                    py: 0.25,
-                    borderRadius: 1,
-                    flexShrink: 0,
-                  }}
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                spacing={0.75}
+              >
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={0.75}
+                  sx={{ minWidth: 0 }}
                 >
-                  {repositoryName}
-                </Link>
-                <Link
-                  href={url}
-                  variant="caption"
-                  color="text.secondary"
-                  underline="hover"
-                  target="_blank"
-                  rel="noopener"
-                  sx={{ flexShrink: 0 }}
-                >
-                  #{number}
-                </Link>
+                  <Link
+                    href={repositoryUrl}
+                    target="_blank"
+                    rel="noopener"
+                    underline="hover"
+                    sx={{
+                      fontFamily: 'monospace',
+                      fontSize: '0.7rem',
+                      backgroundColor: 'action.hover',
+                      color: 'text.primary',
+                      px: 0.75,
+                      py: 0.25,
+                      borderRadius: 1,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {repositoryName}
+                  </Link>
+                  <Link
+                    href={url}
+                    variant="caption"
+                    color="text.secondary"
+                    underline="hover"
+                    target="_blank"
+                    rel="noopener"
+                    sx={{ flexShrink: 0 }}
+                  >
+                    #{number}
+                  </Link>
+                  {autoMerge && <AutoMergeIndicator autoMerge={autoMerge} />}
+                </Stack>
+                <Stack component="span" sx={{ flexShrink: 0 }}>
+                  <DiffSize
+                    additions={additions}
+                    deletions={deletions}
+                    changedFiles={changedFiles}
+                    showNumbers={false}
+                    size="small"
+                  />
+                </Stack>
               </Stack>
               <Link
                 href={url}
@@ -136,7 +174,7 @@ export default function PullRequest({
                 justifyContent="space-between"
               >
                 <Stack direction="row" alignItems="center" spacing={0.75}>
-                  <UserBadge user={author} type="AUTHOR" />
+                  <UserBadge user={author} type="AUTHOR" size="small" />
                   <Typography variant="caption" color="text.secondary">
                     {fromNow(createdAt)}
                   </Typography>
@@ -158,6 +196,7 @@ export default function PullRequest({
                           user={review.reviewer}
                           reviewState={review.state}
                           type="REVIEWER"
+                          size="small"
                         />
                       ))}
                       {requestedReviewers
@@ -167,6 +206,7 @@ export default function PullRequest({
                             key={u.login}
                             user={u}
                             type="REQUESTED_REVIEWER"
+                            size="small"
                           />
                         ))}
                     </Stack>
@@ -184,9 +224,10 @@ export default function PullRequest({
     <Card
       variant="outlined"
       sx={{
+        position: 'relative',
         minHeight: 150,
         minWidth: 700,
-        bgcolor: (() => {
+        backgroundColor: (() => {
           if (state === 'OPEN' && !isLoading) {
             if (reviewDecision === 'CHANGES_REQUESTED')
               return theme.palette.prCard.changesRequested
@@ -198,21 +239,48 @@ export default function PullRequest({
         })(),
       }}
     >
+      {!isLoading && (
+        <Stack
+          direction="column"
+          spacing={0.5}
+          alignItems="flex-start"
+          sx={{ position: 'absolute', top: 60, right: 16 }}
+        >
+          <Link href={url} underline="none" target="_blank" rel="noopener">
+            <Stack
+              direction="row"
+              spacing={0.5}
+              alignItems="center"
+              color="text.secondary"
+              paddingLeft={0.5}
+            >
+              {comments ? <CommentsIcon /> : <NoCommentsIcon />}
+              <Typography>{comments}</Typography>
+            </Stack>
+          </Link>
+          <PrNoteButton
+            prId={id}
+            prNumber={number}
+            prTitle={title}
+            prUrl={url}
+            repositoryName={repositoryName}
+            size="medium"
+          />
+        </Stack>
+      )}
       <CardContent>
         <Grid container columnSpacing={2} rowSpacing={2} alignItems="center">
-          <Grid item xs="auto">
-            {isLoading ? (
-              <Skeleton
-                variant="circular"
-                animation="wave"
-                width={ICON_BUTTON_SIZE}
-                height={ICON_BUTTON_SIZE}
-              />
-            ) : (
-              <PullRequestStateIcon state={state} isDraft={isDraft} />
-            )}
-          </Grid>
-          <Grid item xs={10}>
+          <Grid
+            item
+            sx={{
+              alignSelf: 'baseline',
+              flexGrow: 0,
+              flexBasis: `calc(100% - ${DIFF_COLUMN_WIDTH}px)`,
+              maxWidth: `calc(100% - ${DIFF_COLUMN_WIDTH}px)`,
+              minWidth: 0,
+              overflowWrap: 'anywhere',
+            }}
+          >
             {isLoading ? (
               <Grid item xs={9}>
                 <Skeleton variant="text" animation="wave" />
@@ -227,7 +295,7 @@ export default function PullRequest({
                   sx={{
                     fontFamily: 'monospace',
                     fontSize: '0.75rem',
-                    bgcolor: 'action.hover',
+                    backgroundColor: 'action.hover',
                     color: 'text.primary',
                     px: 0.75,
                     py: 0.25,
@@ -266,6 +334,9 @@ export default function PullRequest({
                 >
                   (#{number})
                 </Link>
+                {autoMerge && (
+                  <AutoMergeIndicator autoMerge={autoMerge} fontSize="medium" />
+                )}
                 {!!lastCommitChecks ? (
                   <CommitChecksIndicator
                     commitChecks={lastCommitChecks.commitChecks}
@@ -278,47 +349,29 @@ export default function PullRequest({
                     }}
                   />
                 ) : null}
-                {labels.map(label => (
-                  <Label key={label.id} label={label} />
-                ))}
+                <LabelGroup labels={labels} />
               </>
             )}
           </Grid>
-          <Grid item xs={1}>
+          <Grid
+            item
+            sx={{
+              alignSelf: 'baseline',
+              flexGrow: 0,
+              flexShrink: 0,
+              flexBasis: `${DIFF_COLUMN_WIDTH}px`,
+              maxWidth: DIFF_COLUMN_WIDTH,
+              textAlign: 'right',
+            }}
+          >
             {isLoading ? (
-              <Skeleton
-                variant="rectangular"
-                animation="wave"
-                width={ICON_BUTTON_SIZE}
-                height={ICON_BUTTON_SIZE}
-              />
+              <Skeleton variant="text" animation="wave" />
             ) : (
-              <Stack direction="column" spacing={0.5} alignItems="flex-start">
-                <Link
-                  href={url}
-                  underline="none"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  <Stack
-                    direction="row"
-                    spacing={0.5}
-                    color="text.secondary"
-                    marginRight={4}
-                  >
-                    {comments ? <CommentsIcon /> : <NoCommentsIcon />}
-                    <Typography>{comments}</Typography>
-                  </Stack>
-                </Link>
-                <PrNoteButton
-                  prId={id}
-                  prNumber={number}
-                  prTitle={title}
-                  prUrl={url}
-                  repositoryName={repositoryName}
-                  size="medium"
-                />
-              </Stack>
+              <DiffSize
+                additions={additions}
+                deletions={deletions}
+                changedFiles={changedFiles}
+              />
             )}
           </Grid>
           <PullRequestStatus

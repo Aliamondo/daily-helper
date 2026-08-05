@@ -111,7 +111,7 @@ export default function CommitChecksIndicator({
   sx,
 }: CommitChecksIndicatorProps) {
   const theme = useTheme()
-  const bgColor = theme.palette.prCard.popup
+  const backgroundColor = theme.palette.prCard.popup
   const [isOpen, setIsOpen] = useState(false)
   const container = useRef(null)
   const main = useRef<HTMLHeadingElement>(null)
@@ -173,7 +173,7 @@ export default function CommitChecksIndicator({
               sx={{
                 minWidth: 400,
                 maxWidth: 800,
-                bgcolor: bgColor,
+                backgroundColor: backgroundColor,
               }}
             >
               <List>

@@ -24,6 +24,10 @@ type PullRequest = {
   repositoryBaseRef: string
   baseRef: string
   isDraft: boolean
+  additions: number
+  deletions: number
+  changedFiles: number
+  autoMerge: AutoMerge | null
   reviews: Review[]
   requestedReviewers: User[]
   assignees: User[]
@@ -31,6 +35,11 @@ type PullRequest = {
     commitChecks: CommitCheck[]
     result: CommitCheck['result'] | null
   } | null
+}
+
+type AutoMerge = {
+  enabledAt: Date
+  enabledBy: User | null
 }
 
 type Label = {

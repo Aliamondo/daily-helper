@@ -60,16 +60,32 @@ function getTooltip({
   return getDisplayName(user)
 }
 
+const DIMENSIONS = {
+  medium: { avatar: 40, badge: 20, badgeIcon: 20 },
+  small: { avatar: 30, badge: 15, badgeIcon: 14 },
+}
+
 function getBadgeContent({
   reviewState,
   type,
-}: Pick<UserBadgeProps, 'reviewState' | 'type'>) {
+  size,
+}: Pick<UserBadgeProps, 'reviewState' | 'type' | 'size'>) {
   if (type === 'DEFAULT') return null
 
   const icon = getIcon({ type, reviewState })
+  const { badge, badgeIcon } = DIMENSIONS[size ?? 'medium']
 
   return icon ? (
-    <Avatar sx={{ bgcolor: 'white', width: 20, height: 20 }}>{icon}</Avatar>
+    <Avatar
+      sx={{
+        backgroundColor: 'white',
+        width: badge,
+        height: badge,
+        '& .MuiSvgIcon-root': { fontSize: badgeIcon },
+      }}
+    >
+      {icon}
+    </Avatar>
   ) : null
 }
 
@@ -87,6 +103,7 @@ function getIcon({
 
 type BaseUserBadgeProps = {
   user: User
+  size?: 'small' | 'medium'
 }
 
 export type UserBadgeProps =
@@ -109,16 +126,23 @@ export default function UserBadge({
   user,
   reviewState,
   type,
+  size = 'medium',
   ...props
 }: UserBadgeProps) {
+  const { avatar } = DIMENSIONS[size]
+
   return (
     <Tooltip title={getTooltip({ user, reviewState, type })} {...props}>
       <Badge
         overlap="circular"
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        badgeContent={getBadgeContent({ reviewState, type })}
+        badgeContent={getBadgeContent({ reviewState, type, size })}
       >
-        <Avatar alt={user.login} src={user.avatarUrl} />
+        <Avatar
+          alt={user.login}
+          src={user.avatarUrl}
+          sx={{ width: avatar, height: avatar }}
+        />
       </Badge>
     </Tooltip>
   )

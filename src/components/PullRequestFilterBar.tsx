@@ -38,7 +38,7 @@ function FilterButton({
           color: active ? color : 'text.secondary',
           '&:hover': {
             color: active ? color : 'text.primary',
-            bgcolor: 'action.hover',
+            backgroundColor: 'action.hover',
           },
         }}
       >
@@ -81,8 +81,9 @@ function ViewToggle({ activeView, onViewToggle }: ViewToggleProps) {
             py: 0.5,
             cursor: 'pointer',
             color: activeView === 'list' ? 'primary.main' : 'text.secondary',
-            bgcolor: activeView === 'list' ? 'action.selected' : 'transparent',
-            '&:hover': { bgcolor: 'action.hover' },
+            backgroundColor:
+              activeView === 'list' ? 'action.selected' : 'transparent',
+            '&:hover': { backgroundColor: 'action.hover' },
           }}
         >
           <ViewListIcon sx={{ fontSize: 18 }} />
@@ -98,9 +99,9 @@ function ViewToggle({ activeView, onViewToggle }: ViewToggleProps) {
             py: 0.5,
             cursor: 'pointer',
             color: activeView === 'kanban' ? 'primary.main' : 'text.secondary',
-            bgcolor:
+            backgroundColor:
               activeView === 'kanban' ? 'action.selected' : 'transparent',
-            '&:hover': { bgcolor: 'action.hover' },
+            '&:hover': { backgroundColor: 'action.hover' },
           }}
         >
           <ViewKanbanOutlinedIcon sx={{ fontSize: 18 }} />
@@ -116,8 +117,9 @@ function ViewToggle({ activeView, onViewToggle }: ViewToggleProps) {
             py: 0.5,
             cursor: 'pointer',
             color: activeView === 'notes' ? 'primary.main' : 'text.secondary',
-            bgcolor: activeView === 'notes' ? 'action.selected' : 'transparent',
-            '&:hover': { bgcolor: 'action.hover' },
+            backgroundColor:
+              activeView === 'notes' ? 'action.selected' : 'transparent',
+            '&:hover': { backgroundColor: 'action.hover' },
           }}
         >
           <NoteAltOutlinedIcon sx={{ fontSize: 18 }} />

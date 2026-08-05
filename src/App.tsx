@@ -4,20 +4,28 @@ import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider } from '@mui/material/styles'
 import { ColorModeContext } from './ColorModeContext'
 import { createAppTheme } from './theme'
+import { settingsHandler } from './helpers/settingsHandler'
 
 const DailyHelper = lazy(() => import('./views/DailyHelper/DailyHelper'))
 
 function App() {
   const [mode, setMode] = useState<'light' | 'dark'>(
-    window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light',
+    () =>
+      // an explicit choice wins, otherwise follow the OS preference
+      settingsHandler.loadColorMode() ??
+      (window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light'),
   )
 
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () =>
-        setMode(prev => (prev === 'light' ? 'dark' : 'light')),
+        setMode(prev => {
+          const next = prev === 'light' ? 'dark' : 'light'
+          settingsHandler.saveColorMode(next)
+          return next
+        }),
     }),
     [],
   )
