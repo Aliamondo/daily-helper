@@ -11,19 +11,19 @@ const markdownSx = {
   '& li': { mb: 0.25 },
   '& h1, & h2, & h3, & h4': { mt: 1, mb: 0.5 },
   '& code': {
-    bgcolor: 'action.hover',
+    backgroundColor: 'action.hover',
     px: 0.5,
     borderRadius: 0.5,
     fontFamily: 'monospace',
     fontSize: '0.85em',
   },
   '& pre': {
-    bgcolor: 'action.hover',
+    backgroundColor: 'action.hover',
     p: 1,
     borderRadius: 1,
     overflowX: 'auto',
   },
-  '& pre code': { bgcolor: 'transparent', px: 0 },
+  '& pre code': { backgroundColor: 'transparent', px: 0 },
   '& a': { color: 'primary.main' },
   '& blockquote': {
     borderLeft: 3,
@@ -107,7 +107,10 @@ export default function NoteEditor({
               p: 1,
               border: 1,
               borderColor: 'transparent',
-              '&:hover': { borderColor: 'divider', bgcolor: 'action.hover' },
+              '&:hover': {
+                borderColor: 'divider',
+                backgroundColor: 'action.hover',
+              },
             }),
         ...markdownSx,
       }}

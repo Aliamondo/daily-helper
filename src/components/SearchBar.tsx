@@ -86,7 +86,7 @@ export default function SearchBar({ onSearch }: SearchBarProps) {
         width: { xs: 150, sm: 240 },
         '& .MuiOutlinedInput-root': {
           color: 'inherit',
-          bgcolor: 'rgba(255, 255, 255, 0.12)',
+          backgroundColor: 'rgba(255, 255, 255, 0.12)',
           '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
           '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
           '&.Mui-focused fieldset': {

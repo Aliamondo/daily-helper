@@ -94,7 +94,7 @@ export function AvatarGroupPopper({
   container,
 }: AvatarGroupPopperProps) {
   const theme = useTheme()
-  const bgColor = theme.palette.prCard.popup
+  const backgroundColor = theme.palette.prCard.popup
 
   if (!isOpen) return null
 
@@ -140,7 +140,7 @@ export function AvatarGroupPopper({
           sx={{
             maxWidth: 500,
             padding: 1,
-            bgcolor: bgColor,
+            backgroundColor: backgroundColor,
             display: 'flex',
           }}
         >

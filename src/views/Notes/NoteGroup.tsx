@@ -110,7 +110,7 @@ function NoteCardShell({
         borderRadius: 1,
         py: 0.5,
         px: 0.75,
-        '&:hover': { bgcolor: 'action.hover' },
+        '&:hover': { backgroundColor: 'action.hover' },
         '& .card-action': actionSx,
         '&:hover .card-action': { opacity: 1 },
       }}

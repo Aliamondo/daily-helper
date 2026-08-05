@@ -78,7 +78,7 @@ function getBadgeContent({
   return icon ? (
     <Avatar
       sx={{
-        bgcolor: 'white',
+        backgroundColor: 'white',
         width: badge,
         height: badge,
         '& .MuiSvgIcon-root': { fontSize: badgeIcon },

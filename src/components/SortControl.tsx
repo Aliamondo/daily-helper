@@ -61,7 +61,7 @@ export default function SortControl({
                 color: isActive ? 'primary.main' : 'text.secondary',
                 '&:hover': {
                   color: isActive ? 'primary.main' : 'text.primary',
-                  bgcolor: 'action.hover',
+                  backgroundColor: 'action.hover',
                 },
               }}
             >

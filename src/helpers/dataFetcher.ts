@@ -30,7 +30,21 @@ const makeClient = (token: string) =>
     },
   })
 
-let gql = makeClient(settingsHandler.loadGithubToken() || '')
+let gql = makeClient('')
+let hasLoadedToken = false
+
+/**
+ * The token cannot be read at module scope: settingsHandler imports this module,
+ * so depending on which side of that cycle is evaluated first, its exports may not
+ * exist yet. Reading it on first use sidesteps the ordering entirely
+ */
+function getClient() {
+  if (!hasLoadedToken) {
+    hasLoadedToken = true
+    gql = makeClient(settingsHandler.loadGithubToken() || '')
+  }
+  return gql
+}
 
 const dataFetcher = {
   fetchOrganizations,
@@ -41,6 +55,7 @@ const dataFetcher = {
   refreshLastCommitChecks,
   fetchTeamRepositories,
   setToken(newToken: string) {
+    hasLoadedToken = true
     gql = makeClient(newToken)
   },
 }
@@ -163,7 +178,7 @@ async function refreshLastCommitChecks({
   repoName,
   prNumber,
 }: RefreshLastCommitChecksProps) {
-  return await gql<GraphQL_CommitChecksPerPullRequestResponse>(
+  return await getClient()<GraphQL_CommitChecksPerPullRequestResponse>(
     getCommitChecksQuery({ orgName, repoName, prNumber }),
   ).then((res: GraphQL_CommitChecksPerPullRequestResponse) =>
     getLastCommitChecks(
@@ -369,7 +384,7 @@ async function fetchTeamUsersPageable(
     nodes: membersRaw,
     totalCount,
     pageInfo,
-  } = await gql<GraphQL_UserPageableResponse>(
+  } = await getClient()<GraphQL_UserPageableResponse>(
     getTeamUsersPageableQuery({
       orgName,
       teamName,
@@ -420,7 +435,7 @@ async function fetchPullRequests({
   if (savedMembers && savedMembers.length > 0) {
     teamUsers = savedMembers
   } else {
-    const allTeamUsers: string[] = await gql<GraphQL_UserResponse>(
+    const allTeamUsers: string[] = await getClient()<GraphQL_UserResponse>(
       getTeamUsersQuery({ orgName, teamName }),
     )
       .then((res: GraphQL_UserResponse) =>
@@ -450,7 +465,7 @@ async function fetchPullRequests({
   const totalResources = teamUsers.length + (teamRepositories?.length ?? 0) + 1
 
   const pullRequestPromises = teamUsers.map(user =>
-    gql<GraphQL_PullRequestsResponse>(
+    getClient()<GraphQL_PullRequestsResponse>(
       getPullRequestsByUserQuery({ orgName, author: user, includeChecks }),
     ).then((res: GraphQL_PullRequestsResponse) => {
       progress += 90 / totalResources
@@ -461,7 +476,7 @@ async function fetchPullRequests({
 
   teamRepositories?.forEach(repo =>
     pullRequestPromises.push(
-      gql<GraphQL_PullRequestsResponse>(
+      getClient()<GraphQL_PullRequestsResponse>(
         getPullRequestsByRepositoriesQuery({
           repository: repo,
           excludeAuthors: teamUsers,
@@ -476,7 +491,7 @@ async function fetchPullRequests({
   )
 
   pullRequestPromises.push(
-    gql<GraphQL_PullRequestsResponse>(
+    getClient()<GraphQL_PullRequestsResponse>(
       getPullRequestsByTeamReviewRequestedQuery({
         orgName,
         teamName,
@@ -572,7 +587,7 @@ async function fetchTeamRepositories(
     edges: repositoriesRaw,
     totalCount,
     pageInfo,
-  } = await gql<GraphQL_TeamRepositoryResponse>(
+  } = await getClient()<GraphQL_TeamRepositoryResponse>(
     getTeamRepositoriesQuery({
       orgName,
       teamName,
@@ -606,14 +621,14 @@ async function fetchTeamRepositories(
 }
 
 async function fetchViewer(): Promise<string> {
-  const res = await gql<GraphQL_ViewerLoginResponse>(getViewerQuery())
+  const res = await getClient()<GraphQL_ViewerLoginResponse>(getViewerQuery())
   return res.viewer.login
 }
 
 async function fetchOrganizations(
   githubToken?: string,
 ): Promise<Organization[]> {
-  const organizations = await gql<GraphQL_OrganizationsResponse>(
+  const organizations = await getClient()<GraphQL_OrganizationsResponse>(
     getOrganizationsQuery(),
     {
       headers:
@@ -636,14 +651,17 @@ async function fetchTeams(
   orgName: string,
   githubToken?: string,
 ): Promise<Team[]> {
-  const teams = await gql<GraphQL_TeamsResponse>(getTeamsQuery({ orgName }), {
-    headers:
-      githubToken && !settingsHandler.loadGithubToken()
-        ? {
-            authorization: `token ${githubToken}`,
-          }
-        : undefined,
-  }).then((res: GraphQL_TeamsResponse) => res.viewer.organization.teams.nodes)
+  const teams = await getClient()<GraphQL_TeamsResponse>(
+    getTeamsQuery({ orgName }),
+    {
+      headers:
+        githubToken && !settingsHandler.loadGithubToken()
+          ? {
+              authorization: `token ${githubToken}`,
+            }
+          : undefined,
+    },
+  ).then((res: GraphQL_TeamsResponse) => res.viewer.organization.teams.nodes)
 
   return teams.map((team: GraphQL_Team & { description: string | null }) => ({
     name: team.name,

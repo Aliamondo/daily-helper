@@ -11,25 +11,6 @@ const MAX_SQUARES = 10
 // per count from MIN_SQUARES upwards, anything past the last one is MAX_SQUARES
 const SQUARE_THRESHOLDS = [2, 10, 25, 50, 100, 250, 500, 1000]
 
-const BUCKET_THRESHOLDS = [10, 50, 200, 800]
-const BUCKET_LABELS = ['XS', 'S', 'M', 'L', 'XL']
-
-/** Zero-based bucket, so it can drive a visual scale as well as the label */
-export function getDiffSizeBucketIndex(
-  additions: number,
-  deletions: number,
-): number {
-  const changedLines = additions + deletions
-  const bucket = BUCKET_THRESHOLDS.findIndex(
-    threshold => changedLines <= threshold,
-  )
-  return bucket === -1 ? BUCKET_LABELS.length - 1 : bucket
-}
-
-export function getDiffSizeLabel(additions: number, deletions: number): string {
-  return BUCKET_LABELS[getDiffSizeBucketIndex(additions, deletions)]
-}
-
 /**
  * How many squares the row is long. Length is what makes the size of a diff
  * readable at a glance, so it carries the magnitude - the green/red split within
@@ -63,18 +44,27 @@ export function getDiffSizeSquares(
   return { additionSquares, deletionSquares: squareCount - additionSquares }
 }
 
+// The gap grows with the squares so the row stays proportioned at either size
+const SQUARE_DIMENSIONS = {
+  small: { size: 6, gap: 0.25 },
+  medium: { size: 10, gap: 0.25 },
+}
+
 type DiffSizeProps = {
   additions: number
   deletions: number
   changedFiles: number
   showNumbers?: boolean
+  size?: 'small' | 'medium'
 }
 export default function DiffSize({
   additions,
   deletions,
   changedFiles,
   showNumbers = true,
+  size = 'medium',
 }: DiffSizeProps) {
+  const { size: squareSize, gap } = SQUARE_DIMENSIONS[size]
   const { additionSquares, deletionSquares } = getDiffSizeSquares(
     additions,
     deletions,
@@ -87,31 +77,11 @@ export default function DiffSize({
       direction="row"
       alignItems="center"
       spacing={0.5}
-      sx={{ display: 'inline-flex', verticalAlign: 'middle' }}
+      sx={{
+        display: 'inline-flex',
+        verticalAlign: showNumbers ? 'baseline' : 'middle',
+      }}
     >
-      <Stack
-        component="span"
-        direction="row"
-        spacing={0.25}
-        sx={{ display: 'inline-flex' }}
-      >
-        {Array.from(
-          { length: additionSquares + deletionSquares },
-          (_, index) => (
-            <Box
-              key={index}
-              component="span"
-              sx={{
-                width: 6,
-                height: 6,
-                borderRadius: '1px',
-                bgcolor:
-                  index < additionSquares ? 'success.main' : 'error.main',
-              }}
-            />
-          ),
-        )}
-      </Stack>
       {showNumbers && (
         <Typography
           component="span"
@@ -122,6 +92,29 @@ export default function DiffSize({
           +{additions} −{deletions} · {files}
         </Typography>
       )}
+      <Stack
+        component="span"
+        direction="row"
+        spacing={gap}
+        sx={{ display: 'inline-flex' }}
+      >
+        {Array.from(
+          { length: additionSquares + deletionSquares },
+          (_, index) => (
+            <Box
+              key={index}
+              component="span"
+              sx={{
+                width: squareSize,
+                height: squareSize,
+                borderRadius: '1px',
+                backgroundColor:
+                  index < additionSquares ? 'success.main' : 'error.main',
+              }}
+            />
+          ),
+        )}
+      </Stack>
     </Stack>
   )
 

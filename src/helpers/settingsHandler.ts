@@ -76,6 +76,15 @@ const settingsHandler = {
     this.saveAll({ ...settings, view })
   },
 
+  loadColorMode(): 'light' | 'dark' | null {
+    return this.load().colorMode ?? null
+  },
+
+  saveColorMode(colorMode: 'light' | 'dark'): void {
+    const settings = this.load()
+    this.saveAll({ ...settings, colorMode })
+  },
+
   loadSort(): Settings_All['sort'] {
     return this.load().sort
   },

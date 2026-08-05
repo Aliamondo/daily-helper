@@ -20,6 +20,7 @@ type Settings_All = {
   aliases?: Record<string, string>
   filters?: Settings_Filters
   view?: 'list' | 'kanban' | 'notes'
+  colorMode?: 'light' | 'dark'
   sort?: {
     field: import('../components/SortControl').SortField
     dirs: Record<
