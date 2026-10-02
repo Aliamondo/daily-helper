@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useTheme } from '@mui/material/styles'
 
-import AutoMergeIndicator from '../../components/AutoMergeIndicator'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
@@ -13,6 +12,7 @@ import Grid from '@mui/material/Grid'
 import LabelGroup from '../../components/LabelGroup'
 import Link from '@mui/material/Link'
 import NoCommentsIcon from '@mui/icons-material/ChatBubbleOutline'
+import PrCardEdges from '../../components/PrCardEdges'
 import PrNoteButton from '../../components/PrNoteButton'
 import PullRequestStatus from './PullRequestStatus'
 import Skeleton from '@mui/material/Skeleton'
@@ -21,6 +21,8 @@ import Typography from '@mui/material/Typography'
 import UserBadge from '../../components/UserBadge'
 import { dataFetcher } from '../../helpers/dataFetcher'
 import { fromNow } from '../../helpers/time'
+import { getEffectiveReviewDecision } from '../../helpers/getEffectiveReviewDecision'
+import { getMergeBlocker } from '../../helpers/getMergeBlocker'
 import { settingsHandler } from '../../helpers/settingsHandler'
 
 // Wide enough for the worst case the widget can produce: 10 squares plus a
@@ -54,6 +56,11 @@ export default function PullRequest({
   additions,
   deletions,
   changedFiles,
+  mergeable,
+  mergeStateStatus,
+  unresolvedThreads,
+  missingRequiredChecks,
+  lastCommitDate,
   autoMerge,
   reviews,
   requestedReviewers,
@@ -66,6 +73,23 @@ export default function PullRequest({
   )
   const [isLastCommitChecksLoading, setIsLastCommitChecksLoading] =
     useState(false)
+
+  const blocker = isLoading
+    ? null
+    : getMergeBlocker({
+        isDraft,
+        reviews,
+        reviewDecision,
+        mergeable,
+        mergeStateStatus,
+        unresolvedThreads,
+        missingRequiredChecks,
+        lastCommitDate,
+      })
+  const effectiveReviewDecision = getEffectiveReviewDecision({
+    reviewDecision,
+    reviews,
+  })
 
   const handleCommitChecksReload = async () => {
     setIsLastCommitChecksLoading(true)
@@ -88,6 +112,7 @@ export default function PullRequest({
       <Card
         variant="outlined"
         sx={{
+          position: 'relative',
           // the size badge replaced the state icon here, so the draft signal
           // has to come from the card itself, the way it does in list view
           backgroundColor: isDraft
@@ -95,6 +120,10 @@ export default function PullRequest({
             : theme.palette.prCard.default,
         }}
       >
+        <PrCardEdges
+          blocker={blocker}
+          autoMerge={isLoading ? null : autoMerge}
+        />
         <CardContent sx={{ '&:last-child': { pb: 1.5 }, pt: 1.5, px: 1.5 }}>
           {isLoading ? (
             <Skeleton variant="rectangular" animation="wave" height={60} />
@@ -141,7 +170,6 @@ export default function PullRequest({
                   >
                     #{number}
                   </Link>
-                  {autoMerge && <AutoMergeIndicator autoMerge={autoMerge} />}
                 </Stack>
                 <Stack component="span" sx={{ flexShrink: 0 }}>
                   <DiffSize
@@ -229,9 +257,9 @@ export default function PullRequest({
         minWidth: 700,
         backgroundColor: (() => {
           if (state === 'OPEN' && !isLoading) {
-            if (reviewDecision === 'CHANGES_REQUESTED')
+            if (effectiveReviewDecision === 'CHANGES_REQUESTED')
               return theme.palette.prCard.changesRequested
-            if (reviewDecision === 'APPROVED')
+            if (effectiveReviewDecision === 'APPROVED')
               return theme.palette.prCard.approved
             if (isDraft) return theme.palette.prCard.draft
           }
@@ -239,6 +267,11 @@ export default function PullRequest({
         })(),
       }}
     >
+      <PrCardEdges
+        blocker={blocker}
+        autoMerge={isLoading ? null : autoMerge}
+        animateAutoMerge
+      />
       {!isLoading && (
         <Stack
           direction="column"
@@ -334,9 +367,6 @@ export default function PullRequest({
                 >
                   (#{number})
                 </Link>
-                {autoMerge && (
-                  <AutoMergeIndicator autoMerge={autoMerge} fontSize="medium" />
-                )}
                 {!!lastCommitChecks ? (
                   <CommitChecksIndicator
                     commitChecks={lastCommitChecks.commitChecks}

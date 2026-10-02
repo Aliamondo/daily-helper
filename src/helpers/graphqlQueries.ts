@@ -130,6 +130,32 @@ function getPullRequestNode(includeChecks = false) {
   additions
   deletions
   changedFiles
+  mergeable
+  mergeStateStatus
+  reviewThreads(last: 100) {
+    nodes {
+      isResolved
+    }
+  }
+  headCommit: commits(last: 1) {
+    nodes {
+      commit {
+        committedDate
+        statusCheckRollup {
+          contexts(last: 100) {
+            nodes {
+              ... on CheckRun {
+                name
+              }
+              ... on StatusContext {
+                context
+              }
+            }
+          }
+        }
+      }
+    }
+  }
   autoMergeRequest {
     enabledAt
     enabledBy {

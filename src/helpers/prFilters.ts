@@ -1,4 +1,5 @@
 import { getDisplayName } from './getDisplayName'
+import { getEffectiveReviewDecision } from './getEffectiveReviewDecision'
 
 function isBotUser(user: User, filters: Settings_Filters): boolean {
   const displayName = getDisplayName(user)
@@ -45,7 +46,7 @@ export function applyReviewRequiredFilter(
     if (pr.isDraft) return false
     if (isBotUser(pr.author, filters) && !isTitleWhitelisted(pr.title, filters))
       return false
-    if (pr.reviewDecision === 'APPROVED') return false
+    if (getEffectiveReviewDecision(pr) === 'APPROVED') return false
     const humanReviewers = pr.requestedReviewers.filter(
       r => !isBotUser(r, filters),
     )

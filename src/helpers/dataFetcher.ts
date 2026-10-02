@@ -27,6 +27,8 @@ const makeClient = (token: string) =>
     headers: {
       authorization: `token ${token}`,
       'user-agent': userAgent,
+      // mergeStateStatus used to be preview-only; harmless if it no longer is
+      accept: 'application/vnd.github.merge-info-preview+json',
     },
   })
 
@@ -119,6 +121,21 @@ function formatReviews(reviews: GraphQL_Review[]): Review[] {
   })
 
   return Array.from(reviewsMap.values())
+}
+
+/**
+ * Required checks that the last commit never reported. Only covers classic
+ * branch protection: checks required through rulesets aren't visible here
+ */
+function getMissingRequiredChecks(pr: GraphQL_PullRequest): string[] {
+  const required = pr.baseRef.branchProtectionRule?.requiredStatusCheckContexts
+  if (!required?.length) return []
+  const reported = new Set(
+    pr.headCommit.nodes[0]?.commit.statusCheckRollup?.contexts.nodes.map(
+      node => ('name' in node ? node.name : node.context),
+    ) ?? [],
+  )
+  return required.filter(name => !reported.has(name))
 }
 
 function getReviewers(reviewRequests: GraphQL_ReviewRequest[]): User[] {
@@ -548,6 +565,13 @@ function normalizePR(
     additions: pr.additions,
     deletions: pr.deletions,
     changedFiles: pr.changedFiles,
+    mergeable: pr.mergeable,
+    mergeStateStatus: pr.mergeStateStatus,
+    unresolvedThreads: pr.reviewThreads.nodes.filter(t => !t.isResolved).length,
+    missingRequiredChecks: getMissingRequiredChecks(pr),
+    lastCommitDate: pr.headCommit.nodes[0]
+      ? new Date(pr.headCommit.nodes[0].commit.committedDate)
+      : null,
     autoMerge: pr.autoMergeRequest
       ? {
           enabledAt: new Date(pr.autoMergeRequest.enabledAt),
