@@ -26,7 +26,7 @@ import {
   matchesSearch,
 } from '../../helpers/prFilters'
 import { getDisplayName } from '../../helpers/getDisplayName'
-import { getStateRank } from '../../helpers/getStateRank'
+import { compareByState } from '../../helpers/getStateRank'
 import { dataFetcher } from '../../helpers/dataFetcher'
 import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
@@ -180,7 +180,7 @@ export default function DailyHelper() {
             getDisplayName(a.author).localeCompare(getDisplayName(b.author))
           )
         case 'state':
-          return getStateRank(a, filters) - getStateRank(b, filters)
+          return compareByState(a, b, filters)
       }
     })
   }, [pullRequests, sortField, sortDir])
@@ -489,6 +489,11 @@ function generateDummyPullRequests(total: number): PullRequest[] {
       additions: 0,
       deletions: 0,
       changedFiles: 0,
+      mergeable: 'UNKNOWN',
+      mergeStateStatus: 'UNKNOWN',
+      unresolvedThreads: 0,
+      missingRequiredChecks: [],
+      lastCommitDate: null,
       autoMerge: null,
       createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
       labels: [],

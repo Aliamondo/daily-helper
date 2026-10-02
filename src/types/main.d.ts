@@ -15,7 +15,8 @@ type PullRequest = {
   number: number
   createdAt: Date
   state: 'OPEN' | 'CLOSED' | 'MERGED'
-  reviewDecision: 'REVIEW_REQUIRED' | 'APPROVED' | 'CHANGES_REQUESTED'
+  // null when the repo has no review rules, so GitHub has no opinion
+  reviewDecision: ReviewDecision | null
   author: User
   contributors: User[]
   labels: Label[]
@@ -27,6 +28,11 @@ type PullRequest = {
   additions: number
   deletions: number
   changedFiles: number
+  mergeable: MergeableState
+  mergeStateStatus: MergeStateStatus
+  unresolvedThreads: number
+  missingRequiredChecks: string[]
+  lastCommitDate: Date | null
   autoMerge: AutoMerge | null
   reviews: Review[]
   requestedReviewers: User[]
@@ -36,6 +42,20 @@ type PullRequest = {
     result: CommitCheck['result'] | null
   } | null
 }
+
+type ReviewDecision = 'REVIEW_REQUIRED' | 'APPROVED' | 'CHANGES_REQUESTED'
+
+type MergeableState = 'MERGEABLE' | 'CONFLICTING' | 'UNKNOWN'
+
+type MergeStateStatus =
+  | 'BEHIND'
+  | 'BLOCKED'
+  | 'CLEAN'
+  | 'DIRTY'
+  | 'DRAFT'
+  | 'HAS_HOOKS'
+  | 'UNKNOWN'
+  | 'UNSTABLE'
 
 type AutoMerge = {
   enabledAt: Date

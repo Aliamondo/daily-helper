@@ -21,13 +21,32 @@ type GraphQL_PullRequest = {
   permalink: string
   number: number
   createdAt: string
-  reviewDecision: 'REVIEW_REQUIRED' | 'APPROVED' | 'CHANGES_REQUESTED'
+  reviewDecision: ReviewDecision | null
   state: 'OPEN' | 'MERGED' | 'CLOSED'
   id: string
   isDraft: boolean
   additions: number
   deletions: number
   changedFiles: number
+  mergeable: MergeableState
+  mergeStateStatus: MergeStateStatus
+  reviewThreads: {
+    nodes: {
+      isResolved: boolean
+    }[]
+  }
+  headCommit: {
+    nodes: {
+      commit: {
+        committedDate: string
+        statusCheckRollup: {
+          contexts: {
+            nodes: ({ name: string } | { context: string })[]
+          }
+        } | null
+      }
+    }[]
+  }
   autoMergeRequest: GraphQL_AutoMergeRequest | null
   author: GraphQL_User
   repository: GraphQL_Repository

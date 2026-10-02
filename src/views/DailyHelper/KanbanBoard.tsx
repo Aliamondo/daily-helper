@@ -4,35 +4,36 @@ import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
 import { SortDir, SortField } from '../../components/SortControl'
 import { getDisplayName } from '../../helpers/getDisplayName'
-import { getStateRank } from '../../helpers/getStateRank'
+import { StateRank, getStateRank } from '../../helpers/getStateRank'
 import { settingsHandler } from '../../helpers/settingsHandler'
 import { useMemo } from 'react'
 
 type ColumnConfig = {
   title: string
-  ranks: (0 | 1 | 2 | 3 | 4)[]
+  ranks: StateRank[]
   accentColor: string
 }
 
 const COLUMN_CONFIGS: ColumnConfig[] = [
   {
     title: 'In Progress',
-    ranks: [3, 4],
+    ranks: [5, 6],
     accentColor: 'text.disabled',
   },
   {
     title: 'Review Required',
-    ranks: [2],
+    ranks: [4],
     accentColor: 'primary.main',
   },
   {
     title: 'Changes Requested',
-    ranks: [1],
+    ranks: [3],
     accentColor: 'warning.main',
   },
   {
     title: 'Approved',
-    ranks: [0],
+    // conflicting ones too: the review is done, the red edge flags the rest
+    ranks: [0, 1, 2],
     accentColor: 'success.main',
   },
 ]
