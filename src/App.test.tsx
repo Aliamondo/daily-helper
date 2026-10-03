@@ -42,8 +42,6 @@ function setPrefersDark(dark: boolean) {
       onchange: null,
       addListener: () => {},
       removeListener: () => {},
-      addEventListener: () => {},
-      removeEventListener: () => {},
       dispatchEvent: () => false,
     }),
   })
@@ -82,7 +80,7 @@ test('toggling switches the mode and saves the choice', async () => {
   render(<App />)
   expect(await screen.findByTestId('mode')).toHaveTextContent('light')
 
-  userEvent.click(screen.getByRole('button', { name: /toggle/i }))
+  await userEvent.click(screen.getByRole('button', { name: /toggle/i }))
 
   expect(screen.getByTestId('mode')).toHaveTextContent('dark')
   expect(settingsHandler.saveColorMode).toHaveBeenCalledWith('dark')
