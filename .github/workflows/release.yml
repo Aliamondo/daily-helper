@@ -1,0 +1,130 @@
+name: Release
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.check.outputs.release }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history + tags
+          persist-credentials: false
+
+      - name: Check if version increased
+        id: check
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          SEMVER='^[0-9]+\.[0-9]+\.[0-9]+$'
+
+          # true (exit 0) if $1 > $2, comparing x.y.z numerically
+          gt() {
+            node -e '
+              const [a, b] = process.argv.slice(1).map(v => v.split(".").map(Number));
+              for (let i = 0; i < 3; i++) {
+                if (a[i] !== b[i]) process.exit(a[i] > b[i] ? 0 : 1);
+              }
+              process.exit(1);
+            ' "$1" "$2"
+          }
+
+          CURR=$(node -p "require('./package.json').version")
+          PREV=$(git show "$BEFORE:package.json" 2>/dev/null | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version" 2>/dev/null || echo "none")
+          LATEST=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n 1 | sed 's/^v//')
+
+          echo "Previous version: $PREV, current version: $CURR, latest tag: ${LATEST:-none}"
+          echo "version=$CURR" >> "$GITHUB_OUTPUT"
+
+          if ! [[ "$CURR" =~ $SEMVER ]]; then
+            echo "::warning::Version '$CURR' is not plain x.y.z, skipping release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          elif [ "$PREV" = "$CURR" ]; then
+            echo "Version unchanged, no release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          elif [[ "$PREV" =~ $SEMVER ]] && ! gt "$CURR" "$PREV"; then
+            echo "::warning::Version went down ($PREV -> $CURR), skipping release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          elif [ -n "$(git tag -l "v$CURR")" ]; then
+            echo "::notice::Tag v$CURR already exists, skipping release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          elif [ -n "$LATEST" ] && ! gt "$CURR" "$LATEST"; then
+            echo "::warning::Version $CURR is not greater than the latest tag v$LATEST, skipping release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: check
+    if: needs.check.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  release:
+    name: Tag and release v${{ needs.check.outputs.version }}
+    needs: [check, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create tag and GitHub Release
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v$VERSION" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "v$VERSION" \
+            --generate-notes
+          echo "Released v$VERSION" >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    needs: [check, build, release]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
