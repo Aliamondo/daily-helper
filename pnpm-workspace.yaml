@@ -1,5 +1,2 @@
-overrides:
-  postcss: "8.5.23"
-
 # 7 days, same as Dependabot
 minimumReleaseAge: 10080
