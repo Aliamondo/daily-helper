@@ -2,6 +2,7 @@
   "name": "daily-helper",
   "version": "2.6.3",
   "private": true,
+  "type": "module",
   "scripts": {
     "start": "vite",
     "build": "vite build",
