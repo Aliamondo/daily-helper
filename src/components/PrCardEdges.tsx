@@ -11,8 +11,11 @@ const HIT_AREA = 12
 const LINE_WIDTH = 5
 const STRIPE = 14
 
+// One tile holds exactly one stripe pair and the animation moves exactly one
+// tile, so the loop is seamless whatever the card's height
+const STRIPE_PERIOD = STRIPE * 2
 const marching = keyframes`
-  to { background-position: 0 ${STRIPE * 4}px; }
+  to { background-position: 0 ${STRIPE_PERIOD}px; }
 `
 
 type PrCardEdgesProps = {
@@ -76,8 +79,9 @@ export default function PrCardEdges({
           lineSx={
             animateAutoMerge
               ? {
-                  background: `repeating-linear-gradient(180deg, ${main} 0 ${STRIPE}px, ${stripe} ${STRIPE}px ${STRIPE * 2}px)`,
-                  animation: `${marching} 1.2s linear infinite`,
+                  background: `repeating-linear-gradient(180deg, ${main} 0 ${STRIPE}px, ${stripe} ${STRIPE}px ${STRIPE_PERIOD}px)`,
+                  backgroundSize: `${LINE_WIDTH}px ${STRIPE_PERIOD}px`,
+                  animation: `${marching} 0.6s linear infinite`,
                   '@media (prefers-reduced-motion: reduce)': {
                     animation: 'none',
                   },
