@@ -20,11 +20,7 @@ type UserGroupProps = {
   users: User[]
   groupName: string
   type?:
-    | 'DEFAULT'
-    | 'AUTHOR'
-    | 'CONTRIBUTOR'
-    | 'REQUESTED_REVIEWER'
-    | 'ASSIGNEE'
+    'DEFAULT' | 'AUTHOR' | 'CONTRIBUTOR' | 'REQUESTED_REVIEWER' | 'ASSIGNEE'
 }
 export default function UserGroup({
   users,
@@ -82,8 +78,8 @@ export default function UserGroup({
 type AvatarGroupPopperProps = {
   isOpen: boolean
   showUsers: () => ReactElement[]
-  main: RefObject<HTMLHeadingElement>
-  container: RefObject<HTMLHeadingElement>
+  main: RefObject<HTMLHeadingElement | null>
+  container: RefObject<HTMLHeadingElement | null>
   handleClose: VoidFunction
 }
 export function AvatarGroupPopper({
