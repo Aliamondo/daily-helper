@@ -16,7 +16,7 @@ import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
-import NoteEditor, { markdownSx } from './NoteEditor'
+import NoteEditor, { markdownSx, markdownComponents } from './NoteEditor'
 import { notesHandler } from '../../helpers/notesHandler'
 import { settingsHandler } from '../../helpers/settingsHandler'
 
@@ -371,7 +371,10 @@ function TodoItemRow({
           }}
         >
           <ReactMarkdown
-            components={{ p: ({ children }) => <span>{children}</span> }}
+            components={{
+              ...markdownComponents,
+              p: ({ children }) => <span>{children}</span>,
+            }}
           >
             {item.text}
           </ReactMarkdown>
