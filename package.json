@@ -23,7 +23,7 @@
     "motion": "13.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "react-markdown": "9.1.0",
+    "react-markdown": "10.1.0",
     "typescript": "5.9.3"
   },
   "lint-staged": {
