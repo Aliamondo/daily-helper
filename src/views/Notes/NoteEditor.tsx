@@ -1,7 +1,7 @@
 import { useState, useEffect, KeyboardEvent } from 'react'
 import Box from '@mui/material/Box'
 import TextField from '@mui/material/TextField'
-import ReactMarkdown from 'react-markdown'
+import ReactMarkdown, { Components } from 'react-markdown'
 
 const markdownSx = {
   typography: 'body2',
@@ -34,7 +34,19 @@ const markdownSx = {
   },
 } as const
 
-export { markdownSx }
+// Links open in a new tab; stopPropagation keeps the click from entering edit mode
+const markdownComponents: Components = {
+  a: ({ node, ...props }) => (
+    <a
+      {...props}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={e => e.stopPropagation()}
+    />
+  ),
+}
+
+export { markdownSx, markdownComponents }
 
 type NoteEditorProps = {
   value: string
@@ -116,7 +128,7 @@ export default function NoteEditor({
       }}
     >
       {draft ? (
-        <ReactMarkdown>{draft}</ReactMarkdown>
+        <ReactMarkdown components={markdownComponents}>{draft}</ReactMarkdown>
       ) : (
         <Box
           sx={{
