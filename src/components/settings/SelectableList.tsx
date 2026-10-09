@@ -109,14 +109,13 @@ export default function SelectableList({
   const selectedSize = selectedKeys.size
   const hasData = items.length > 0 || !!pageable
 
-  const statsLabel =
-    total > 0
-      ? ` (${total} total${
-          selectedSize > 0 && selectedSize < total
-            ? `, ${selectedSize} selected`
-            : ', none selected'
-        })`
-      : ''
+  const selectionLabel =
+    selectedSize === 0
+      ? 'none selected'
+      : selectedSize >= total
+        ? 'all selected'
+        : `${selectedSize} selected`
+  const statsLabel = total > 0 ? ` (${total} total, ${selectionLabel})` : ''
 
   const handleSelectAllOnPage = () => {
     const next = new Set(selectedKeys)

@@ -67,6 +67,7 @@ const dataFetcher = {
   fetchTeams,
   fetchViewer,
   fetchTeamUsersPageable,
+  fetchAllTeamUserLogins,
   fetchPullRequests,
   refreshLastCommitChecks,
   fetchTeamRepositories,
@@ -443,6 +444,33 @@ async function fetchTeamUsersPageable(
     startCursor: pageInfo.startCursor,
     endCursor: pageInfo.endCursor,
   }
+}
+
+/**
+ * Every member of the team, across all pages. Used to spot saved members who
+ * have since left the team
+ */
+async function fetchAllTeamUserLogins(
+  orgName: string,
+  teamName: string,
+): Promise<Set<string>> {
+  const logins = new Set<string>()
+  let endCursor = ''
+  let hasNextPage = true
+  while (hasNextPage) {
+    const page = await fetchTeamUsersPageable(
+      orgName,
+      teamName,
+      'NEXT_PAGE',
+      100,
+      undefined,
+      endCursor,
+    )
+    page.members.forEach(member => logins.add(member.login))
+    endCursor = page.endCursor
+    hasNextPage = page.hasNextPage
+  }
+  return logins
 }
 
 async function fetchPullRequests({
