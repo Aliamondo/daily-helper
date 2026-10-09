@@ -39,6 +39,11 @@ import { comparePullRequests, getKanbanSortField } from '../../helpers/prSort'
 import { toggleInSet } from '../../helpers/core'
 import { dataFetcher } from '../../helpers/dataFetcher'
 import { describeLoadError } from '../../helpers/describeLoadError'
+import {
+  ActiveFilter,
+  readFilterParam,
+  writeFilterParam,
+} from '../../helpers/filterParam'
 import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
 import KanbanBoard from './KanbanBoard'
@@ -89,9 +94,14 @@ export default function DailyHelper() {
     setIsPullRequestsWithoutLabelsHidden,
   ] = useState(false)
   const [hiddenLabels, setHiddenLabels] = useState(new Set<string>()) // always keep them lowercase
-  const [activeFilter, setActiveFilter] = useState<
-    'mustReview' | 'myPrs' | 'myWork' | null
-  >(null)
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(
+    readFilterParam(window.location.search),
+  )
+  useEffect(() => {
+    const search = writeFilterParam(window.location.search, activeFilter)
+    const { pathname, hash } = window.location
+    window.history.replaceState(null, '', `${pathname}${search}${hash}`)
+  }, [activeFilter])
   const isReviewFilterActive = activeFilter === 'mustReview'
   const isMyPrsFilterActive = activeFilter === 'myPrs'
   const isMyWorkFilterActive = activeFilter === 'myWork'
