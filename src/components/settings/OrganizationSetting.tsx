@@ -1,4 +1,4 @@
-import { SyntheticEvent, useEffect, useState } from 'react'
+import { SyntheticEvent, useEffect, useRef, useState } from 'react'
 
 import Autocomplete from '@mui/material/Autocomplete'
 import Avatar from '@mui/material/Avatar'
@@ -33,6 +33,10 @@ export default function OrganizationSetting({
       null,
   )
 
+  // Fetched once per token/org: an empty result must not trigger another fetch
+  const hasFetchedOrgs = useRef(false)
+  const hasFetchedTeams = useRef(false)
+
   const [teamOptions, setTeamOptions] = useState<Team[]>([])
   const [isTeamOpen, setIsTeamOpen] = useState(false)
   const [isTeamLoading, setIsTeamLoading] = useState(false)
@@ -53,6 +57,7 @@ export default function OrganizationSetting({
 
   useEffect(() => {
     const getOrganizations = async () => {
+      hasFetchedOrgs.current = true
       setIsOrgLoading(true)
       setOrgOptions(await dataFetcher.fetchOrganizations(githubToken))
       setIsOrgLoading(false)
@@ -60,6 +65,7 @@ export default function OrganizationSetting({
 
     const getTeams = async () => {
       if (orgName) {
+        hasFetchedTeams.current = true
         setIsTeamLoading(true)
         setTeamOptions(await dataFetcher.fetchTeams(orgName, githubToken))
         setIsTeamLoading(false)
@@ -86,15 +92,18 @@ export default function OrganizationSetting({
     setTeamsInputValue(tempTeamsInputValue)
 
     if (githubToken) {
-      isOrgOpen && orgOptions.length === 0 && getOrganizations()
-      isTeamOpen && orgName && teamOptions.length === 0 && getTeams()
+      isOrgOpen && !hasFetchedOrgs.current && getOrganizations()
+      isTeamOpen && orgName && !hasFetchedTeams.current && getTeams()
     } else {
+      hasFetchedOrgs.current = false
+      hasFetchedTeams.current = false
       orgOptions.length > 0 && setOrgOptions([])
       teamOptions.length > 0 && setTeamOptions([])
     }
 
-    if (!orgName && teamOptions.length > 0) {
-      setTeamOptions([])
+    if (!orgName) {
+      hasFetchedTeams.current = false
+      teamOptions.length > 0 && setTeamOptions([])
     }
   }, [
     orgName,

@@ -117,6 +117,17 @@ describe('getMergeBlocker', () => {
     })
   })
 
+  it('flags an approved PR that is behind its base branch', () => {
+    expect(
+      getMergeBlocker({
+        ...base,
+        reviews: approved,
+        reviewDecision: 'APPROVED',
+        mergeStateStatus: 'BEHIND',
+      })?.reasons,
+    ).toEqual(['Behind base branch'])
+  })
+
   it('names required checks that an old commit never reported', () => {
     expect(
       getMergeBlocker({

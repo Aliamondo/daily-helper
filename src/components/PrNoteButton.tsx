@@ -9,6 +9,7 @@ import Typography from '@mui/material/Typography'
 import NoteEditor from '../views/Notes/NoteEditor'
 import { NoteCard, TodoNoteCard } from '../views/Notes/NoteGroup'
 import { notesHandler } from '../helpers/notesHandler'
+import { hasNoteContent } from '../helpers/notes'
 
 type PrNoteButtonProps = {
   prId: string
@@ -33,9 +34,7 @@ export default function PrNoteButton({
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
-  const hasNote =
-    note !== null &&
-    (note.content?.trim() !== '' || (note.items?.length ?? 0) > 0)
+  const hasNote = hasNoteContent(note)
 
   const groupId = note ? (notesHandler.findNoteGroupId(note.id) ?? '') : ''
 

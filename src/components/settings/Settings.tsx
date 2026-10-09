@@ -34,7 +34,7 @@ import FiltersSetting from './FiltersSetting'
 import TeamMembersSetting from './TeamMembersSetting'
 import TeamRepositoriesSetting from './TeamRepositoriesSetting'
 import Typography from '@mui/material/Typography'
-import { equals } from '../../helpers/core'
+import { hasSameItems } from '../../helpers/core'
 import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
 import { useTheme } from '@mui/material/styles'
@@ -138,8 +138,8 @@ export default function Settings({
 
   const savedTeam = settingsHandler.loadTeam(selectedTeamName)
   const isResetSettingsDisabled =
-    equals(savedTeam?.repositories.length, selectedRepositories.size) &&
-    equals(savedTeam?.members?.length ?? 0, selectedMembers.size) &&
+    hasSameItems(savedTeam?.repositories, selectedRepositories) &&
+    hasSameItems(savedTeam?.members, selectedMembers) &&
     settingsHandler.loadGithubToken() === githubToken &&
     settingsHandler.loadOrgName() === orgName &&
     JSON.stringify(settingsHandler.loadTeamNames()) ===

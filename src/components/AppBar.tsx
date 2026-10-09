@@ -64,7 +64,10 @@ export default function AppBarElement({
   const toolbarRef = useRef<HTMLHeadingElement>(null)
 
   const handleReload = (teamName: string, isValidToken: boolean) => {
-    setTeamNames(settingsHandler.loadTeamNames())
+    const newTeamNames = settingsHandler.loadTeamNames()
+    setTeamNames(newTeamNames)
+    // Keep the same team selected when teams before it were removed
+    setTeamTabValue(Math.max(0, newTeamNames.indexOf(teamName)))
     initialHandleReload(teamName, isValidToken)
   }
 

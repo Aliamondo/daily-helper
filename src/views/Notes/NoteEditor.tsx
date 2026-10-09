@@ -73,7 +73,7 @@ export default function NoteEditor({
   }, [value, editing])
 
   const commit = (text: string) => {
-    onSave(text)
+    if (text !== value) onSave(text)
     setEditing(false)
   }
 

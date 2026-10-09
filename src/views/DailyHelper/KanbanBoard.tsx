@@ -3,7 +3,7 @@ import KanbanColumn from './KanbanColumn'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
 import { SortDir, SortField } from '../../components/SortControl'
-import { getDisplayName } from '../../helpers/getDisplayName'
+import { comparePullRequests } from '../../helpers/prSort'
 import { StateRank, getStateRank } from '../../helpers/getStateRank'
 import { settingsHandler } from '../../helpers/settingsHandler'
 import { useMemo } from 'react'
@@ -120,26 +120,8 @@ export default function KanbanBoard({
       const col = COLUMN_CONFIGS.find(c => c.ranks.includes(rank))
       if (col) result.get(col.title)!.push(pr)
     }
-    const mul = sortDir === 'asc' ? 1 : -1
     for (const prs of result.values()) {
-      prs.sort((a, b) => {
-        switch (sortField) {
-          case 'repo':
-            return mul * a.repositoryName.localeCompare(b.repositoryName)
-          case 'author':
-            return (
-              mul *
-              getDisplayName(a.author).localeCompare(getDisplayName(b.author))
-            )
-          case 'date':
-          default:
-            return (
-              mul *
-              (new Date(a.createdAt).getTime() -
-                new Date(b.createdAt).getTime())
-            )
-        }
-      })
+      prs.sort((a, b) => comparePullRequests(a, b, sortField, sortDir, filters))
     }
     return result
   }, [pullRequests, sortField, sortDir])

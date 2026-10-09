@@ -1,5 +1,6 @@
 import { getEffectiveReviewDecision } from './getEffectiveReviewDecision'
 import { getMergeBlocker, hasConflicts } from './getMergeBlocker'
+import { isBotUser } from './prFilters'
 
 export type StateRank = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
@@ -25,7 +26,7 @@ export function getStateRank(
   }
   if (reviewDecision === 'CHANGES_REQUESTED') return 3
   const humanReviewers = pr.requestedReviewers.filter(
-    r => !filters.botLogins.includes(r.login?.toLowerCase()),
+    r => !isBotUser(r, filters),
   )
   // Auto-merge means the author considers it done, so it belongs in
   // "Review Required" rather than "In Progress"

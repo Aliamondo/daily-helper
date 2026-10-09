@@ -7,6 +7,11 @@ import CircularProgress from '@mui/material/CircularProgress'
 import ClickAwayListener from '@mui/material/ClickAwayListener'
 import FailureIcon from '@mui/icons-material/Close'
 import { ICON_BUTTON_SIZE } from '../views/DailyHelper/DailyHelper'
+import {
+  countPassedChecks,
+  getCommitChecksCalculatedStatus,
+  getCommitChecksCompositeStatus,
+} from '../helpers/commitChecks'
 import IconButton from '@mui/material/IconButton'
 import Link from '@mui/material/Link'
 import List from '@mui/material/List'
@@ -66,38 +71,6 @@ const CommitChecksIndicatorIcon = forwardRef<
   }
 })
 
-function getCommitChecksCalculatedStatus(
-  result: CommitChecksIndicatorProps['result'],
-  commitChecks: CommitCheck[],
-): CommitChecksIndicatorProps['result'] {
-  if (result === 'SUCCESS') {
-    if (commitChecks.find(commitCheck => commitCheck.result === 'PENDING')) {
-      return 'FAILURE'
-    }
-  }
-
-  return result
-}
-
-function getCommitChecksCompositeStatus(
-  resultRaw: CommitChecksIndicatorProps['result'],
-  commitChecks: CommitCheck[],
-): string {
-  const result = getCommitChecksCalculatedStatus(resultRaw, commitChecks)
-
-  switch (result) {
-    case 'SUCCESS':
-      return 'All checks have passed'
-    case 'IN_PROGRESS':
-    case 'PENDING':
-      return "Some checks haven't completed yet"
-    case 'SKIPPED':
-      return 'All checks were skipped'
-    default:
-      return 'Some checks were not successful'
-  }
-}
-
 function CommitCheckRunnerBadge({ checker }: Pick<CommitCheck, 'checker'>) {
   return <UserBadge user={checker} type="COMMIT_CHECK_RUNNER" />
 }
@@ -124,9 +97,7 @@ export default function CommitChecksIndicator({
   }
 
   const total = commitChecks.length
-  const successes = commitChecks.filter(
-    ({ result }) => result === 'SUCCESS' || result === 'SKIPPED',
-  ).length
+  const successes = countPassedChecks(commitChecks)
 
   if (total) {
     return (

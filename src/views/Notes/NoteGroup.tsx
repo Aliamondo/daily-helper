@@ -19,6 +19,12 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import NoteEditor, { markdownSx, markdownComponents } from './NoteEditor'
 import { notesHandler } from '../../helpers/notesHandler'
 import { settingsHandler } from '../../helpers/settingsHandler'
+import {
+  parseGitHubPrUrl,
+  parsePrNumber,
+  sortNotesByCompletion,
+  sortTodoItems,
+} from '../../helpers/notes'
 
 // ── Shared hover-reveal style for action buttons ──────────────────────────────
 const actionSx = {
@@ -49,11 +55,6 @@ function NoteCardShell({
   const [prUrl, setPrUrl] = useState('')
   const [prTitle, setPrTitle] = useState('')
 
-  const parsePrNumber = (url: string) => {
-    const m = url.match(/\/pull\/(\d+)/)
-    return m ? parseInt(m[1], 10) : null
-  }
-
   const cancelLink = () => {
     setLinkingPr(false)
     setPrUrl('')
@@ -61,9 +62,9 @@ function NoteCardShell({
   }
 
   const fetchPrTitle = async (url: string) => {
-    const match = url.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/)
-    if (!match) return
-    const [, owner, repo, number] = match
+    const parsed = parseGitHubPrUrl(url)
+    if (!parsed) return
+    const { owner, repo, number } = parsed
     const token = settingsHandler.loadGithubToken()
     if (!token) return
     try {
@@ -171,8 +172,7 @@ function NoteCardShell({
             onChange={e => {
               const val = e.target.value
               setPrUrl(val)
-              if (/github\.com\/[^/]+\/[^/]+\/pull\/\d+/.test(val))
-                fetchPrTitle(val)
+              if (parseGitHubPrUrl(val)) fetchPrTitle(val)
             }}
             onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
               if (e.key === 'Enter') commitLink()
@@ -440,17 +440,15 @@ export function TodoNoteCard({
       deleteTooltip="Delete checklist"
     >
       <Stack spacing={0.25}>
-        {[...(note.items ?? [])]
-          .sort((a, b) => Number(a.done) - Number(b.done))
-          .map(item => (
-            <TodoItemRow
-              key={item.id}
-              item={item}
-              groupId={groupId}
-              noteId={note.id}
-              onTodoChange={onTodoChange}
-            />
-          ))}
+        {sortTodoItems(note.items ?? []).map(item => (
+          <TodoItemRow
+            key={item.id}
+            item={item}
+            groupId={groupId}
+            noteId={note.id}
+            onTodoChange={onTodoChange}
+          />
+        ))}
 
         {addingItem ? (
           <Stack direction="row" alignItems="center" spacing={0.5}>
@@ -661,34 +659,26 @@ export default function NoteGroup({
           sx={{ px: 1, pt: 0.5, maxHeight: '50vh', overflowY: 'auto' }}
           divider={<Divider sx={{ opacity: 0.5 }} />}
         >
-          {[...group.notes]
-            .sort((a, b) => {
-              const done = (n: NoteItem) =>
-                n.type === 'todo' &&
-                (n.items?.length ?? 0) > 0 &&
-                n.items!.every(i => i.done)
-              return Number(done(a)) - Number(done(b))
-            })
-            .map(note =>
-              note.type === 'todo' ? (
-                <TodoNoteCard
-                  key={note.id}
-                  note={note}
-                  groupId={group.id}
-                  onDelete={() => onDeleteNote(note.id)}
-                  onTodoChange={onTodoChange}
-                />
-              ) : (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  groupId={group.id}
-                  onUpdate={content => onUpdateNote(note.id, content)}
-                  onDelete={() => onDeleteNote(note.id)}
-                  onReload={onTodoChange}
-                />
-              ),
-            )}
+          {sortNotesByCompletion(group.notes).map(note =>
+            note.type === 'todo' ? (
+              <TodoNoteCard
+                key={note.id}
+                note={note}
+                groupId={group.id}
+                onDelete={() => onDeleteNote(note.id)}
+                onTodoChange={onTodoChange}
+              />
+            ) : (
+              <NoteCard
+                key={note.id}
+                note={note}
+                groupId={group.id}
+                onUpdate={content => onUpdateNote(note.id, content)}
+                onDelete={() => onDeleteNote(note.id)}
+                onReload={onTodoChange}
+              />
+            ),
+          )}
         </Stack>
       )}
 

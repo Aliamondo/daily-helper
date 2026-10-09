@@ -12,6 +12,7 @@ import NextIcon from '@mui/icons-material/ChevronRight'
 import PreviousIcon from '@mui/icons-material/ChevronLeft'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
+import { toggleInSet } from '../../helpers/core'
 
 export type SelectableListItem = {
   key: string
@@ -126,13 +127,7 @@ export default function SelectableList({
   const handleUnselectAll = () => setSelectedKeys(new Set())
 
   const handleToggle = (key: string) => {
-    const next = new Set(selectedKeys)
-    if (next.has(key)) {
-      next.delete(key)
-    } else {
-      next.add(key)
-    }
-    setSelectedKeys(next)
+    setSelectedKeys(toggleInSet(selectedKeys, key))
   }
 
   return (

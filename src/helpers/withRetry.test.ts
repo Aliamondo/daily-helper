@@ -69,4 +69,20 @@ describe('withRetry', () => {
     await expect(result).rejects.toThrow()
     expect(run).toHaveBeenCalledTimes(1)
   })
+
+  it('cancels the wait before the next retry when aborted', async () => {
+    const controller = new AbortController()
+    const run = vi.fn().mockRejectedValue(httpError(502))
+
+    const result = withRetry(run, {
+      baseDelayMs: 10_000,
+      signal: controller.signal,
+    })
+    await vi.waitFor(() => expect(run).toHaveBeenCalledTimes(1))
+    controller.abort()
+
+    // Would time out if the 10s wait kept running
+    await expect(result).rejects.toThrow()
+    expect(run).toHaveBeenCalledTimes(1)
+  })
 })
