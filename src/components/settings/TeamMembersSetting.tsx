@@ -14,7 +14,9 @@ import Typography from '@mui/material/Typography'
 import { dataFetcher } from '../../helpers/dataFetcher'
 import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
-import { usePagination } from './usePagination'
+import { getFormerMembers } from '../../helpers/teamMembers'
+import { partitionSet } from '../../helpers/core'
+import { usePagination } from '../../hooks/usePagination'
 
 const PAGE_SIZE = 24
 
@@ -240,15 +242,10 @@ export default function TeamMembersSetting({
   // Saved members are queried as-is, so someone who left the team keeps showing
   // up on the board until unchecked. Not known until the whole team has loaded,
   // so nobody gets flagged by mistake
-  const formerMembers: User[] = teamLogins
-    ? (settingsHandler.loadTeam(teamName)?.members ?? [])
-        .filter(login => !teamLogins.has(login))
-        .map(login => ({
-          login,
-          name: null,
-          avatarUrl: `https://github.com/${login}.png?size=48`,
-        }))
-    : []
+  const formerMembers = getFormerMembers(
+    settingsHandler.loadTeam(teamName)?.members ?? [],
+    teamLogins,
+  )
   const formerLogins = new Set(formerMembers.map(member => member.login))
 
   const toItems = (members: User[]) =>
@@ -277,10 +274,9 @@ export default function TeamMembersSetting({
 
   // Each list only sees and changes its own people, so "Unselect all" in one
   // leaves the other alone and the counts don't mix
-  const selectedCurrent = new Set<string>()
-  const selectedFormer = new Set<string>()
-  selectedMembers.forEach(login =>
-    (formerLogins.has(login) ? selectedFormer : selectedCurrent).add(login),
+  const [selectedFormer, selectedCurrent] = partitionSet(
+    selectedMembers,
+    login => formerLogins.has(login),
   )
   const setSelectedCurrent = (next: Set<string>) =>
     setSelectedMembers(new Set([...next, ...selectedFormer]))

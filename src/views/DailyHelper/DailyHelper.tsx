@@ -28,11 +28,15 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import VisibleIcon from '@mui/icons-material/Visibility'
 import {
+  LabelWithCount,
   applyReviewRequiredFilter,
+  countLabels,
+  isMyWork,
+  isVisibleByLabels,
   matchesSearch,
 } from '../../helpers/prFilters'
-import { getDisplayName } from '../../helpers/getDisplayName'
-import { compareByState } from '../../helpers/getStateRank'
+import { comparePullRequests, getKanbanSortField } from '../../helpers/prSort'
+import { toggleInSet } from '../../helpers/core'
 import { dataFetcher } from '../../helpers/dataFetcher'
 import { describeLoadError } from '../../helpers/describeLoadError'
 import { queryCache } from '../../helpers/queryCache'
@@ -44,10 +48,6 @@ import SortControl, { SortDir, SortField } from '../../components/SortControl'
 
 const teamNames = settingsHandler.loadTeamNames()
 export const ICON_BUTTON_SIZE = 40
-
-type LabelWithCount = Label & {
-  count: number
-}
 
 export default function DailyHelper() {
   const [isInvalidToken, setIsInvalidToken] = useState(
@@ -119,6 +119,8 @@ export default function DailyHelper() {
     },
   )
   const sortDir = sortDirs[sortField]
+  const kanbanSortField = getKanbanSortField(sortField)
+  const shownSortField = activeView === 'kanban' ? kanbanSortField : sortField
 
   const handleInvalidTokenError = () => {
     setIsInvalidToken(true)
@@ -189,42 +191,11 @@ export default function DailyHelper() {
     return new Set(filtered.map(pr => pr.id))
   }, [pullRequests, isReviewFilterActive, viewerLogin])
 
-  const getVisibility = (labels: Label[]): boolean => {
-    if (!labels.length) return !isPullRequestsWithoutLabelsHidden
-    return !labels
-      .map(label => label.name.toLocaleLowerCase())
-      .every(labelName => hiddenLabels.has(labelName))
-  }
-
-  const isMyWork = (pr: (typeof pullRequests)[number]) =>
-    viewerLogin !== null &&
-    (pr.author.login === viewerLogin ||
-      pr.contributors.some(u => u.login === viewerLogin) ||
-      pr.assignees.some(u => u.login === viewerLogin) ||
-      pr.requestedReviewers.some(u => u.login === viewerLogin) ||
-      pr.reviews.some(r => r.reviewer.login === viewerLogin))
-
   const sortedPullRequests = useMemo(() => {
     const filters = settingsHandler.loadFilters()
-    const mul = sortDir === 'asc' ? 1 : -1
-    return [...pullRequests].sort((a, b) => {
-      switch (sortField) {
-        case 'date':
-          return (
-            mul *
-            (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-          )
-        case 'repo':
-          return mul * a.repositoryName.localeCompare(b.repositoryName)
-        case 'author':
-          return (
-            mul *
-            getDisplayName(a.author).localeCompare(getDisplayName(b.author))
-          )
-        case 'state':
-          return compareByState(a, b, filters)
-      }
-    })
+    return [...pullRequests].sort((a, b) =>
+      comparePullRequests(a, b, sortField, sortDir, filters),
+    )
   }, [pullRequests, sortField, sortDir])
 
   const visiblePullRequests = useMemo(
@@ -233,11 +204,15 @@ export default function DailyHelper() {
         ? sortedPullRequests
         : sortedPullRequests.filter(
             pr =>
-              getVisibility(pr.labels) &&
+              isVisibleByLabels(
+                pr.labels,
+                hiddenLabels,
+                isPullRequestsWithoutLabelsHidden,
+              ) &&
               (!reviewRequiredFilteredIds ||
                 reviewRequiredFilteredIds.has(pr.id)) &&
               (!isMyPrsFilterActive || pr.author.login === viewerLogin) &&
-              (!isMyWorkFilterActive || isMyWork(pr)) &&
+              (!isMyWorkFilterActive || isMyWork(pr, viewerLogin)) &&
               matchesSearch(pr, searchQuery),
           ),
     [
@@ -253,23 +228,8 @@ export default function DailyHelper() {
     ],
   )
 
-  const allLabels = new Map<string, LabelWithCount>()
-  const pullRequestsWithLabels = pullRequests.filter(pr => pr.labels.length)
-  const pullRequestsWithoutLabelsCount =
-    pullRequests.length - pullRequestsWithLabels.length
-  pullRequestsWithLabels.forEach(pr =>
-    pr.labels.forEach(label => {
-      const name = label.name.toLocaleLowerCase()
-      const count = allLabels.get(name)?.count || 0
-      const color = allLabels.get(name)?.color
-      allLabels.set(name, {
-        ...label,
-        color: color || label.color,
-        description: '',
-        count: count + 1,
-      })
-    }),
-  )
+  const { labels: allLabels, unlabeledCount: pullRequestsWithoutLabelsCount } =
+    countLabels(pullRequests)
 
   const handleReload = (newTeamName: string, isValidToken: boolean) => {
     if (newTeamName !== teamName) {
@@ -286,14 +246,7 @@ export default function DailyHelper() {
   }
 
   const handleLabelClick = (labelNameRaw: string) => {
-    const labelName = labelNameRaw.toLocaleLowerCase()
-
-    if (hiddenLabels.has(labelName)) {
-      hiddenLabels.delete(labelName)
-    } else {
-      hiddenLabels.add(labelName)
-    }
-    setHiddenLabels(new Set(hiddenLabels))
+    setHiddenLabels(toggleInSet(hiddenLabels, labelNameRaw.toLocaleLowerCase()))
   }
 
   const handlePullRequestsWithoutLabelsClick = () =>
@@ -457,15 +410,11 @@ export default function DailyHelper() {
                       </Stack>
                     )}
                     <SortControl
-                      field={
-                        activeView === 'kanban' && sortField === 'state'
-                          ? 'date'
-                          : sortField
-                      }
-                      dir={sortDir}
+                      field={shownSortField}
+                      dir={sortDirs[shownSortField]}
                       excludeFields={activeView === 'kanban' ? ['state'] : []}
                       onChange={(f, d) => {
-                        const newDir = f === sortField ? d : sortDirs[f]
+                        const newDir = f === shownSortField ? d : sortDirs[f]
                         const newDirs = { ...sortDirs, [f]: newDir }
                         setSortField(f)
                         setSortDirs(newDirs)
@@ -538,8 +487,8 @@ export default function DailyHelper() {
                 <KanbanBoard
                   pullRequests={visiblePullRequests}
                   isLoading={isLoadingAnimationPlaying}
-                  sortField={sortField === 'state' ? 'date' : sortField}
-                  sortDir={sortDir}
+                  sortField={kanbanSortField}
+                  sortDir={sortDirs[kanbanSortField]}
                 />
               ) : (
                 <NotesView trackedRepos={trackedRepos} />

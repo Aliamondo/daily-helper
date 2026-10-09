@@ -33,6 +33,12 @@ describe('describeLoadError', () => {
     )
   })
 
+  it('names the status of other HTTP errors', () => {
+    expect(describeLoadError(httpError(403))).toBe(
+      'GitHub responded with HTTP 403.',
+    )
+  })
+
   it('never shows internal JavaScript errors', () => {
     const error = new TypeError(
       'can\'t access property "search", res is undefined',

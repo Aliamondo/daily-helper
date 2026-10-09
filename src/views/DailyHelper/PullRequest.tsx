@@ -23,6 +23,11 @@ import { dataFetcher } from '../../helpers/dataFetcher'
 import { fromNow } from '../../helpers/time'
 import { getEffectiveReviewDecision } from '../../helpers/getEffectiveReviewDecision'
 import { getMergeBlocker } from '../../helpers/getMergeBlocker'
+import {
+  getCompactPrCardTone,
+  getPrCardTone,
+} from '../../helpers/getPrCardTone'
+import { pickCompactReviewers } from '../../helpers/userBadge'
 import { settingsHandler } from '../../helpers/settingsHandler'
 
 // Wide enough for the worst case the widget can produce: 10 squares plus a
@@ -107,6 +112,10 @@ export default function PullRequest({
     const activeReviews = reviews.filter(({ state }) => state !== 'DISMISSED')
     const hasReviewers =
       activeReviews.length > 0 || requestedReviewers.length > 0
+    const compactReviewers = pickCompactReviewers(
+      activeReviews,
+      requestedReviewers,
+    )
 
     return (
       <Card
@@ -115,9 +124,15 @@ export default function PullRequest({
           position: 'relative',
           // the size badge replaced the state icon here, so the draft signal
           // has to come from the card itself, the way it does in list view
-          backgroundColor: isDraft
-            ? theme.palette.prCard.draft
-            : theme.palette.prCard.default,
+          backgroundColor:
+            theme.palette.prCard[
+              getCompactPrCardTone({
+                state,
+                effectiveReviewDecision,
+                isDraft,
+                isLoading,
+              })
+            ],
         }}
       >
         <PrCardEdges
@@ -218,7 +233,7 @@ export default function PullRequest({
                   />
                   {hasReviewers && (
                     <Stack direction="row" spacing={0.25}>
-                      {activeReviews.slice(0, 3).map(review => (
+                      {compactReviewers.reviews.map(review => (
                         <UserBadge
                           key={review.reviewer.login}
                           user={review.reviewer}
@@ -227,16 +242,14 @@ export default function PullRequest({
                           size="small"
                         />
                       ))}
-                      {requestedReviewers
-                        .slice(0, 3 - activeReviews.length)
-                        .map(u => (
-                          <UserBadge
-                            key={u.login}
-                            user={u}
-                            type="REQUESTED_REVIEWER"
-                            size="small"
-                          />
-                        ))}
+                      {compactReviewers.requested.map(u => (
+                        <UserBadge
+                          key={u.login}
+                          user={u}
+                          type="REQUESTED_REVIEWER"
+                          size="small"
+                        />
+                      ))}
                     </Stack>
                   )}
                 </Stack>
@@ -255,16 +268,15 @@ export default function PullRequest({
         position: 'relative',
         minHeight: 150,
         minWidth: 700,
-        backgroundColor: (() => {
-          if (state === 'OPEN' && !isLoading) {
-            if (effectiveReviewDecision === 'CHANGES_REQUESTED')
-              return theme.palette.prCard.changesRequested
-            if (effectiveReviewDecision === 'APPROVED')
-              return theme.palette.prCard.approved
-            if (isDraft) return theme.palette.prCard.draft
-          }
-          return theme.palette.prCard.default
-        })(),
+        backgroundColor:
+          theme.palette.prCard[
+            getPrCardTone({
+              state,
+              effectiveReviewDecision,
+              isDraft,
+              isLoading,
+            })
+          ],
       }}
     >
       <PrCardEdges

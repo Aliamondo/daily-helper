@@ -71,6 +71,7 @@ const dataFetcher = {
   fetchPullRequests,
   refreshLastCommitChecks,
   fetchTeamRepositories,
+  fetchAllTeamRepositoryNames,
   setToken(newToken: string) {
     hasLoadedToken = true
     gql = makeClient(newToken)
@@ -342,6 +343,7 @@ function getCommitCheckDescription(
     }
 
     const runTime = durationBetween(startedAt, completedAt)
+    if (!runTime) return enumerationToSentenceCase(checkRun.status)
     return enumerationToSentenceCase(`${checkRun.status} in ${runTime}`)
   }
 
@@ -699,6 +701,33 @@ async function fetchTeamRepositories(
     startCursor: pageInfo.startCursor,
     endCursor: pageInfo.endCursor,
   }
+}
+
+/**
+ * Every repository of the team (as owner/name), across all pages. Used to spot
+ * saved repositories that have since been removed from the team
+ */
+async function fetchAllTeamRepositoryNames(
+  orgName: string,
+  teamName: string,
+): Promise<Set<string>> {
+  const names = new Set<string>()
+  let endCursor = ''
+  let hasNextPage = true
+  while (hasNextPage) {
+    const page = await fetchTeamRepositories(
+      orgName,
+      teamName,
+      'NEXT_PAGE',
+      100,
+      undefined,
+      endCursor,
+    )
+    page.teamRepositories.forEach(repo => names.add(repo.nameWithOwner))
+    endCursor = page.endCursor
+    hasNextPage = page.hasNextPage
+  }
+  return names
 }
 
 async function fetchViewer(): Promise<string> {

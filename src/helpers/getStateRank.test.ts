@@ -4,7 +4,11 @@ import { compareByState, getStateRank } from './getStateRank'
 
 const user = { login: 'someone', name: null, avatarUrl: '' }
 const approved: Review[] = [{ state: 'APPROVED', reviewer: user }]
-const filters = { botLogins: [] } as unknown as Settings_Filters
+const filters: Settings_Filters = {
+  botPatterns: ['[bot]'],
+  botLogins: ['Copilot-Pull-Request-Reviewer'],
+  titleWhitelist: [],
+}
 
 const pr = (overrides: Partial<PullRequest>): PullRequest =>
   ({
@@ -95,6 +99,34 @@ describe('getStateRank', () => {
         .sort((a, b) => compareByState(a, b, filters))
         .map(p => p.title),
     ).toEqual(['clean', 'conflicting', 'in progress'])
+  })
+
+  it('ranks drafts last, whatever their reviews say', () => {
+    expect(
+      getStateRank(pr({ isDraft: true, reviews: approved }), filters),
+    ).toBe(6)
+  })
+
+  it('treats PRs without human reviewers as in progress unless auto-merge is on', () => {
+    const noReviewers = { requestedReviewers: [] }
+    expect(getStateRank(pr(noReviewers), filters)).toBe(5)
+    expect(
+      getStateRank(
+        pr({
+          ...noReviewers,
+          autoMerge: { enabledAt: new Date(), enabledBy: null },
+        }),
+        filters,
+      ),
+    ).toBe(4)
+  })
+
+  it('does not count bots as human reviewers, whatever the case', () => {
+    const bots = [
+      { login: 'copilot-pull-request-reviewer', name: null, avatarUrl: '' },
+      { login: 'renovate[bot]', name: null, avatarUrl: '' },
+    ]
+    expect(getStateRank(pr({ requestedReviewers: bots }), filters)).toBe(5)
   })
 
   it('ignores amber blockers outside the approved ranks', () => {

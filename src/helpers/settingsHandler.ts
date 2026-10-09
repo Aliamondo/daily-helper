@@ -14,7 +14,10 @@ const settingsHandler = {
       partialSettings.teams = { ...settings.teams, ...partialSettings.teams }
     }
 
-    if (partialSettings.githubToken !== settings.githubToken) {
+    if (
+      partialSettings.githubToken !== undefined &&
+      partialSettings.githubToken !== settings.githubToken
+    ) {
       dataFetcher.setToken(partialSettings.githubToken || '')
     }
 

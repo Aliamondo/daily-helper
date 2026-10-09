@@ -8,8 +8,7 @@ import { ReactElement } from 'react'
 import ReviewPendingIcon from '@mui/icons-material/Pending'
 import ReviewRequestedIcon from '@mui/icons-material/Circle'
 import Tooltip from '@mui/material/Tooltip'
-import { enumerationToSentenceCase } from '../helpers/strings'
-import { getDisplayName } from '../helpers/getDisplayName'
+import { getUserBadgeTooltip } from '../helpers/userBadge'
 
 function getReviewIcon(state: ReviewState): ReactElement | null {
   switch (state) {
@@ -24,40 +23,6 @@ function getReviewIcon(state: ReviewState): ReactElement | null {
     default:
       return null
   }
-}
-
-function getReviewStatusTooltip({
-  reviewState,
-  user,
-}: {
-  reviewState: ReviewState
-  user: User
-}): string {
-  if (reviewState === 'PENDING')
-    return `Currently being reviewed by ${getDisplayName(user)}`
-
-  const state = enumerationToSentenceCase(reviewState)
-
-  return `${state} by ${getDisplayName(user)}`
-}
-
-function getTooltip({
-  user,
-  reviewState,
-  type,
-}: Pick<UserBadgeProps, 'user' | 'reviewState' | 'type'>) {
-  if (type === 'AUTHOR') return `Opened by ${getDisplayName(user)}`
-  if (type === 'CONTRIBUTOR') return `Contributed by ${getDisplayName(user)}`
-  if (type === 'ASSIGNEE') return `Assigned to ${getDisplayName(user)}`
-  if (type === 'REQUESTED_REVIEWER')
-    return `Review requested from ${getDisplayName(user)}`
-  if (type === 'REVIEWER' && reviewState) {
-    return getReviewStatusTooltip({ reviewState, user })
-  }
-  if (type === 'COMMIT_CHECK_RUNNER')
-    return `Started by ${getDisplayName(user)}`
-
-  return getDisplayName(user)
 }
 
 const DIMENSIONS = {
@@ -132,7 +97,10 @@ export default function UserBadge({
   const { avatar } = DIMENSIONS[size]
 
   return (
-    <Tooltip title={getTooltip({ user, reviewState, type })} {...props}>
+    <Tooltip
+      title={getUserBadgeTooltip({ user, reviewState, type })}
+      {...props}
+    >
       <Badge
         overlap="circular"
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}

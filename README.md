@@ -1,16 +1,10 @@
-# Github Daily Helper
+# GitHub Daily Helper
 
 ## To-do checklist
 
-- [x] Search team repositories in settings
-- [x] Add no PRs message for no PRs found and all PRs filtered out
-- [ ] Add tests
-- [ ] Show missing required `CheckRun`s, if possible
-- [ ] Research and add tab with currently ran github actions for recently merged PRs (potentially filter by `CODEOWNERS`)
-- [ ] Extract wording to translations file
-- [ ] (Low priority) Rework `UserGroup`s empty states (reconsider what's shown on `DRAFT` PRs)
-- [x] List appropriate pull requests where a review from the team was requested
-- [x] Research how to make an application start faster
+- [ ] ~~Show missing required `CheckRun`s, if possible~~ `CheckRun` feature is on pause because in my current projects I have 80+ checks for every PR and hundreds of PRs to load.
+- [ ] ~~Research and add tab with currently ran github actions for recently merged PRs (potentially filter by `CODEOWNERS`)~~
+- [ ] (Low priority) Extract wording to translations file
 
 ## General info
 

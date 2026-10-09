@@ -1,7 +1,7 @@
 import { getDisplayName } from './getDisplayName'
 import { getEffectiveReviewDecision } from './getEffectiveReviewDecision'
 
-function isBotUser(user: User, filters: Settings_Filters): boolean {
+export function isBotUser(user: User, filters: Settings_Filters): boolean {
   const displayName = getDisplayName(user)
   const matchesPattern = filters.botPatterns.some(p =>
     displayName?.toLowerCase().includes(p.toLowerCase()),
@@ -56,4 +56,57 @@ export function applyReviewRequiredFilter(
     // even when nobody was explicitly requested as a reviewer
     return humanReviewers.length > 0 || !!pr.autoMerge || isWhitelisted
   })
+}
+
+export type LabelWithCount = Label & {
+  count: number
+}
+
+/** Hidden labels are lowercase. A PR is hidden only when all its labels are */
+export function isVisibleByLabels(
+  labels: Label[],
+  hiddenLabels: Set<string>,
+  hideUnlabeled: boolean,
+): boolean {
+  if (!labels.length) return !hideUnlabeled
+  return !labels
+    .map(label => label.name.toLocaleLowerCase())
+    .every(labelName => hiddenLabels.has(labelName))
+}
+
+export function isMyWork(pr: PullRequest, viewerLogin: string | null): boolean {
+  return (
+    viewerLogin !== null &&
+    (pr.author.login === viewerLogin ||
+      pr.contributors.some(u => u.login === viewerLogin) ||
+      pr.assignees.some(u => u.login === viewerLogin) ||
+      pr.requestedReviewers.some(u => u.login === viewerLogin) ||
+      pr.reviews.some(r => r.reviewer.login === viewerLogin))
+  )
+}
+
+/** Counts PRs per label, case-insensitively, plus the PRs without labels */
+export function countLabels(pullRequests: PullRequest[]): {
+  labels: Map<string, LabelWithCount>
+  unlabeledCount: number
+} {
+  const labels = new Map<string, LabelWithCount>()
+  const pullRequestsWithLabels = pullRequests.filter(pr => pr.labels.length)
+  pullRequestsWithLabels.forEach(pr =>
+    pr.labels.forEach(label => {
+      const name = label.name.toLocaleLowerCase()
+      const count = labels.get(name)?.count || 0
+      const color = labels.get(name)?.color
+      labels.set(name, {
+        ...label,
+        color: color || label.color,
+        description: '',
+        count: count + 1,
+      })
+    }),
+  )
+  return {
+    labels,
+    unlabeledCount: pullRequests.length - pullRequestsWithLabels.length,
+  }
 }
