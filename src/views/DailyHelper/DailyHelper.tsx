@@ -1,13 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
-import Alert from '@mui/material/Alert'
-import AlertTitle from '@mui/material/AlertTitle'
 import AppBar from '../../components/AppBar'
 import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
+import BusinessIcon from '@mui/icons-material/Business'
 import Button from '@mui/material/Button'
+import CloudOffIcon from '@mui/icons-material/CloudOff'
 import Drawer from '@mui/material/Drawer'
+import GroupsIcon from '@mui/icons-material/Groups'
 import InvisibleIcon from '@mui/icons-material/VisibilityOff'
+import KeyIcon from '@mui/icons-material/Key'
 import Label from '../../components/Label'
 import List from '@mui/material/List'
 import ListItem from '@mui/material/ListItem'
@@ -16,8 +18,12 @@ import ListItemText from '@mui/material/ListItemText'
 import ListSubheader from '@mui/material/ListSubheader'
 import { AnimatePresence, motion } from 'motion/react'
 import PullRequest from './PullRequest'
+import RefreshIcon from '@mui/icons-material/Refresh'
 import SettingsIcon from '@mui/icons-material/Settings'
 import Stack from '@mui/material/Stack'
+import StatusBanner from '../../components/StatusBanner'
+import type { SettingsTab } from '../../components/settings'
+import WarningIcon from '@mui/icons-material/WarningAmber'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import VisibleIcon from '@mui/icons-material/Visibility'
@@ -28,6 +34,7 @@ import {
 import { getDisplayName } from '../../helpers/getDisplayName'
 import { compareByState } from '../../helpers/getStateRank'
 import { dataFetcher } from '../../helpers/dataFetcher'
+import { describeLoadError } from '../../helpers/describeLoadError'
 import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
 import KanbanBoard from './KanbanBoard'
@@ -58,6 +65,24 @@ export default function DailyHelper() {
     !isInvalidToken && Boolean(orgName) && teamNames.length > 0,
   )
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [loadError, setLoadError] = useState<{
+    description: string
+    // The previous board was restored, so this is a failed refresh, not an empty view
+    isStale: boolean
+  } | null>(null)
+  // Banners open a specific tab; the gear button keeps the last viewed one
+  const [settings, setSettings] = useState<{
+    isOpen: boolean
+    tab?: SettingsTab
+  }>({ isOpen: false })
+  // Reloads can overlap (team tab switch, reload button): starting one cancels
+  // the previous, so a slow load retrying 502s can't overwrite the newer board
+  const currentLoad = useRef<AbortController | null>(null)
+  // Restored when a reload fails, so the board never shows a partial result
+  const lastLoaded = useRef<{
+    teamName: string
+    pullRequests: PullRequest[]
+  } | null>(null)
   const [isDrawbarOpen, setIsDrawbarOpen] = useState(false)
   const [
     isPullRequestsWithoutLabelsHidden,
@@ -108,21 +133,38 @@ export default function DailyHelper() {
       !isInvalidToken && Boolean(orgName) && Boolean(teamName)
 
     if (isMandatoryDataPresent && shouldLoad) {
+      currentLoad.current?.abort()
+      const load = new AbortController()
+      currentLoad.current = load
       dataFetcher
         .fetchPullRequests({
           orgName: orgName || '',
           teamName: teamName,
           setProgress: setLoadingProgress,
           handleInvalidTokenError,
+          signal: load.signal,
         })
         .then(pullRequests => {
+          if (load.signal.aborted) return
+          lastLoaded.current = { teamName, pullRequests }
           setPullRequests(pullRequests)
           setLastUpdated(new Date())
+          setIsLoadingAnimationPlaying(false)
+        })
+        .catch((error: unknown) => {
+          if (load.signal.aborted) return
+          console.error('Loading pull requests failed', error)
+          const previous = lastLoaded.current
+          const isStale = previous?.teamName === teamName
+          setPullRequests(isStale ? previous.pullRequests : [])
+          setLoadError({ description: describeLoadError(error), isStale })
           setIsLoadingAnimationPlaying(false)
         })
       setShouldLoad(false)
     }
   }, [shouldLoad, teamName, isInvalidToken, orgName])
+
+  useEffect(() => () => currentLoad.current?.abort(), [])
 
   useEffect(() => {
     if (!settingsHandler.loadGithubToken()) return
@@ -237,6 +279,7 @@ export default function DailyHelper() {
     setOrgName(settingsHandler.loadOrgName())
     setTeamName(newTeamName)
     setLoadingProgress(0)
+    setLoadError(null)
     isValidToken && setIsLoadingAnimationPlaying(true)
     setPullRequests(generateDummyPullRequests(pullRequests.length))
     setShouldLoad(true)
@@ -255,6 +298,18 @@ export default function DailyHelper() {
 
   const handlePullRequestsWithoutLabelsClick = () =>
     setIsPullRequestsWithoutLabelsHidden(!isPullRequestsWithoutLabelsHidden)
+
+  const openSettingsAction = {
+    label: 'Open settings',
+    icon: <SettingsIcon />,
+    onClick: () => setSettings({ isOpen: true, tab: 'general' }),
+  }
+
+  const tryAgainAction = {
+    label: 'Try again',
+    icon: <RefreshIcon />,
+    onClick: () => handleReload(teamName, true),
+  }
 
   const resetFilters = () => {
     setIsPullRequestsWithoutLabelsHidden(false)
@@ -280,6 +335,9 @@ export default function DailyHelper() {
         })}
         drawbarName="Search filters"
         isDrawbarOpen={isDrawbarOpen}
+        isSettingsOpen={settings.isOpen}
+        settingsTab={settings.tab}
+        setIsSettingsOpen={isOpen => setSettings({ isOpen })}
         setIsDrawbarOpen={setIsDrawbarOpen}
         onSearch={setSearchQuery}
         showSearch={activeView !== 'notes'}
@@ -298,36 +356,48 @@ export default function DailyHelper() {
             activeView === 'kanban' || activeView === 'notes' ? undefined : 1000
           }
         >
-          {isInvalidToken && (
-            <Alert severity="error">
-              <AlertTitle>Authorization error</AlertTitle>
-              <Typography display="flex" variant="h6" alignItems="center">
-                Github token is not provided or is invalid. Please edit it in
-                the
-                <SettingsIcon fontSize="medium" sx={{ marginLeft: 0.5 }} />
-                Settings
-              </Typography>
-            </Alert>
-          )}
-          {!orgName && (
-            <Alert severity="error">
-              <AlertTitle>Error</AlertTitle>
-              <Typography display="flex" variant="h6" alignItems="center">
-                Organization name is not provided. Please edit it in the
-                <SettingsIcon fontSize="medium" sx={{ marginLeft: 0.5 }} />
-                Settings
-              </Typography>
-            </Alert>
-          )}
-          {!teamName && (
-            <Alert severity="error">
-              <AlertTitle>Error</AlertTitle>
-              <Typography display="flex" variant="h6" alignItems="center">
-                No teams are selected. Please select them in the
-                <SettingsIcon fontSize="medium" sx={{ marginLeft: 0.5 }} />
-                Settings
-              </Typography>
-            </Alert>
+          {(isInvalidToken ||
+            !orgName ||
+            !teamName ||
+            (loadError && !loadError.isStale)) && (
+            <Stack gap={1} sx={{ py: 1 }}>
+              {isInvalidToken && (
+                <StatusBanner
+                  severity="error"
+                  icon={<KeyIcon />}
+                  title="GitHub token missing or invalid"
+                  description='Add a token with the "repo" and "read:org" scopes.'
+                  action={openSettingsAction}
+                />
+              )}
+              {!orgName && (
+                <StatusBanner
+                  severity="error"
+                  icon={<BusinessIcon />}
+                  title="No organization selected"
+                  description="Pick the GitHub organization your team works in."
+                  action={openSettingsAction}
+                />
+              )}
+              {!teamName && (
+                <StatusBanner
+                  severity="error"
+                  icon={<GroupsIcon />}
+                  title="No team selected"
+                  description="Pick the team whose pull requests you want to see."
+                  action={openSettingsAction}
+                />
+              )}
+              {loadError && !loadError.isStale && (
+                <StatusBanner
+                  severity="error"
+                  icon={<CloudOffIcon />}
+                  title="Couldn't load pull requests"
+                  description={loadError.description}
+                  action={tryAgainAction}
+                />
+              )}
+            </Stack>
           )}
           {!isInvalidToken && Boolean(orgName) && Boolean(teamName) && (
             <>
@@ -405,6 +475,21 @@ export default function DailyHelper() {
                   </Stack>
                 )}
               </Stack>
+              {loadError?.isStale && activeView !== 'notes' && (
+                <Box sx={{ mt: 1, mb: 0.5 }}>
+                  <StatusBanner
+                    compact
+                    severity="warning"
+                    icon={<WarningIcon fontSize="small" />}
+                    title="Couldn't refresh."
+                    description={`Showing data from ${lastUpdated?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. ${loadError.description}`}
+                    action={{
+                      label: 'Try again',
+                      onClick: tryAgainAction.onClick,
+                    }}
+                  />
+                </Box>
+              )}
               {activeView === 'list' ? (
                 <Stack spacing={0.5} useFlexGap>
                   {isLoadingAnimationPlaying ? (
@@ -438,6 +523,7 @@ export default function DailyHelper() {
                     </AnimatePresence>
                   )}
                   {!isLoadingAnimationPlaying &&
+                    !loadError &&
                     visiblePullRequests.length === 0 && (
                       <Typography
                         variant="body2"

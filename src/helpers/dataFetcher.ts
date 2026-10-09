@@ -14,16 +14,18 @@ import {
 } from './graphqlQueries'
 
 import { graphql } from '@octokit/graphql'
+import type { RequestParameters } from '@octokit/graphql/types'
 import { SetStateAction } from 'react'
 import { durationBetween } from './time'
 import { enumerationToSentenceCase } from './strings'
 import packageData from '../../package.json'
 import { settingsHandler } from './settingsHandler'
+import { EmptyResponseError, withRetry } from './withRetry'
 
 const userAgent = `daily-helper/v${packageData.version}`
 
-const makeClient = (token: string) =>
-  graphql.defaults({
+const makeClient = (token: string) => {
+  const client = graphql.defaults({
     headers: {
       authorization: `token ${token}`,
       'user-agent': userAgent,
@@ -31,6 +33,18 @@ const makeClient = (token: string) =>
       accept: 'application/vnd.github.merge-info-preview+json',
     },
   })
+  return <ResponseData>(query: string, parameters?: RequestParameters) =>
+    withRetry(
+      async () => {
+        const data = await client<ResponseData>(query, parameters)
+        if (data == null) throw new EmptyResponseError()
+        return data
+      },
+      {
+        signal: parameters?.request?.signal,
+      },
+    )
+}
 
 let gql = makeClient('')
 let hasLoadedToken = false
@@ -102,12 +116,10 @@ function calculateNumberOfComments(
 }
 
 function formatReviews(reviews: GraphQL_Review[]): Review[] {
-  const formattedReviews = reviews.map(
-    (review): Review => ({
-      state: review.state,
-      reviewer: review.author,
-    }),
-  )
+  const formattedReviews = reviews.map((review): Review => ({
+    state: review.state,
+    reviewer: review.author,
+  }))
 
   const reviewsMap = new Map()
   formattedReviews.forEach(review => {
@@ -386,6 +398,7 @@ type FetchPullRequestsProps = {
     (arg0: number): void
   }
   handleInvalidTokenError: VoidFunction
+  signal?: AbortSignal
 }
 
 async function fetchTeamUsersPageable(
@@ -419,13 +432,11 @@ async function fetchTeamUsersPageable(
   )
 
   return {
-    members: membersRaw.map(
-      (user: GraphQL_User): User => ({
-        login: user.login,
-        name: user.name,
-        avatarUrl: user.avatarUrl,
-      }),
-    ),
+    members: membersRaw.map((user: GraphQL_User): User => ({
+      login: user.login,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+    })),
     total: totalCount,
     hasNextPage: pageInfo.hasNextPage,
     hasPreviousPage: pageInfo.hasPreviousPage,
@@ -439,7 +450,16 @@ async function fetchPullRequests({
   teamName,
   setProgress,
   handleInvalidTokenError,
+  signal,
 }: FetchPullRequestsProps): Promise<PullRequest[]> {
+  // Once one query has failed for good the board won't be shown anyway, so
+  // stop the rest instead of letting them keep querying and retrying
+  const batch = new AbortController()
+  const options = {
+    request: {
+      signal: signal ? AbortSignal.any([signal, batch.signal]) : batch.signal,
+    },
+  }
   const savedTeam = settingsHandler.loadTeam(teamName)
   const teamRepositories = savedTeam?.repositories
   const savedMembers = savedTeam?.members
@@ -454,6 +474,7 @@ async function fetchPullRequests({
   } else {
     const allTeamUsers: string[] = await getClient()<GraphQL_UserResponse>(
       getTeamUsersQuery({ orgName, teamName }),
+      options,
     )
       .then((res: GraphQL_UserResponse) =>
         res.organization.teams.nodes[0].members.nodes.map(
@@ -484,6 +505,7 @@ async function fetchPullRequests({
   const pullRequestPromises = teamUsers.map(user =>
     getClient()<GraphQL_PullRequestsResponse>(
       getPullRequestsByUserQuery({ orgName, author: user, includeChecks }),
+      options,
     ).then((res: GraphQL_PullRequestsResponse) => {
       progress += 90 / totalResources
       setProgress(progress)
@@ -499,6 +521,7 @@ async function fetchPullRequests({
           excludeAuthors: teamUsers,
           includeChecks,
         }),
+        options,
       ).then((res: GraphQL_PullRequestsResponse) => {
         progress += 90 / totalResources
         setProgress(progress)
@@ -515,6 +538,7 @@ async function fetchPullRequests({
         excludeRepositories: teamRepositories,
         includeChecks,
       }),
+      options,
     ).then((res: GraphQL_PullRequestsResponse) => {
       progress += 90 / totalResources
       setProgress(progress)
@@ -522,7 +546,12 @@ async function fetchPullRequests({
     }),
   )
 
-  const rawPullRequestsData = await Promise.all(pullRequestPromises)
+  const rawPullRequestsData = await Promise.all(pullRequestPromises).catch(
+    error => {
+      batch.abort()
+      throw error
+    },
+  )
   const rawPullRequests = rawPullRequestsData
     .map((res: GraphQL_PullRequestsResponse) => res.search.nodes)
     .flat()

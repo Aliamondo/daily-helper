@@ -39,8 +39,13 @@ import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
 import { useTheme } from '@mui/material/styles'
 
+const SETTINGS_TABS = ['general', 'members', 'repositories', 'filters'] as const
+export type SettingsTab = (typeof SETTINGS_TABS)[number]
+
 type SettingsProps = {
   isOpen: boolean
+  /** Tab to show when opened; without it the last viewed tab is kept */
+  openOnTab?: SettingsTab
   close: VoidFunction
   selectedTeamName: string
   handleReload: (teamName: string, isValidToken: boolean) => void
@@ -48,6 +53,7 @@ type SettingsProps = {
 }
 export default function Settings({
   isOpen,
+  openOnTab,
   close,
   selectedTeamName,
   handleReload,
@@ -75,6 +81,13 @@ export default function Settings({
   )
   const [saveKey, setSaveKey] = useState(0)
   const [isConfirmDiscardOpen, setIsConfirmDiscardOpen] = useState(false)
+
+  useEffect(() => {
+    if (!isOpen || !openOnTab) return
+    const tab = SETTINGS_TABS.indexOf(openOnTab)
+    setActiveTab(tab)
+    setMountedTabs(prev => new Set([...prev, tab]))
+  }, [isOpen, openOnTab])
 
   useEffect(() => {
     const savedTeam = settingsHandler.loadTeam(selectedTeamName)

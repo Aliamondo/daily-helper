@@ -16,7 +16,7 @@ import LinearProgress from '@mui/material/LinearProgress'
 import MenuIcon from '@mui/icons-material/Menu'
 import ReloadIcon from '@mui/icons-material/Replay'
 import SearchBar from './SearchBar'
-import Settings from './settings/Settings'
+import Settings, { SettingsTab } from './settings/Settings'
 import SettingsIcon from '@mui/icons-material/Settings'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
@@ -36,6 +36,9 @@ type AppBarElementProps = {
   drawbarName: string
   isDrawbarOpen: boolean
   setIsDrawbarOpen: (newState: boolean) => void
+  isSettingsOpen: boolean
+  settingsTab?: SettingsTab
+  setIsSettingsOpen: (newState: boolean) => void
   onSearch?: (query: string) => void
   showSearch?: boolean
 }
@@ -48,13 +51,15 @@ export default function AppBarElement({
   drawbarName,
   isDrawbarOpen,
   setIsDrawbarOpen,
+  isSettingsOpen,
+  settingsTab,
+  setIsSettingsOpen,
   onSearch,
   showSearch = true,
 }: AppBarElementProps) {
   const relativeTime = useRelativeTime(lastUpdated)
   const [teamTabValue, setTeamTabValue] = useState(0)
   const [teamNames, setTeamNames] = useState(settingsHandler.loadTeamNames())
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const DrawbarButtonRef = useRef(null)
   const toolbarRef = useRef<HTMLHeadingElement>(null)
 
@@ -153,6 +158,7 @@ export default function AppBarElement({
           </Tooltip>
           <Settings
             isOpen={isSettingsOpen}
+            openOnTab={settingsTab}
             close={handleHideSettings}
             selectedTeamName={teamNames[teamTabValue]}
             handleReload={handleReload}
