@@ -3,8 +3,10 @@ import { KeyboardEvent, useEffect, useRef, useState } from 'react'
 import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
 import EditIcon from '@mui/icons-material/DriveFileRenameOutline'
+import Grid from '@mui/material/Grid'
 import GroupIcon from '@mui/icons-material/Group'
 import InputBase from '@mui/material/InputBase'
+import PersonOffIcon from '@mui/icons-material/PersonOff'
 import SelectableList from './SelectableList'
 import Stack from '@mui/material/Stack'
 import Tooltip from '@mui/material/Tooltip'
@@ -21,8 +23,15 @@ type AliasEditorProps = {
   originalName: string | null
   alias: string | undefined
   onSave: (login: string, alias: string | null) => void
+  isFormerMember?: boolean
 }
-function AliasEditor({ login, originalName, alias, onSave }: AliasEditorProps) {
+function AliasEditor({
+  login,
+  originalName,
+  alias,
+  onSave,
+  isFormerMember = false,
+}: AliasEditorProps) {
   const [editing, setEditing] = useState(false)
   const [value, setValue] = useState(alias ?? '')
   const [hovered, setHovered] = useState(false)
@@ -93,7 +102,13 @@ function AliasEditor({ login, originalName, alias, onSave }: AliasEditorProps) {
     >
       <Typography
         component="span"
-        color={hasAlias ? 'primary' : 'text.primary'}
+        color={
+          isFormerMember
+            ? 'text.disabled'
+            : hasAlias
+              ? 'primary'
+              : 'text.primary'
+        }
         sx={{ fontStyle: hasAlias ? 'italic' : 'normal' }}
       >
         {displayName}
@@ -139,6 +154,32 @@ export default function TeamMembersSetting({
   )
   const { pageCursor, reset, navigate } = usePagination()
   const [currentTeam, setCurrentTeam] = useState('')
+  const [teamLogins, setTeamLogins] = useState<Set<string> | null>(null)
+
+  useEffect(() => {
+    setTeamLogins(null)
+    const orgName = settingsHandler.loadOrgName()
+    if (!orgName || !teamName || !settingsHandler.loadGithubToken()) return
+
+    const cacheKey = `members-all:${orgName}:${teamName}`
+    const cached = queryCache.get<Set<string>>(cacheKey)
+    if (cached) {
+      setTeamLogins(cached)
+      return
+    }
+
+    let isCurrent = true
+    dataFetcher
+      .fetchAllTeamUserLogins(orgName, teamName)
+      .then(logins => {
+        queryCache.set(cacheKey, logins)
+        if (isCurrent) setTeamLogins(logins)
+      })
+      .catch(error => console.error('Loading team members failed', error))
+    return () => {
+      isCurrent = false
+    }
+  }, [teamName, saveKey])
 
   useEffect(() => {
     if (currentTeam !== teamName) {
@@ -196,8 +237,22 @@ export default function TeamMembersSetting({
     setAliases(settingsHandler.loadAliases())
   }
 
-  const items =
-    pageable?.members
+  // Saved members are queried as-is, so someone who left the team keeps showing
+  // up on the board until unchecked. Not known until the whole team has loaded,
+  // so nobody gets flagged by mistake
+  const formerMembers: User[] = teamLogins
+    ? (settingsHandler.loadTeam(teamName)?.members ?? [])
+        .filter(login => !teamLogins.has(login))
+        .map(login => ({
+          login,
+          name: null,
+          avatarUrl: `https://github.com/${login}.png?size=48`,
+        }))
+    : []
+  const formerLogins = new Set(formerMembers.map(member => member.login))
+
+  const toItems = (members: User[]) =>
+    members
       .slice()
       .sort((a, b) => {
         const nameA = aliases[a.login] ?? a.name ?? a.login
@@ -214,22 +269,57 @@ export default function TeamMembersSetting({
               originalName={name}
               alias={aliases[login]}
               onSave={handleSaveAlias}
+              isFormerMember={formerLogins.has(login)}
             />
           </Stack>
         ),
-      })) ?? []
+      }))
+
+  // Each list only sees and changes its own people, so "Unselect all" in one
+  // leaves the other alone and the counts don't mix
+  const selectedCurrent = new Set<string>()
+  const selectedFormer = new Set<string>()
+  selectedMembers.forEach(login =>
+    (formerLogins.has(login) ? selectedFormer : selectedCurrent).add(login),
+  )
+  const setSelectedCurrent = (next: Set<string>) =>
+    setSelectedMembers(new Set([...next, ...selectedFormer]))
+  const setSelectedFormer = (next: Set<string>) =>
+    setSelectedMembers(new Set([...selectedCurrent, ...next]))
 
   return (
-    <SelectableList
-      icon={<GroupIcon sx={{ marginRight: 1 }} />}
-      title={teamName ? `Members of ${teamName}` : 'Members'}
-      isLoading={isLoading}
-      items={items}
-      selectedKeys={selectedMembers}
-      setSelectedKeys={setSelectedMembers}
-      pageable={pageable}
-      pageSize={PAGE_SIZE}
-      onNavigate={navigate}
-    />
+    <>
+      <SelectableList
+        icon={<GroupIcon sx={{ marginRight: 1 }} />}
+        title={teamName ? `Members of ${teamName}` : 'Members'}
+        isLoading={isLoading}
+        items={toItems(pageable?.members ?? [])}
+        selectedKeys={selectedCurrent}
+        setSelectedKeys={setSelectedCurrent}
+        pageable={pageable}
+        pageSize={PAGE_SIZE}
+        onNavigate={navigate}
+      />
+      {formerMembers.length > 0 && (
+        <>
+          <Grid item xs={12} sx={{ mt: 3 }} />
+          <SelectableList
+            icon={
+              <Tooltip
+                title="No longer in the team on GitHub, but their pull requests still load. Uncheck and save to remove them from this list."
+                placement="top"
+              >
+                <PersonOffIcon color="error" sx={{ marginRight: 1 }} />
+              </Tooltip>
+            }
+            title={`Previous members of ${teamName}`}
+            isLoading={false}
+            items={toItems(formerMembers)}
+            selectedKeys={selectedFormer}
+            setSelectedKeys={setSelectedFormer}
+          />
+        </>
+      )}
+    </>
   )
 }
