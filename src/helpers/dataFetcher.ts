@@ -400,7 +400,6 @@ type FetchPullRequestsProps = {
     (value: SetStateAction<number>): void
     (arg0: number): void
   }
-  handleInvalidTokenError: VoidFunction
   signal?: AbortSignal
 }
 
@@ -479,7 +478,6 @@ async function fetchPullRequests({
   orgName,
   teamName,
   setProgress,
-  handleInvalidTokenError,
   signal,
 }: FetchPullRequestsProps): Promise<PullRequest[]> {
   // Once one query has failed for good the board won't be shown anyway, so
@@ -505,18 +503,11 @@ async function fetchPullRequests({
     const allTeamUsers: string[] = await getClient()<GraphQL_UserResponse>(
       getTeamUsersQuery({ orgName, teamName }),
       options,
+    ).then((res: GraphQL_UserResponse) =>
+      res.organization.teams.nodes[0].members.nodes.map(
+        (user: GraphQL_User) => user.login,
+      ),
     )
-      .then((res: GraphQL_UserResponse) =>
-        res.organization.teams.nodes[0].members.nodes.map(
-          (user: GraphQL_User) => user.login,
-        ),
-      )
-      .catch((error: { response?: { status?: number } }) => {
-        if (error.response?.status === 401 || error.response?.status === 403) {
-          handleInvalidTokenError()
-          return []
-        } else throw error
-      })
 
     if (!allTeamUsers.length) {
       setProgress(100)

@@ -38,7 +38,10 @@ import {
 import { comparePullRequests, getKanbanSortField } from '../../helpers/prSort'
 import { toggleInSet } from '../../helpers/core'
 import { dataFetcher } from '../../helpers/dataFetcher'
-import { describeLoadError } from '../../helpers/describeLoadError'
+import {
+  describeLoadError,
+  LoadErrorInfo,
+} from '../../helpers/describeLoadError'
 import {
   ActiveFilter,
   readFilterParam,
@@ -70,11 +73,13 @@ export default function DailyHelper() {
     !isInvalidToken && Boolean(orgName) && teamNames.length > 0,
   )
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-  const [loadError, setLoadError] = useState<{
-    description: string
-    // The previous board was restored, so this is a failed refresh, not an empty view
-    isStale: boolean
-  } | null>(null)
+  const [loadError, setLoadError] = useState<
+    | (LoadErrorInfo & {
+        // The previous board was restored, so this is a failed refresh, not an empty view
+        isStale: boolean
+      })
+    | null
+  >(null)
   // Banners open a specific tab; the gear button keeps the last viewed one
   const [settings, setSettings] = useState<{
     isOpen: boolean
@@ -132,10 +137,6 @@ export default function DailyHelper() {
   const kanbanSortField = getKanbanSortField(sortField)
   const shownSortField = activeView === 'kanban' ? kanbanSortField : sortField
 
-  const handleInvalidTokenError = () => {
-    setIsInvalidToken(true)
-  }
-
   useEffect(() => {
     if (isInvalidToken) {
       setIsInvalidToken(settingsHandler.loadGithubToken() === '')
@@ -153,7 +154,6 @@ export default function DailyHelper() {
           orgName: orgName || '',
           teamName: teamName,
           setProgress: setLoadingProgress,
-          handleInvalidTokenError,
           signal: load.signal,
         })
         .then(pullRequests => {
@@ -169,7 +169,7 @@ export default function DailyHelper() {
           const previous = lastLoaded.current
           const isStale = previous?.teamName === teamName
           setPullRequests(isStale ? previous.pullRequests : [])
-          setLoadError({ description: describeLoadError(error), isStale })
+          setLoadError({ ...describeLoadError(error), isStale })
           setIsLoadingAnimationPlaying(false)
         })
       setShouldLoad(false)
@@ -274,6 +274,17 @@ export default function DailyHelper() {
     onClick: () => handleReload(teamName, true),
   }
 
+  const getLoadErrorAction = (fix: LoadErrorInfo['fix']) => {
+    if (fix === 'settings') return openSettingsAction
+    if (fix)
+      return {
+        label: 'Authorize token',
+        icon: <KeyIcon />,
+        onClick: () => window.open(fix.authorizeUrl, '_blank', 'noopener'),
+      }
+    return tryAgainAction
+  }
+
   const resetFilters = () => {
     setIsPullRequestsWithoutLabelsHidden(false)
     setHiddenLabels(new Set())
@@ -357,7 +368,7 @@ export default function DailyHelper() {
                   icon={<CloudOffIcon />}
                   title="Couldn't load pull requests"
                   description={loadError.description}
-                  action={tryAgainAction}
+                  action={getLoadErrorAction(loadError.fix)}
                 />
               )}
             </Stack>
@@ -443,8 +454,8 @@ export default function DailyHelper() {
                     title="Couldn't refresh."
                     description={`Showing data from ${lastUpdated?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. ${loadError.description}`}
                     action={{
-                      label: 'Try again',
-                      onClick: tryAgainAction.onClick,
+                      ...getLoadErrorAction(loadError.fix),
+                      icon: undefined,
                     }}
                   />
                 </Box>

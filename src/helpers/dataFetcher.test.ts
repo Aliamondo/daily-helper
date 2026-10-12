@@ -77,12 +77,11 @@ const rawPr = (overrides: Partial<GraphQL_PullRequest>): GraphQL_PullRequest =>
 const search = (...nodes: GraphQL_PullRequest[]) =>
   Promise.resolve({ search: { nodes } })
 
-const fetchPullRequests = (handleInvalidTokenError = vi.fn()) =>
+const fetchPullRequests = () =>
   dataFetcher.fetchPullRequests({
     orgName: 'org',
     teamName: 'team',
     setProgress: vi.fn(),
-    handleInvalidTokenError,
   })
 
 beforeEach(() => {
@@ -113,22 +112,10 @@ describe('fetchPullRequests', () => {
     expect(api.requests.every(r => r.signal!.aborted)).toBe(true)
   })
 
-  it('reports an invalid token when loading the team fails with 401', async () => {
+  it('passes on errors when loading the team, auth ones included', async () => {
     api.team = undefined
     api.respond = () =>
-      Promise.reject(
-        Object.assign(new Error('Bad'), { response: { status: 401 } }),
-      )
-    const handleInvalidTokenError = vi.fn()
-
-    expect(await fetchPullRequests(handleInvalidTokenError)).toEqual([])
-    expect(handleInvalidTokenError).toHaveBeenCalled()
-  })
-
-  it('passes on other errors when loading the team', async () => {
-    api.team = undefined
-    api.respond = () =>
-      Promise.reject(Object.assign(new Error('Boom'), { status: 422 }))
+      Promise.reject(Object.assign(new Error('Boom'), { status: 403 }))
 
     await expect(fetchPullRequests()).rejects.toThrow('Boom')
   })
