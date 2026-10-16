@@ -99,6 +99,15 @@ describe('applyReviewRequiredFilter', () => {
     expect(keep(pr({ ...bot, title: 'Bump vite' }))).toBe(false)
     expect(keep(pr({ ...bot, title: 'Security fix for vite' }))).toBe(true)
   })
+
+  it('keeps whitelisted titles from unrecognized bots too', () => {
+    // GraphQL logins have no [bot] suffix, so unlisted apps look like people
+    const app = { author: user('crowdin-sync'), requestedReviewers: [] }
+    expect(keep(pr({ ...app, title: 'New Crowdin translations' }))).toBe(false)
+    expect(
+      keep(pr({ ...app, title: 'Security: new Crowdin translations' })),
+    ).toBe(true)
+  })
 })
 
 describe('isVisibleByLabels', () => {

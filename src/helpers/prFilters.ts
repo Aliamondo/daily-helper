@@ -44,14 +44,12 @@ export function applyReviewRequiredFilter(
   return prs.filter(pr => {
     if (pr.author.login === viewerLogin) return false
     if (pr.isDraft) return false
-    if (isBotUser(pr.author, filters) && !isTitleWhitelisted(pr.title, filters))
-      return false
+    const isWhitelisted = isTitleWhitelisted(pr.title, filters)
+    if (isBotUser(pr.author, filters) && !isWhitelisted) return false
     if (getEffectiveReviewDecision(pr) === 'APPROVED') return false
     const humanReviewers = pr.requestedReviewers.filter(
       r => !isBotUser(r, filters),
     )
-    const isWhitelisted =
-      isBotUser(pr.author, filters) && isTitleWhitelisted(pr.title, filters)
     // Auto-merge is a deliberate author action, so it signals review-readiness
     // even when nobody was explicitly requested as a reviewer
     return humanReviewers.length > 0 || !!pr.autoMerge || isWhitelisted
