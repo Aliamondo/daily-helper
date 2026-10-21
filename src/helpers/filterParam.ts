@@ -1,8 +1,9 @@
-export type ActiveFilter = 'mustReview' | 'myPrs' | 'myWork'
+export type ActiveFilter = 'mustReview' | 'mediumPriority' | 'myPrs' | 'myWork'
 
 // Readable values for the ?filter= URL param
 const FILTER_PARAMS: Record<ActiveFilter, string> = {
   mustReview: 'highest-priority',
+  mediumPriority: 'medium-priority',
   myPrs: 'my-prs',
   myWork: 'my-work',
 }

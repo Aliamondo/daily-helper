@@ -14,6 +14,7 @@ import Link from '@mui/material/Link'
 import NoCommentsIcon from '@mui/icons-material/ChatBubbleOutline'
 import PrCardEdges from '../../components/PrCardEdges'
 import PrNoteButton from '../../components/PrNoteButton'
+import PriorityStarButton from '../../components/PriorityStarButton'
 import PullRequestStatus from './PullRequestStatus'
 import Skeleton from '@mui/material/Skeleton'
 import Stack from '@mui/material/Stack'
@@ -185,6 +186,7 @@ export default function PullRequest({
                   >
                     #{number}
                   </Link>
+                  <PriorityStarButton prId={id} size="small" />
                 </Stack>
                 <Stack component="span" sx={{ flexShrink: 0 }}>
                   <DiffSize
@@ -379,6 +381,7 @@ export default function PullRequest({
                 >
                   (#{number})
                 </Link>
+                <PriorityStarButton prId={id} />
                 {!!lastCommitChecks ? (
                   <CommitChecksIndicator
                     commitChecks={lastCommitChecks.commitChecks}

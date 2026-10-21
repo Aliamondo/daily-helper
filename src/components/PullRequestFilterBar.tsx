@@ -132,6 +132,10 @@ function ViewToggle({ activeView, onViewToggle }: ViewToggleProps) {
 type ReviewFilterBarProps = {
   isMustReviewActive: boolean
   onMustReviewToggle: VoidFunction
+  // Nothing is medium on its own, so the filter only shows up once it's used
+  showMediumPriority: boolean
+  isMediumPriorityActive: boolean
+  onMediumPriorityToggle: VoidFunction
   isMyPrsActive: boolean
   onMyPrsToggle: VoidFunction
   isMyWorkActive: boolean
@@ -142,6 +146,9 @@ type ReviewFilterBarProps = {
 export default function PullRequestFilterBar({
   isMustReviewActive,
   onMustReviewToggle,
+  showMediumPriority,
+  isMediumPriorityActive,
+  onMediumPriorityToggle,
   isMyPrsActive,
   onMyPrsToggle,
   isMyWorkActive,
@@ -158,6 +165,15 @@ export default function PullRequestFilterBar({
         color="error.main"
         onClick={onMustReviewToggle}
       />
+      {showMediumPriority && (
+        <FilterButton
+          label="Medium Priority"
+          icon={StarRate}
+          active={isMediumPriorityActive}
+          color="warning.main"
+          onClick={onMediumPriorityToggle}
+        />
+      )}
       <FilterButton
         label="My PRs"
         icon={PersonIcon}
