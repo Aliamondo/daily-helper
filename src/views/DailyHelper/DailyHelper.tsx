@@ -47,6 +47,15 @@ import {
   readFilterParam,
   writeFilterParam,
 } from '../../helpers/filterParam'
+import {
+  PriorityStar,
+  PrOverrides,
+  getPriorityStar,
+  loadPrOverrides,
+  savePrOverrides,
+  setPriorityOverride,
+} from '../../helpers/prOverrides'
+import { PrOverridesContext } from '../../PrOverridesContext'
 import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
 import KanbanBoard from './KanbanBoard'
@@ -108,9 +117,41 @@ export default function DailyHelper() {
     window.history.replaceState(null, '', `${pathname}${search}${hash}`)
   }, [activeFilter])
   const isReviewFilterActive = activeFilter === 'mustReview'
+  const isMediumPriorityFilterActive = activeFilter === 'mediumPriority'
   const isMyPrsFilterActive = activeFilter === 'myPrs'
   const isMyWorkFilterActive = activeFilter === 'myWork'
   const [viewerLogin, setViewerLogin] = useState<string | null>(null)
+  const [prOverrides, setPrOverrides] = useState(loadPrOverrides)
+  // Every card's star needs these, not only the Highest Priority filter
+  const automaticHighestPriorityIds = useMemo(
+    () =>
+      viewerLogin
+        ? new Set(
+            applyReviewRequiredFilter(
+              pullRequests,
+              viewerLogin,
+              settingsHandler.loadFilters(),
+            ).map(pr => pr.id),
+          )
+        : new Set<string>(),
+    [pullRequests, viewerLogin],
+  )
+  const prOverridesContext = useMemo(() => {
+    const update = (change: (overrides: PrOverrides) => PrOverrides) =>
+      setPrOverrides(overrides => {
+        const updated = change(overrides)
+        savePrOverrides(updated)
+        return updated
+      })
+    return {
+      overrides: prOverrides,
+      automaticIds: automaticHighestPriorityIds,
+      setPriority: (
+        prId: string,
+        priority: Parameters<typeof setPriorityOverride>[2],
+      ) => update(o => setPriorityOverride(o, prId, priority)),
+    }
+  }, [prOverrides, automaticHighestPriorityIds])
   const [searchQuery, setSearchQuery] = useState('')
   const [activeView, setActiveView] = useState<'list' | 'kanban' | 'notes'>(
     settingsHandler.loadView(),
@@ -191,15 +232,30 @@ export default function DailyHelper() {
     })
   }, [shouldLoad])
 
-  const reviewRequiredFilteredIds = useMemo(() => {
-    if (!isReviewFilterActive || !viewerLogin) return null
-    const filtered = applyReviewRequiredFilter(
-      pullRequests,
-      viewerLogin,
-      settingsHandler.loadFilters(),
+  const priorityFilteredIds = useMemo(() => {
+    const filteredStar: PriorityStar | null = isReviewFilterActive
+      ? 'high'
+      : isMediumPriorityFilterActive
+        ? 'medium'
+        : null
+    if (!filteredStar || !viewerLogin) return null
+    return new Set(
+      pullRequests
+        .filter(
+          pr =>
+            getPriorityStar(pr.id, automaticHighestPriorityIds, prOverrides) ===
+            filteredStar,
+        )
+        .map(pr => pr.id),
     )
-    return new Set(filtered.map(pr => pr.id))
-  }, [pullRequests, isReviewFilterActive, viewerLogin])
+  }, [
+    pullRequests,
+    isReviewFilterActive,
+    isMediumPriorityFilterActive,
+    viewerLogin,
+    automaticHighestPriorityIds,
+    prOverrides,
+  ])
 
   const sortedPullRequests = useMemo(() => {
     const filters = settingsHandler.loadFilters()
@@ -219,8 +275,7 @@ export default function DailyHelper() {
                 hiddenLabels,
                 isPullRequestsWithoutLabelsHidden,
               ) &&
-              (!reviewRequiredFilteredIds ||
-                reviewRequiredFilteredIds.has(pr.id)) &&
+              (!priorityFilteredIds || priorityFilteredIds.has(pr.id)) &&
               (!isMyPrsFilterActive || pr.author.login === viewerLogin) &&
               (!isMyWorkFilterActive || isMyWork(pr, viewerLogin)) &&
               matchesSearch(pr, searchQuery),
@@ -228,7 +283,7 @@ export default function DailyHelper() {
     [
       sortedPullRequests,
       isLoadingAnimationPlaying,
-      reviewRequiredFilteredIds,
+      priorityFilteredIds,
       isMyPrsFilterActive,
       isMyWorkFilterActive,
       viewerLogin,
@@ -291,7 +346,7 @@ export default function DailyHelper() {
   }
 
   return (
-    <>
+    <PrOverridesContext.Provider value={prOverridesContext}>
       <AppBar
         loadingProgress={loadingProgress}
         isLoadingAnimationPlaying={isLoadingAnimationPlaying}
@@ -396,6 +451,16 @@ export default function DailyHelper() {
                       f === 'mustReview' ? null : 'mustReview',
                     )
                   }
+                  showMediumPriority={
+                    isMediumPriorityFilterActive ||
+                    pullRequests.some(pr => prOverrides[pr.id] === 'medium')
+                  }
+                  isMediumPriorityActive={isMediumPriorityFilterActive}
+                  onMediumPriorityToggle={() =>
+                    setActiveFilter(f =>
+                      f === 'mediumPriority' ? null : 'mediumPriority',
+                    )
+                  }
                   isMyPrsActive={isMyPrsFilterActive}
                   onMyPrsToggle={() =>
                     setActiveFilter(f => (f === 'myPrs' ? null : 'myPrs'))
@@ -471,16 +536,27 @@ export default function DailyHelper() {
                         </div>
                       ))
                   ) : (
-                    <AnimatePresence mode="popLayout">
+                    // A leaving card keeps its space while it slides out, then
+                    // collapses. Dropping it at once makes the list shorter in
+                    // one frame, and when scrolled down the cards above jump.
+                    // Switching filters swaps the whole list instead, so new
+                    // cards don't wait below the ones still sliding out
+                    <AnimatePresence key={activeFilter}>
                       {visiblePullRequests.map((pr, index) => (
                         <motion.div
                           key={pr.id}
+                          style={{ overflow: 'hidden' }}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{
                             opacity: 0,
                             x: '100%',
-                            transition: { duration: 0.5, ease: 'easeIn' },
+                            height: 0,
+                            transition: {
+                              duration: 0.5,
+                              ease: 'easeIn',
+                              height: { delay: 0.3, duration: 0.25 },
+                            },
                           }}
                           transition={{
                             duration: 0.2,
@@ -518,7 +594,7 @@ export default function DailyHelper() {
           )}
         </Box>
       </Box>
-    </>
+    </PrOverridesContext.Provider>
   )
 }
 

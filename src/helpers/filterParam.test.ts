@@ -4,6 +4,7 @@ import { readFilterParam, writeFilterParam } from './filterParam'
 describe('filterParam', () => {
   it('reads each filter from the URL', () => {
     expect(readFilterParam('?filter=highest-priority')).toBe('mustReview')
+    expect(readFilterParam('?filter=medium-priority')).toBe('mediumPriority')
     expect(readFilterParam('?filter=my-prs')).toBe('myPrs')
     expect(readFilterParam('?filter=my-work')).toBe('myWork')
   })
