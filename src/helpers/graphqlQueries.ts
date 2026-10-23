@@ -474,6 +474,30 @@ function getPullRequestsByTeamReviewRequestedQuery({
   return minify(query)
 }
 
+type GetPullRequestsForViewerProps = {
+  orgName: string
+  includeChecks?: boolean
+}
+function getPullRequestsForViewerQuery({
+  orgName,
+  includeChecks = false,
+}: GetPullRequestsForViewerProps) {
+  // ISSUE_ADVANCED is the search type that supports OR between qualifiers
+  const query = `{
+    search(
+      query: "is:open org:${orgName} type:pr (user-review-requested:@me OR assignee:@me OR reviewed-by:@me)"
+      first: 100
+      type: ISSUE_ADVANCED
+    ) {
+        nodes {
+          ${getPullRequestNode(includeChecks)}
+        }
+      }
+    }`
+
+  return minify(query)
+}
+
 type GetCommitChecksProps = {
   orgName: string
   repoName: string
@@ -507,6 +531,7 @@ export {
   getPullRequestsByUserQuery,
   getPullRequestsByRepositoriesQuery,
   getPullRequestsByTeamReviewRequestedQuery,
+  getPullRequestsForViewerQuery,
   getCommitChecksQuery,
 }
 export { getNextPageQuery, getPreviousPageQuery }
