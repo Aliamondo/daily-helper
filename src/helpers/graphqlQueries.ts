@@ -476,19 +476,18 @@ function getPullRequestsByTeamReviewRequestedQuery({
 
 type GetPullRequestsForViewerProps = {
   orgName: string
-  qualifier: 'user-review-requested' | 'assignee'
   includeChecks?: boolean
 }
 function getPullRequestsForViewerQuery({
   orgName,
-  qualifier,
   includeChecks = false,
 }: GetPullRequestsForViewerProps) {
+  // ISSUE_ADVANCED is the search type that supports OR between qualifiers
   const query = `{
     search(
-      query: "is:open org:${orgName} type:pr ${qualifier}:@me"
+      query: "is:open org:${orgName} type:pr (user-review-requested:@me OR assignee:@me OR reviewed-by:@me)"
       first: 100
-      type: ISSUE
+      type: ISSUE_ADVANCED
     ) {
         nodes {
           ${getPullRequestNode(includeChecks)}

@@ -521,8 +521,8 @@ async function fetchPullRequests({
   setProgress(10)
 
   let progress = 10
-  // +1 for the team-review-requested query, +2 for the viewer's own queries
-  const totalResources = teamUsers.length + (teamRepositories?.length ?? 0) + 3
+  // +1 for the team-review-requested query, +1 for the viewer's own query
+  const totalResources = teamUsers.length + (teamRepositories?.length ?? 0) + 2
 
   const pullRequestPromises = teamUsers.map(user =>
     getClient()<GraphQL_PullRequestsResponse>(
@@ -568,19 +568,17 @@ async function fetchPullRequests({
     }),
   )
 
-  // PRs that request or assign the viewer directly, even outside tracked repos
-  const viewerQualifiers = ['user-review-requested', 'assignee'] as const
-  viewerQualifiers.forEach(qualifier =>
-    pullRequestPromises.push(
-      getClient()<GraphQL_PullRequestsResponse>(
-        getPullRequestsForViewerQuery({ orgName, qualifier, includeChecks }),
-        options,
-      ).then((res: GraphQL_PullRequestsResponse) => {
-        progress += 90 / totalResources
-        setProgress(progress)
-        return res
-      }),
-    ),
+  // PRs that request, assign or were reviewed by the viewer, even outside
+  // tracked repos
+  pullRequestPromises.push(
+    getClient()<GraphQL_PullRequestsResponse>(
+      getPullRequestsForViewerQuery({ orgName, includeChecks }),
+      options,
+    ).then((res: GraphQL_PullRequestsResponse) => {
+      progress += 90 / totalResources
+      setProgress(progress)
+      return res
+    }),
   )
 
   const rawPullRequestsData = await Promise.all(pullRequestPromises).catch(
