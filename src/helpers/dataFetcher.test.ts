@@ -239,6 +239,67 @@ describe('fetchPullRequests', () => {
     expect((await fetchPullRequests()).map(pr => pr.id)).toEqual(['new', 'old'])
   })
 
+  describe('when a search is too heavy for GitHub', () => {
+    const resourceLimitError = () =>
+      Promise.reject(
+        new Error(
+          'Request failed due to following response errors:\n - Resource limits for this query exceeded.',
+        ),
+      )
+    const page = (
+      endCursor: string,
+      hasNextPage: boolean,
+      ...nodes: GraphQL_PullRequest[]
+    ) =>
+      Promise.resolve({
+        search: { nodes, pageInfo: { endCursor, hasNextPage } },
+      })
+    const aliceSearches = () =>
+      api.requests.filter(r => r.query.includes('author:alice'))
+
+    it('asks for 100 PRs in a single request when that works', async () => {
+      api.respond = () => search(rawPr({}))
+
+      await fetchPullRequests()
+
+      // alice, the team review requests and the viewer's PRs
+      expect(api.requests).toHaveLength(3)
+      expect(api.requests.some(r => r.query.includes('after:'))).toBe(false)
+    })
+
+    it('pages through smaller pages and combines them', async () => {
+      const a = rawPr({ id: 'a', createdAt: '2026-03-01T00:00:00Z' })
+      const b = rawPr({ id: 'b', createdAt: '2026-02-01T00:00:00Z' })
+      const c = rawPr({ id: 'c', createdAt: '2026-01-01T00:00:00Z' })
+      api.respond = query => {
+        if (!query.includes('author:alice')) return search()
+        if (query.includes('first:50 after:""')) return page('c1', true, a, b)
+        if (query.includes('first:25 after:"c1"'))
+          return page('c2', false, b, c)
+        // The first search at 100 and the second page at 50
+        return resourceLimitError()
+      }
+
+      expect((await fetchPullRequests()).map(pr => pr.id)).toEqual([
+        'a',
+        'b',
+        'c',
+      ])
+      expect(aliceSearches()).toHaveLength(4)
+    })
+
+    it('fails like before when even the smallest page is too heavy', async () => {
+      api.respond = query =>
+        query.includes('author:alice') ? resourceLimitError() : search()
+
+      await expect(fetchPullRequests()).rejects.toThrow(
+        'Resource limits for this query exceeded',
+      )
+      // 100, 50 and 25
+      expect(aliceSearches()).toHaveLength(3)
+    })
+  })
+
   it('maps GitHub data to the shape the board uses', async () => {
     const bob = user('bob')
     const erin = user('erin')

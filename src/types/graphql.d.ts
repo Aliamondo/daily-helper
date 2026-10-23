@@ -84,6 +84,10 @@ type GraphQL_AutoMergeRequest = {
 type GraphQL_PullRequestsResponse = {
   search: {
     nodes: GraphQL_PullRequest[]
+    pageInfo: {
+      hasNextPage: boolean
+      endCursor: string | null
+    }
   }
 }
 
@@ -98,11 +102,7 @@ type GraphQL_Repository = {
 type GraphQL_Review = {
   body: string
   state:
-    | 'APPROVED'
-    | 'CHANGES_REQUESTED'
-    | 'COMMENTED'
-    | 'PENDING'
-    | 'DISMISSED'
+    'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'PENDING' | 'DISMISSED'
   author: GraphQL_User
   comments: {
     totalCount: number
@@ -169,12 +169,7 @@ type GraphQL_CommitCheckRun = {
   id: string
   name: string
   status:
-    | 'QUEUED'
-    | 'IN_PROGRESS'
-    | 'COMPLETED'
-    | 'WAITING'
-    | 'PENDING'
-    | 'REQUESTED'
+    'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'WAITING' | 'PENDING' | 'REQUESTED'
   conclusion: 'SUCCESS' | 'FAILURE' | 'SKIPPED' | 'CANCELLED' | 'NEUTRAL' | null // there are more
   permalink: string
   startedAt: string | null

@@ -81,11 +81,7 @@ type Review = {
 }
 
 type ReviewState =
-  | 'APPROVED'
-  | 'CHANGES_REQUESTED'
-  | 'COMMENTED'
-  | 'PENDING'
-  | 'DISMISSED'
+  'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'PENDING' | 'DISMISSED'
 
 type CommitCheck = {
   id: string

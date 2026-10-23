@@ -399,20 +399,26 @@ type GetPullRequestsByUserProps = {
   orgName: string
   author: string
   includeChecks?: boolean
+  pagination?: string
 }
 function getPullRequestsByUserQuery({
   orgName,
   author,
   includeChecks = false,
+  pagination = 'first: 100',
 }: GetPullRequestsByUserProps) {
   const query = `{
     search(
       query: "is:open org:${orgName} type:pr author:${author}"
-      first: 100
+      ${pagination}
       type: ISSUE
     ) {
         nodes {
           ${getPullRequestNode(includeChecks)}
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
         }
       }
     }`
@@ -424,21 +430,27 @@ type GetPullRequestsByRepositoriesQueryProps = {
   repository: string
   excludeAuthors?: string[]
   includeChecks?: boolean
+  pagination?: string
 }
 function getPullRequestsByRepositoriesQuery({
   repository,
   excludeAuthors = [],
   includeChecks = false,
+  pagination = 'first: 100',
 }: GetPullRequestsByRepositoriesQueryProps) {
   const exclusions = excludeAuthors.map(login => `-author:${login}`).join(' ')
   const query = `{
     search(
       query: "is:open type:pr repo:${repository} ${exclusions}"
-      first: 100
+      ${pagination}
       type: ISSUE
     ) {
         nodes {
           ${getPullRequestNode(includeChecks)}
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
         }
       }
     }`
@@ -451,22 +463,28 @@ type GetPullRequestsByTeamReviewRequestedProps = {
   teamName: string
   excludeRepositories?: string[]
   includeChecks?: boolean
+  pagination?: string
 }
 function getPullRequestsByTeamReviewRequestedQuery({
   orgName,
   teamName,
   excludeRepositories = [],
   includeChecks = false,
+  pagination = 'first: 100',
 }: GetPullRequestsByTeamReviewRequestedProps) {
   const exclusions = excludeRepositories.map(repo => `-repo:${repo}`).join(' ')
   const query = `{
     search(
       query: "is:open type:pr team-review-requested:${orgName}/${teamName} ${exclusions}"
-      first: 100
+      ${pagination}
       type: ISSUE
     ) {
         nodes {
           ${getPullRequestNode(includeChecks)}
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
         }
       }
     }`
@@ -477,20 +495,26 @@ function getPullRequestsByTeamReviewRequestedQuery({
 type GetPullRequestsForViewerProps = {
   orgName: string
   includeChecks?: boolean
+  pagination?: string
 }
 function getPullRequestsForViewerQuery({
   orgName,
   includeChecks = false,
+  pagination = 'first: 100',
 }: GetPullRequestsForViewerProps) {
   // ISSUE_ADVANCED is the search type that supports OR between qualifiers
   const query = `{
     search(
       query: "is:open org:${orgName} type:pr (user-review-requested:@me OR assignee:@me OR reviewed-by:@me)"
-      first: 100
+      ${pagination}
       type: ISSUE_ADVANCED
     ) {
         nodes {
           ${getPullRequestNode(includeChecks)}
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
         }
       }
     }`
