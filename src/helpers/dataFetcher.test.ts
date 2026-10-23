@@ -107,8 +107,9 @@ describe('fetchPullRequests', () => {
 
     await expect(fetchPullRequests()).rejects.toThrow('HTTP 422')
 
-    // alice, bob, the team repository and the team review requests
-    expect(api.requests).toHaveLength(4)
+    // alice, bob, the team repository, the team review requests and the
+    // viewer's review requests and assignments
+    expect(api.requests).toHaveLength(6)
     expect(api.requests.every(r => r.signal!.aborted)).toBe(true)
   })
 
@@ -149,6 +150,8 @@ describe('fetchPullRequests', () => {
       expect.stringContaining('author:bob'),
       expect.stringContaining('repo:org/repo'),
       expect.stringContaining('team-review-requested:org/team'),
+      expect.stringContaining('org:org type:pr user-review-requested:@me'),
+      expect.stringContaining('org:org type:pr assignee:@me'),
     ])
   })
 

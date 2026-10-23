@@ -474,6 +474,31 @@ function getPullRequestsByTeamReviewRequestedQuery({
   return minify(query)
 }
 
+type GetPullRequestsForViewerProps = {
+  orgName: string
+  qualifier: 'user-review-requested' | 'assignee'
+  includeChecks?: boolean
+}
+function getPullRequestsForViewerQuery({
+  orgName,
+  qualifier,
+  includeChecks = false,
+}: GetPullRequestsForViewerProps) {
+  const query = `{
+    search(
+      query: "is:open org:${orgName} type:pr ${qualifier}:@me"
+      first: 100
+      type: ISSUE
+    ) {
+        nodes {
+          ${getPullRequestNode(includeChecks)}
+        }
+      }
+    }`
+
+  return minify(query)
+}
+
 type GetCommitChecksProps = {
   orgName: string
   repoName: string
@@ -507,6 +532,7 @@ export {
   getPullRequestsByUserQuery,
   getPullRequestsByRepositoriesQuery,
   getPullRequestsByTeamReviewRequestedQuery,
+  getPullRequestsForViewerQuery,
   getCommitChecksQuery,
 }
 export { getNextPageQuery, getPreviousPageQuery }
