@@ -475,6 +475,59 @@ async function fetchAllTeamUserLogins(
   return logins
 }
 
+// Each search page asks for up to 100 PRs, each with up to 100 commits,
+// reviews, labels and so on. A big result set can go over GitHub's per-query
+// limit, so that search is retried in smaller pages
+const SMALLER_SEARCH_PAGE_SIZES = [50, 25]
+
+function isResourceLimitError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.includes('Resource limits for this query exceeded')
+  )
+}
+
+async function searchPullRequests(
+  buildQuery: (pagination?: string) => string,
+  options: RequestParameters,
+): Promise<GraphQL_PullRequestsResponse> {
+  try {
+    return await getClient()<GraphQL_PullRequestsResponse>(
+      buildQuery(),
+      options,
+    )
+  } catch (error) {
+    if (!isResourceLimitError(error)) throw error
+  }
+
+  const nodes: GraphQL_PullRequest[] = []
+  let sizeIndex = 0
+  let endCursor = ''
+  let hasNextPage = true
+  while (hasNextPage) {
+    const pageSize = SMALLER_SEARCH_PAGE_SIZES[sizeIndex]
+    try {
+      const { search } = await getClient()<GraphQL_PullRequestsResponse>(
+        buildQuery(getNextPageQuery({ pageSize, pageCursor: endCursor })),
+        options,
+      )
+      nodes.push(...search.nodes)
+      endCursor = search.pageInfo.endCursor ?? ''
+      hasNextPage = search.pageInfo.hasNextPage
+    } catch (error) {
+      if (
+        !isResourceLimitError(error) ||
+        ++sizeIndex >= SMALLER_SEARCH_PAGE_SIZES.length
+      ) {
+        throw error
+      }
+    }
+  }
+  return {
+    search: { nodes, pageInfo: { hasNextPage: false, endCursor: null } },
+  }
+}
+
 async function fetchPullRequests({
   orgName,
   teamName,
@@ -525,8 +578,14 @@ async function fetchPullRequests({
   const totalResources = teamUsers.length + (teamRepositories?.length ?? 0) + 2
 
   const pullRequestPromises = teamUsers.map(user =>
-    getClient()<GraphQL_PullRequestsResponse>(
-      getPullRequestsByUserQuery({ orgName, author: user, includeChecks }),
+    searchPullRequests(
+      pagination =>
+        getPullRequestsByUserQuery({
+          orgName,
+          author: user,
+          includeChecks,
+          pagination,
+        }),
       options,
     ).then((res: GraphQL_PullRequestsResponse) => {
       progress += 90 / totalResources
@@ -537,12 +596,14 @@ async function fetchPullRequests({
 
   teamRepositories?.forEach(repo =>
     pullRequestPromises.push(
-      getClient()<GraphQL_PullRequestsResponse>(
-        getPullRequestsByRepositoriesQuery({
-          repository: repo,
-          excludeAuthors: teamUsers,
-          includeChecks,
-        }),
+      searchPullRequests(
+        pagination =>
+          getPullRequestsByRepositoriesQuery({
+            repository: repo,
+            excludeAuthors: teamUsers,
+            includeChecks,
+            pagination,
+          }),
         options,
       ).then((res: GraphQL_PullRequestsResponse) => {
         progress += 90 / totalResources
@@ -553,13 +614,15 @@ async function fetchPullRequests({
   )
 
   pullRequestPromises.push(
-    getClient()<GraphQL_PullRequestsResponse>(
-      getPullRequestsByTeamReviewRequestedQuery({
-        orgName,
-        teamName,
-        excludeRepositories: teamRepositories,
-        includeChecks,
-      }),
+    searchPullRequests(
+      pagination =>
+        getPullRequestsByTeamReviewRequestedQuery({
+          orgName,
+          teamName,
+          excludeRepositories: teamRepositories,
+          includeChecks,
+          pagination,
+        }),
       options,
     ).then((res: GraphQL_PullRequestsResponse) => {
       progress += 90 / totalResources
@@ -571,8 +634,9 @@ async function fetchPullRequests({
   // PRs that request, assign or were reviewed by the viewer, even outside
   // tracked repos
   pullRequestPromises.push(
-    getClient()<GraphQL_PullRequestsResponse>(
-      getPullRequestsForViewerQuery({ orgName, includeChecks }),
+    searchPullRequests(
+      pagination =>
+        getPullRequestsForViewerQuery({ orgName, includeChecks, pagination }),
       options,
     ).then((res: GraphQL_PullRequestsResponse) => {
       progress += 90 / totalResources
