@@ -3,6 +3,7 @@ import {
   applyReviewRequiredFilter,
   countLabels,
   isMyWork,
+  isOnlyMentioned,
   isVisibleByLabels,
   matchesSearch,
 } from './prFilters'
@@ -33,6 +34,7 @@ const pr = (overrides: Partial<PullRequest>): PullRequest =>
     reviews: [],
     requestedReviewers: [reviewer],
     autoMerge: null,
+    foundByViewerSearch: false,
     ...overrides,
   }) as PullRequest
 
@@ -100,6 +102,14 @@ describe('applyReviewRequiredFilter', () => {
     expect(keep(pr({ ...bot, title: 'Security fix for vite' }))).toBe(true)
   })
 
+  it('keeps PRs that only mention the viewer, whatever their state', () => {
+    const mention = { foundByViewerSearch: true, requestedReviewers: [] }
+    expect(keep(pr(mention))).toBe(true)
+    expect(keep(pr({ ...mention, isDraft: true }))).toBe(true)
+    expect(keep(pr({ ...mention, reviewDecision: 'APPROVED' }))).toBe(true)
+    expect(keep(pr({ ...mention, author: user('renovate[bot]') }))).toBe(true)
+  })
+
   it('keeps whitelisted titles from unrecognized bots too', () => {
     // GraphQL logins have no [bot] suffix, so unlisted apps look like people
     const app = { author: user('crowdin-sync'), requestedReviewers: [] }
@@ -107,6 +117,29 @@ describe('applyReviewRequiredFilter', () => {
     expect(
       keep(pr({ ...app, title: 'Security: new Crowdin translations' })),
     ).toBe(true)
+  })
+})
+
+describe('isOnlyMentioned', () => {
+  it("matches PRs from the viewer's search that don't involve them otherwise", () => {
+    const found = { foundByViewerSearch: true }
+    expect(isOnlyMentioned(pr(found), 'me')).toBe(true)
+    expect(isOnlyMentioned(pr({}), 'me')).toBe(false)
+    expect(
+      isOnlyMentioned(pr({ ...found, assignees: [user('me')] }), 'me'),
+    ).toBe(false)
+    expect(
+      isOnlyMentioned(pr({ ...found, requestedReviewers: [user('me')] }), 'me'),
+    ).toBe(false)
+    expect(
+      isOnlyMentioned(
+        pr({
+          ...found,
+          reviews: [{ state: 'COMMENTED', reviewer: user('me') }],
+        }),
+        'me',
+      ),
+    ).toBe(false)
   })
 })
 

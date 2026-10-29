@@ -475,9 +475,9 @@ function getPullRequestsByTeamReviewRequestedQuery({
   const exclusions = excludeRepositories.map(repo => `-repo:${repo}`).join(' ')
   const query = `{
     search(
-      query: "is:open type:pr team-review-requested:${orgName}/${teamName} ${exclusions}"
+      query: "is:open type:pr (team-review-requested:${orgName}/${teamName} OR team:${orgName}/${teamName}) ${exclusions}"
       ${pagination}
-      type: ISSUE
+      type: ISSUE_ADVANCED
     ) {
         nodes {
           ${getPullRequestNode(includeChecks)}
@@ -505,7 +505,7 @@ function getPullRequestsForViewerQuery({
   // ISSUE_ADVANCED is the search type that supports OR between qualifiers
   const query = `{
     search(
-      query: "is:open org:${orgName} type:pr (user-review-requested:@me OR assignee:@me OR reviewed-by:@me)"
+      query: "is:open org:${orgName} type:pr (user-review-requested:@me OR assignee:@me OR reviewed-by:@me OR mentions:@me)"
       ${pagination}
       type: ISSUE_ADVANCED
     ) {
