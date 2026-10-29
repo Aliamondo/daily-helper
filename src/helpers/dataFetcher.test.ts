@@ -149,11 +149,29 @@ describe('fetchPullRequests', () => {
       expect.stringContaining('members'),
       expect.stringContaining('author:bob'),
       expect.stringContaining('repo:org/repo'),
-      expect.stringContaining('team-review-requested:org/team'),
       expect.stringContaining(
-        'org:org type:pr (user-review-requested:@me OR assignee:@me OR reviewed-by:@me)',
+        '(team-review-requested:org/team OR team:org/team)',
+      ),
+      expect.stringContaining(
+        'org:org type:pr (user-review-requested:@me OR assignee:@me OR reviewed-by:@me OR mentions:@me)',
       ),
     ])
+  })
+
+  it("flags the PRs the viewer's own search found", async () => {
+    api.respond = query => {
+      if (query.includes('author:alice'))
+        return search(rawPr({ id: 'team' }), rawPr({ id: 'both' }))
+      if (query.includes('mentions:@me'))
+        return search(rawPr({ id: 'both' }), rawPr({ id: 'viewer' }))
+      return search()
+    }
+
+    const prs = await fetchPullRequests()
+
+    expect(
+      Object.fromEntries(prs.map(pr => [pr.id, pr.foundByViewerSearch])),
+    ).toEqual({ team: false, both: true, viewer: true })
   })
 
   it('includes pipeline status when enabled', async () => {

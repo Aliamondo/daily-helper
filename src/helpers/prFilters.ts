@@ -42,6 +42,8 @@ export function applyReviewRequiredFilter(
   filters: Settings_Filters,
 ): PullRequest[] {
   return prs.filter(pr => {
+    // Being pinged personally is a request, whatever state the PR is in
+    if (isOnlyMentioned(pr, viewerLogin)) return true
     if (pr.author.login === viewerLogin) return false
     if (pr.isDraft) return false
     const isWhitelisted = isTitleWhitelisted(pr.title, filters)
@@ -54,6 +56,14 @@ export function applyReviewRequiredFilter(
     // even when nobody was explicitly requested as a reviewer
     return humanReviewers.length > 0 || !!pr.autoMerge || isWhitelisted
   })
+}
+
+/**
+ * GitHub doesn't say which part of the viewer's search matched, so a PR found
+ * by it that doesn't involve the viewer in any other way was a mention
+ */
+export function isOnlyMentioned(pr: PullRequest, viewerLogin: string): boolean {
+  return pr.foundByViewerSearch && !isMyWork(pr, viewerLogin)
 }
 
 export type LabelWithCount = Label & {

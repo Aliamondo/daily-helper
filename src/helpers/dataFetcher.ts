@@ -631,19 +631,18 @@ async function fetchPullRequests({
     }),
   )
 
-  // PRs that request, assign or were reviewed by the viewer, even outside
-  // tracked repos
-  pullRequestPromises.push(
-    searchPullRequests(
-      pagination =>
-        getPullRequestsForViewerQuery({ orgName, includeChecks, pagination }),
-      options,
-    ).then((res: GraphQL_PullRequestsResponse) => {
-      progress += 90 / totalResources
-      setProgress(progress)
-      return res
-    }),
-  )
+  // PRs that request, assign, mention or were reviewed by the viewer, even
+  // outside tracked repos
+  const viewerPullRequestsPromise = searchPullRequests(
+    pagination =>
+      getPullRequestsForViewerQuery({ orgName, includeChecks, pagination }),
+    options,
+  ).then((res: GraphQL_PullRequestsResponse) => {
+    progress += 90 / totalResources
+    setProgress(progress)
+    return res
+  })
+  pullRequestPromises.push(viewerPullRequestsPromise)
 
   const rawPullRequestsData = await Promise.all(pullRequestPromises).catch(
     error => {
@@ -661,8 +660,11 @@ async function fetchPullRequests({
     uniquePullRequests.set(pr.id, pr),
   )
 
+  const viewerPullRequestIds = new Set(
+    (await viewerPullRequestsPromise).search.nodes.map(pr => pr.id),
+  )
   const pullRequests = Array.from(uniquePullRequests.values()).map(pr =>
-    normalizePR(pr, includeChecks),
+    normalizePR(pr, includeChecks, viewerPullRequestIds.has(pr.id)),
   )
 
   pullRequests.sort((a, b) => b.createdAt.valueOf() - a.createdAt.valueOf())
@@ -676,6 +678,7 @@ async function fetchPullRequests({
 function normalizePR(
   pr: GraphQL_PullRequest,
   includeChecks: boolean,
+  foundByViewerSearch: boolean,
 ): PullRequest {
   return {
     id: pr.id,
@@ -716,6 +719,7 @@ function normalizePR(
     requestedReviewers: getReviewers(pr.reviewRequests.nodes),
     contributors: getContributors(pr.commits.nodes, pr.author),
     assignees: pr.assignees.nodes,
+    foundByViewerSearch,
     lastCommitChecks:
       includeChecks && pr.lastCommit?.nodes[0]
         ? getLastCommitChecks(

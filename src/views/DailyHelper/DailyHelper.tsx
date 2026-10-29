@@ -634,6 +634,7 @@ function generateDummyPullRequests(total: number): PullRequest[] {
       requestedReviewers: [],
       contributors: [],
       assignees: [],
+      foundByViewerSearch: false,
       lastCommitChecks: {
         commitChecks: [],
         result: 'SUCCESS',

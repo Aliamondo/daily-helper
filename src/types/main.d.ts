@@ -37,6 +37,9 @@ type PullRequest = {
   reviews: Review[]
   requestedReviewers: User[]
   assignees: User[]
+  // Matched the viewer's own search: review requests, assignments, reviews and
+  // mentions
+  foundByViewerSearch: boolean
   lastCommitChecks: {
     commitChecks: CommitCheck[]
     result: CommitCheck['result'] | null
