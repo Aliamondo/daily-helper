@@ -18,6 +18,7 @@ type GraphQL_User = {
 
 type GraphQL_PullRequest = {
   title: string
+  headRefName: string
   permalink: string
   number: number
   createdAt: string

@@ -684,6 +684,7 @@ function normalizePR(
     id: pr.id,
     author: pr.author,
     title: pr.title,
+    headRefName: pr.headRefName,
     number: pr.number,
     url: pr.permalink,
     repositoryUrl: pr.repository.url,

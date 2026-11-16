@@ -613,6 +613,7 @@ function generateDummyPullRequests(total: number): PullRequest[] {
       url: '',
       repositoryUrl: '',
       repositoryName: '',
+      headRefName: '',
       baseRef: 'master',
       repositoryBaseRef: 'master',
       state: 'OPEN',

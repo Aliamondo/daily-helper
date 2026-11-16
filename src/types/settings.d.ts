@@ -9,6 +9,11 @@ type Settings_Filters = {
   titleWhitelist: string[]
 }
 
+type Settings_Jira = {
+  baseUrl: string
+  projectKeys: string[]
+}
+
 type Settings_All = {
   githubToken: string
   orgName: string | null
@@ -19,6 +24,7 @@ type Settings_All = {
   loadPipelineStatus?: boolean
   aliases?: Record<string, string>
   filters?: Settings_Filters
+  jira?: Settings_Jira
   view?: 'list' | 'kanban' | 'notes'
   colorMode?: 'light' | 'dark'
   sort?: {

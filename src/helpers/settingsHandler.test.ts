@@ -19,6 +19,7 @@ describe('settingsHandler', () => {
     })
     expect(settingsHandler.loadView()).toBe('list')
     expect(settingsHandler.loadFilters().botLogins).toContain('dependabot')
+    expect(settingsHandler.loadJira()).toEqual({ baseUrl: '', projectKeys: [] })
   })
 
   it('merges teams on partial save instead of replacing them', () => {

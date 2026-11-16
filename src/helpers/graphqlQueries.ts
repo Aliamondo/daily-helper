@@ -120,6 +120,7 @@ function getPullRequestNode(includeChecks = false) {
   return `
 ... on PullRequest {
   title
+  headRefName
   permalink
   number
   createdAt
