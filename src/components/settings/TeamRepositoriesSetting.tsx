@@ -13,7 +13,7 @@ import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
 import { usePagination } from '../../hooks/usePagination'
 
-const PAGE_SIZE = 24
+const PAGE_SIZE = 20
 
 function getPermissionColor(
   permission: TeamRepository['permission'],
