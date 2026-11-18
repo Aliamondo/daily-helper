@@ -9,6 +9,7 @@ import CommitChecksIndicator from '../../components/CommitChecksIndicator'
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows'
 import DiffSize from '../../components/DiffSize'
 import Grid from '@mui/material/Grid'
+import JiraLinks from '../../components/JiraLinks'
 import LabelGroup from '../../components/LabelGroup'
 import Link from '@mui/material/Link'
 import NoCommentsIcon from '@mui/icons-material/ChatBubbleOutline'
@@ -22,6 +23,7 @@ import Typography from '@mui/material/Typography'
 import UserBadge from '../../components/UserBadge'
 import { dataFetcher } from '../../helpers/dataFetcher'
 import { fromNow } from '../../helpers/time'
+import { getJiraTickets } from '../../helpers/jiraKeys'
 import { getEffectiveReviewDecision } from '../../helpers/getEffectiveReviewDecision'
 import { getMergeBlocker } from '../../helpers/getMergeBlocker'
 import {
@@ -45,6 +47,7 @@ export default function PullRequest({
   variant = 'full',
   id,
   title,
+  headRefName,
   author,
   comments,
   number,
@@ -92,6 +95,10 @@ export default function PullRequest({
         missingRequiredChecks,
         lastCommitDate,
       })
+  const jiraTickets = getJiraTickets(
+    [title, headRefName],
+    settingsHandler.loadJira(),
+  )
   const effectiveReviewDecision = getEffectiveReviewDecision({
     reviewDecision,
     reviews,
@@ -186,6 +193,7 @@ export default function PullRequest({
                   >
                     #{number}
                   </Link>
+                  <JiraLinks tickets={jiraTickets} variant="compact" />
                   <PriorityStarButton prId={id} size="small" />
                 </Stack>
                 <Stack component="span" sx={{ flexShrink: 0 }}>
@@ -381,6 +389,7 @@ export default function PullRequest({
                 >
                   (#{number})
                 </Link>
+                <JiraLinks tickets={jiraTickets} />
                 <PriorityStarButton prId={id} />
                 {!!lastCommitChecks ? (
                   <CommitChecksIndicator

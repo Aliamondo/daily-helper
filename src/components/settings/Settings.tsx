@@ -31,6 +31,7 @@ import Switch from '@mui/material/Switch'
 import Tab from '@mui/material/Tab'
 import Tabs from '@mui/material/Tabs'
 import FiltersSetting from './FiltersSetting'
+import JiraSetting from './JiraSetting'
 import TeamMembersSetting from './TeamMembersSetting'
 import TeamRepositoriesSetting from './TeamRepositoriesSetting'
 import Typography from '@mui/material/Typography'
@@ -39,7 +40,13 @@ import { queryCache } from '../../helpers/queryCache'
 import { settingsHandler } from '../../helpers/settingsHandler'
 import { useTheme } from '@mui/material/styles'
 
-const SETTINGS_TABS = ['general', 'members', 'repositories', 'filters'] as const
+const SETTINGS_TABS = [
+  'general',
+  'members',
+  'repositories',
+  'filters',
+  'jira',
+] as const
 export type SettingsTab = (typeof SETTINGS_TABS)[number]
 
 type SettingsProps = {
@@ -78,6 +85,9 @@ export default function Settings({
   )
   const [filters, setFilters] = useState<Settings_Filters>(() =>
     settingsHandler.loadFilters(),
+  )
+  const [jira, setJira] = useState<Settings_Jira>(() =>
+    settingsHandler.loadJira(),
   )
   const [saveKey, setSaveKey] = useState(0)
   const [isConfirmDiscardOpen, setIsConfirmDiscardOpen] = useState(false)
@@ -121,6 +131,7 @@ export default function Settings({
       },
       loadPipelineStatus,
       filters,
+      jira,
     })
 
     setSaveKey(k => k + 1)
@@ -145,7 +156,8 @@ export default function Settings({
     JSON.stringify(settingsHandler.loadTeamNames()) ===
       JSON.stringify(teamNames) &&
     settingsHandler.loadPipelineStatus() === loadPipelineStatus &&
-    JSON.stringify(settingsHandler.loadFilters()) === JSON.stringify(filters)
+    JSON.stringify(settingsHandler.loadFilters()) === JSON.stringify(filters) &&
+    JSON.stringify(settingsHandler.loadJira()) === JSON.stringify(jira)
 
   const hasUnsavedChanges = !isResetSettingsDisabled
 
@@ -171,6 +183,7 @@ export default function Settings({
     setTeamNames(settingsHandler.loadTeamNames())
     setLoadPipelineStatus(settingsHandler.loadPipelineStatus())
     setFilters(settingsHandler.loadFilters())
+    setJira(settingsHandler.loadJira())
   }
 
   return (
@@ -215,6 +228,7 @@ export default function Settings({
           <Tab label="Members" />
           <Tab label="Repositories" />
           <Tab label="Filters" />
+          <Tab label="Jira" />
         </Tabs>
 
         <Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
@@ -294,6 +308,11 @@ export default function Settings({
           {mountedTabs.has(3) && (
             <Box sx={{ display: activeTab === 3 ? undefined : 'none' }}>
               <FiltersSetting filters={filters} setFilters={setFilters} />
+            </Box>
+          )}
+          {mountedTabs.has(4) && (
+            <Box sx={{ display: activeTab === 4 ? undefined : 'none' }}>
+              <JiraSetting jira={jira} setJira={setJira} />
             </Box>
           )}
         </Box>

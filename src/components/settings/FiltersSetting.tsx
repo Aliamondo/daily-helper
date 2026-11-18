@@ -14,7 +14,7 @@ type ChipListEditorProps = {
   items: string[]
   onChange: (items: string[]) => void
 }
-function ChipListEditor({
+export function ChipListEditor({
   label,
   description,
   items,

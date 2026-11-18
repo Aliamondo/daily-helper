@@ -70,6 +70,10 @@ const settingsHandler = {
     )
   },
 
+  loadJira(): Settings_Jira {
+    return this.load().jira ?? { baseUrl: '', projectKeys: [] }
+  },
+
   loadView(): 'list' | 'kanban' | 'notes' {
     return this.load().view ?? 'list'
   },
